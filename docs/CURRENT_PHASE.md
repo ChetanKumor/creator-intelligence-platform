@@ -1,6 +1,6 @@
-# Current Phase - Phase 2.6A Acceptance Complete
+# Current Phase - Phase 2.6B Real-Footage Verification Complete
 
-Last updated: 2026-09-20
+Last updated: 2026-09-21
 
 ## Current ruling
 
@@ -10,12 +10,24 @@ Last updated: 2026-09-20
 - Phase 2.6A acceptance: PASS.
 - Phase 2.6A overall: COMPLETE for the owner-authorized architecture-freeze and guarded detector-integration acceptance scope.
 - Session 2 editorial-contract implementation: NOT STARTED; remains a separate, unauthorized scope.
-- Phase 2.6B: NOT STARTED. Creating its empty branch is authorized; implementation/execution is not.
+- Phase 2.6B: COMPLETE. TransNetV2 verified on real authorized footage through the current application path.
 - Phase 3: NOT STARTED; not authorized.
 
 Current detector default: **PySceneDetect** (content, threshold 27, minSceneFrames 2, adaptiveThreshold 3). TransNetV2 is integrated and explicitly selectable, not yet default. The ordinary CLI supplies no TransNetV2 launch configuration and still fails explicitly with TRANSNETV2_NOT_CONFIGURED if selected without that configuration. No silent fallback was added.
 
-Next gate: **authorized real-footage LocalFootageServices -> TransNetV2 execution before any default change**. This task does not execute that gate or approve a default change.
+Phase 2.6B gate: **PASS**. Nine authorized, unchanged H.264 sources (302.338072 seconds / 11,888 frames, including two VFR assets) completed fresh CUDA TransNetV2 inference through LocalFootageServices, producing 36 complete MediaTruth timelines. All nine cached repeats match exactly. A real VFR asset additionally completed fresh `analyzeFootage` execution, yielding 65 validated ClipSegments, then an identical full analysis repeat with zero detector/semantic calls and zero decoding. The owner explicitly authorized the existing ignored nine-source corpus in place.
+
+The pinned source/weights match, and actual worker responses plus NVIDIA compute-process observations identify TensorFlow 2.15.0 on the RTX 4050 Laptop GPU. No silent fallback or CPU fallback occurred. PySceneDetect remains default. Fresh PySceneDetect comparison yields 36 shots, with three one-frame boundary differences across two assets; detector superiority is unproven.
+
+Fresh evidence exposed one bounded telemetry defect: the 139-character TransNet provenance string exceeded the frozen 80-character ModelRun version field. Successful TransNet telemetry now binds the complete string through a 75-character SHA-256 label; full provenance remains in timings/cache. The failing evidence and regression are preserved. No public contract, detector/cache identity, MediaTruth, reference analyzer, SigLIP or candidate behavior changed.
+
+Post-inference `npm.cmd run verify` passed: 92 TypeScript / six media / eleven Python tests, workspace audit and 33 generated artifacts, plus synthetic demo; zero failures/skips. Full application runtime was 40.752 seconds; cached repeat 0.564 seconds. Four genuine SigLIP embeddings were reused; normal cheap-frame repair decoded 55 sampled PNG frames, with no raw RGB dumps. A verification-only zero-decoding assertion and a sandbox EPERM repeat failure remain preserved separately from the successful final repeat.
+
+Authority: [Phase 2.6B real-footage report](phases/phase-2.6b-real-footage.md); ignored machine receipt `.local-runs/phase2_6b_20260920/final-receipt.json`. Initial baseline was `b9068bca8e432974c0c9491200556827b4e9443b` on `phase/2.6b-real-footage`.
+
+Next gate: **separate owner authorization for further evaluation or phase work**. No detector-default change, Session 2 editorial implementation, merge to main or Phase 3 start is authorized by this closure.
+
+## Preserved Phase 2.6A acceptance context
 
 Fresh acceptance: `npm.cmd run verify` exited 0 on 2026-09-20: typecheck/build, 89 TypeScript tests (86 existing plus three boundary regressions), six media regressions, eleven Python tests, workspace audit (42 application files / nine explicit adapters), 33 generated schema/fixture checks and synthetic demo PASS. No skipped tests. No pretrained model download or new pretrained inference. Media tests use synthetic footage/stub embeddings; Python tests include generated tiny parameters/mocks.
 
@@ -27,7 +39,7 @@ Git was initialized with an intentional pre-repair recovery baseline, `07eaf2c35
 
 Historical failures remain in the [repository baseline audit](phases/phase-2.6a-repository-baseline-audit-20260920.md) and unchanged earlier architecture amendments. Their readiness/tooling findings describe those earlier sessions. The missing Session 1 verification.json remains missing; it was not reconstructed. See the [acceptance repair report](phases/phase-2.6a-acceptance-repair-20260920.md) for current gates, source relocation identities, limits and local evidence.
 
-Unproven: real-footage TransNetV2 service execution, superiority over PySceneDetect, professional editing quality and broad-domain generalization. The retained historical GPU smoke used a synthetic 90-frame fixture; its receipt does not bind the GPU log or Python-worker hash, and the claimed rollback guard remains independently unverified. Current acceptance does not upgrade that historical evidence.
+At Phase 2.6A closure, real-footage TransNetV2 service execution was unproven; Phase 2.6B now supplies separate fresh evidence above. Superiority over PySceneDetect, professional editing quality and broad-domain generalization remain unproven. The retained historical GPU smoke used a synthetic 90-frame fixture; its receipt does not bind the GPU log or Python-worker hash, and the claimed rollback guard remains independently unverified. Its historical evidence is not rewritten.
 
 ## Frozen model
 
@@ -84,4 +96,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains historically CLOSED. Phase 2.6A architecture-freeze and guarded integration acceptance are COMPLETE under the current bounded authorization. Session 2 editorial implementation, Phase 2.6B execution and Phase 3 remain NOT STARTED and require separate authorization. Do not change the detector default, introduce a model, expand audio/music, add Creative Ranker or build an Editorial Decision Graph.
+Phase 2 remains CLOSED. Phase 2.6A architecture-freeze and guarded integration acceptance are COMPLETE. Phase 2.6B real-footage verification is COMPLETE. Session 2 editorial implementation and Phase 3 remain NOT STARTED and require separate authorization. Do not change the detector default, introduce a model, expand audio/music, add Creative Ranker or build an Editorial Decision Graph.

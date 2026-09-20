@@ -57,7 +57,11 @@ export async function analyzeFootage(manifestInput: unknown, configInput: unknow
     catch (error) { const failure = failureAt(name, error); errorCode = failure.code; throw failure; }
     finally {
       const durationMilliseconds = Math.max(0, Math.round(services.clock.milliseconds() - start));
-      const run = ModelRunSchema.parse({ contractType: "ModelRun", schemaVersion: "1.0.0", runId: `${operationId}.model`, scope, provider: "local", model: tool, modelVersion: name === "embedding" ? config.embedding.revision : version,
+      // Full TransNet provenance exceeds the frozen 80-character version label.
+      // Bind it by digest in telemetry; retain the complete value in stage timings/cache.
+      const modelVersion = name === "embedding" ? config.embedding.revision
+        : name === "detect" && config.detector.kind === "transnetv2" && errorCode === null ? contentId("transnetv2", version) : version;
+      const run = ModelRunSchema.parse({ contractType: "ModelRun", schemaVersion: "1.0.0", runId: `${operationId}.model`, scope, provider: "local", model: tool, modelVersion,
         adapterVersion: FOOTAGE_VERSION, operation: name === "embedding" ? "embedding" : "footage_analysis", inputIds: authorization === null ? [] : [`asset_${authorization.contentHash}`], outputIds: errorCode === null ? [contentId("stage", [entryId, configurationId, name])] : [], startedAt, endedAt: services.clock.now(), status: errorCode === null ? "succeeded" : "failed", errorCode });
       services.telemetry.recordModelRun(run); runs.push(run);
       services.telemetry.record(CostEventSchema.parse({ contractType: "CostEvent", schemaVersion: "1.0.0", eventId: `${operationId}.cost`, scope, occurredAt: services.clock.now(), operationId, attempt: 1, provider: "local", tool, model: tool, modelRunId: run.runId, operation: run.operation, durationMilliseconds, units, costInrMicros: 0, costSource: scope.environment === "synthetic" ? "synthetic" : "measured" }));
