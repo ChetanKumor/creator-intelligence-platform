@@ -1,0 +1,77 @@
+[
+  {
+    "contractType": "MediaAsset",
+    "schemaVersion": "1.0.0",
+    "assetId": "asset_reference",
+    "projectId": "project_synthetic",
+    "creatorId": "creator_synthetic",
+    "kind": "video",
+    "objectId": "object_asset_reference",
+    "durationSeconds": 20,
+    "origin": "synthetic",
+    "retention": {
+      "expiresAt": null,
+      "deletionRequestedAt": null
+    }
+  },
+  {
+    "contractType": "MediaAsset",
+    "schemaVersion": "1.0.0",
+    "assetId": "asset_red",
+    "projectId": "project_synthetic",
+    "creatorId": "creator_synthetic",
+    "kind": "video",
+    "objectId": "object_asset_red",
+    "durationSeconds": 12,
+    "origin": "synthetic",
+    "retention": {
+      "expiresAt": null,
+      "deletionRequestedAt": null
+    }
+  },
+  {
+    "contractType": "MediaAsset",
+    "schemaVersion": "1.0.0",
+    "assetId": "asset_scene",
+    "projectId": "project_synthetic",
+    "creatorId": "creator_synthetic",
+    "kind": "video",
+    "objectId": "object_asset_scene",
+    "durationSeconds": 14,
+    "origin": "synthetic",
+    "retention": {
+      "expiresAt": null,
+      "deletionRequestedAt": null
+    }
+  },
+  {
+    "contractType": "MediaAsset",
+    "schemaVersion": "1.0.0",
+    "assetId": "asset_alternative",
+    "projectId": "project_synthetic",
+    "creatorId": "creator_synthetic",
+    "kind": "video",
+    "objectId": "object_asset_alternative",
+    "durationSeconds": 8,
+    "origin": "synthetic",
+    "retention": {
+      "expiresAt": null,
+      "deletionRequestedAt": null
+    }
+  },
+  {
+    "contractType": "MediaAsset",
+    "schemaVersion": "1.0.0",
+    "assetId": "asset_music",
+    "projectId": "project_synthetic",
+    "creatorId": "creator_synthetic",
+    "kind": "audio",
+    "objectId": "object_asset_music",
+    "durationSeconds": 20,
+    "origin": "synthetic",
+    "retention": {
+      "expiresAt": null,
+      "deletionRequestedAt": null
+    }
+  }
+]

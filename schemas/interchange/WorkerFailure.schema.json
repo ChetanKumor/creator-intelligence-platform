@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "protocolVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+        },
+        "stage": {
+          "type": "string",
+          "enum": [
+            "metadata",
+            "detect",
+            "sample",
+            "embed",
+            "protocol"
+          ]
+        },
+        "diagnostic": {
+          "type": "string",
+          "maxLength": 240,
+          "pattern": "^[a-zA-Z0-9 _.,:()=-]+$"
+        }
+      },
+      "required": [
+        "code",
+        "stage",
+        "diagnostic"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "protocolVersion",
+    "error"
+  ],
+  "additionalProperties": false,
+  "$id": "urn:creator-intelligence:interchange:WorkerFailure:1.0.0",
+  "$comment": "Generated from TypeScript-owned schemas. TypeScript semantic validation remains mandatory."
+}

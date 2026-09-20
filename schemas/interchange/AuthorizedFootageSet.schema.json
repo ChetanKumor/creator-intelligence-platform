@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "manifestType": {
+      "type": "string",
+      "const": "AuthorizedFootageSet"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "creatorId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "projectId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "assets": {
+      "minItems": 1,
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "authorization": {}
+        },
+        "required": [
+          "entryId",
+          "path",
+          "authorization"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "manifestType",
+    "schemaVersion",
+    "creatorId",
+    "projectId",
+    "assets"
+  ],
+  "additionalProperties": false,
+  "$id": "urn:creator-intelligence:interchange:AuthorizedFootageSet:1.0.0",
+  "$comment": "Generated from TypeScript-owned schemas. TypeScript semantic validation remains mandatory."
+}

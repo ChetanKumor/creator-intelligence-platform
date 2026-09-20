@@ -1,0 +1,27 @@
+{
+  "contractType": "BenchmarkManifest",
+  "schemaVersion": "1.0.0",
+  "benchmarkId": "benchmark_contract_example",
+  "benchmarkVersion": "1.0.0",
+  "provenance": "synthetic",
+  "split": "test",
+  "splitUnit": "creator",
+  "frozenAt": "2026-09-13T00:00:00.000Z",
+  "cases": [
+    {
+      "caseId": "case_contract_example",
+      "creatorGroupId": "creator_synthetic",
+      "candidateSegmentIds": [
+        "segment_hook",
+        "segment_alternative"
+      ],
+      "acceptableSegmentIds": [
+        "segment_hook"
+      ],
+      "referenceFingerprintId": "reference_synthetic",
+      "audioFingerprintId": "audio_synthetic",
+      "slotRole": "hook"
+    }
+  ],
+  "casesDigest": "db2704cd34fe389461c934de0bbfbaeaa3fe07dc346d22fd6c2a08f061ae1d53"
+}

@@ -1,0 +1,19 @@
+{
+  "provenance": "Observed Phase 1 offline So400m verification, authorized synthetic media.",
+  "configuration": {
+    "cpuFallback": false,
+    "device": "cpu",
+    "maxPatches": 256,
+    "mode": "siglip",
+    "model": "google/siglip2-so400m-patch16-naflex",
+    "revision": "cc24074f717b612951c2dead130904ab9b65a81e"
+  },
+  "reference": {
+    "dimensions": 1152,
+    "distance": "cosine",
+    "embeddingId": "embedding_4a758dc3296c026a469620a8868fe8bd8f21246f35abe75af9150049f5477d7d",
+    "objectId": "cache_c3a00069306fe312717d87ebb1efc2b9a9e3ed547762a7bd69d529c05da6de65",
+    "spaceId": "space_58bd790c6dc94ee22f001fadec49ff85cb3178eef47a856ca421948b3d06f687",
+    "spaceVersion": "normalized-mean-v1"
+  }
+}

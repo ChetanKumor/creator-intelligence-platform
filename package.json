@@ -1,0 +1,27 @@
+{
+  "name": "creator-intelligence-platform",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Owned creative contracts and local reference and footage analysis with offline verification.",
+  "engines": { "node": ">=24.15.0 <25" },
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --import ./scripts/no-network.mjs --test dist/tests/*.test.js",
+    "schemas:generate": "npm run build && node dist/scripts/export-schemas.js",
+    "schemas:check": "npm run build && node dist/scripts/export-schemas.js --check",
+    "demo": "npm run build && node --import ./scripts/no-network.mjs dist/samples/demo.js",
+    "audit:workspace": "node scripts/audit-workspace.mjs",
+    "tree": "node scripts/project-tree.mjs",
+    "verify": "npm run typecheck && npm test && node scripts/audit-workspace.mjs && node dist/scripts/export-schemas.js --check && node --import ./scripts/no-network.mjs dist/samples/demo.js && npm run test:media && npm run test:python",
+    "analyze-reference": "node dist/scripts/analyze-reference.js",
+    "analyze-footage": "node --import ./scripts/no-network.mjs dist/scripts/analyze-footage.js",
+    "test:media": "node --import ./scripts/no-network.mjs --test dist/tests/*-media.integration.js",
+    "test:python": ".venv\\Scripts\\python.exe -B scripts/test-python.py",
+    "setup:reference": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-reference.ps1"
+  },
+  "dependencies": { "zod": "4.1.12" },
+  "devDependencies": { "@types/node": "24.10.0", "typescript": "5.9.3" }
+}

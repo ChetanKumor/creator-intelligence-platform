@@ -1,0 +1,202 @@
+creator-intelligence-platform/
+├── docs/
+│   ├── phases/
+│   │   ├── phase-2.5-final-closure.md
+│   │   ├── phase-2.6a-editorial-contracts.md
+│   │   ├── phase-2.6a-repository-baseline-audit-20260920.md
+│   │   ├── phase-2.6a-session-1-architecture.md
+│   │   └── phase-2.6a-session-2-handoff.md
+│   ├── CURRENT_PHASE.md
+│   ├── architecture.md
+│   ├── contracts.md
+│   ├── data-learning.md
+│   ├── footage-analyzer.md
+│   ├── footage-evaluation.md
+│   ├── footage-verification.md
+│   ├── phases.md
+│   ├── project-tree.txt
+│   ├── reference-analyzer.md
+│   ├── reference-contract-v11.md
+│   ├── reference-evaluation.md
+│   ├── reference-verification.md
+│   └── verification.md
+├── packages/
+│   ├── audio-analyzer/
+│   │   ├── beat.ts
+│   │   ├── energy-worker.ts
+│   │   ├── energy.ts
+│   │   ├── index.ts
+│   │   ├── music-analysis.ts
+│   │   ├── music-primitives.ts
+│   │   ├── protocol.ts
+│   │   ├── structure-worker.ts
+│   │   ├── structure.ts
+│   │   └── worker.ts
+│   ├── contracts/
+│   │   ├── audio.ts
+│   │   ├── common.ts
+│   │   ├── creative.ts
+│   │   ├── edit-plan.ts
+│   │   ├── events.ts
+│   │   ├── execution.ts
+│   │   ├── index.ts
+│   │   ├── job.ts
+│   │   └── reference-v11.ts
+│   ├── domain/
+│   │   ├── index.ts
+│   │   └── serialization.ts
+│   ├── evaluation/
+│   │   ├── footage.ts
+│   │   ├── index.ts
+│   │   └── reference.ts
+│   ├── footage-analyzer/
+│   │   ├── aggregation.ts
+│   │   ├── candidates.ts
+│   │   ├── frame-bank.ts
+│   │   ├── index.ts
+│   │   ├── lattice.ts
+│   │   ├── protocol.ts
+│   │   ├── transnetv2-protocol.ts
+│   │   └── transnetv2.ts
+│   ├── jobs/
+│   │   └── index.ts
+│   ├── providers/
+│   │   ├── dry-run-renderer.ts
+│   │   └── index.ts
+│   ├── reference-analyzer/
+│   │   ├── embeddings.ts
+│   │   ├── features.ts
+│   │   ├── index.ts
+│   │   ├── models.ts
+│   │   └── protocol.ts
+│   ├── telemetry/
+│   │   └── index.ts
+│   └── validation/
+│       ├── index.ts
+│       └── qc.ts
+├── python/
+│   ├── audio_analyzer/
+│   │   ├── __init__.py
+│   │   ├── __main__.py
+│   │   ├── energy_worker.py
+│   │   └── structure_worker.py
+│   ├── reference_analyzer/
+│   │   ├── __init__.py
+│   │   ├── __main__.py
+│   │   ├── capacity.py
+│   │   ├── media.py
+│   │   ├── offline.py
+│   │   └── siglip.py
+│   ├── tests/
+│   │   ├── test_footage.py
+│   │   └── test_siglip.py
+│   └── transnet_detector/
+│       ├── __init__.py
+│       └── __main__.py
+├── samples/
+│   ├── fixtures/
+│   │   ├── audio-fingerprint.json
+│   │   ├── benchmark.json
+│   │   ├── clip-segments.json
+│   │   ├── decisions.json
+│   │   ├── edit-plan.json
+│   │   ├── media-assets.json
+│   │   └── reference-fingerprint.json
+│   ├── README.md
+│   ├── demo.ts
+│   ├── fixtures.ts
+│   └── pipeline.ts
+├── schemas/
+│   ├── interchange/
+│   │   ├── AuthorizedFootage.schema.json
+│   │   ├── AuthorizedFootageSet.schema.json
+│   │   ├── AuthorizedReference.schema.json
+│   │   ├── FootageAnalysis.schema.json
+│   │   ├── FootageConfig.schema.json
+│   │   ├── FootageInventory.schema.json
+│   │   ├── ReferenceBoundaryBenchmark.schema.json
+│   │   ├── WorkerFailure.schema.json
+│   │   ├── WorkerRequest.schema.json
+│   │   └── WorkerResponse.schema.json
+│   ├── v1/
+│   │   ├── AudioFingerprint.schema.json
+│   │   ├── BenchmarkManifest.schema.json
+│   │   ├── ClipSegment.schema.json
+│   │   ├── CostEvent.schema.json
+│   │   ├── CreatorPreferenceEvent.schema.json
+│   │   ├── DecisionEvent.schema.json
+│   │   ├── FeedbackEvent.schema.json
+│   │   ├── JobState.schema.json
+│   │   ├── MediaAsset.schema.json
+│   │   ├── ModelRun.schema.json
+│   │   ├── QCResult.schema.json
+│   │   ├── ReferenceFingerprint.schema.json
+│   │   ├── RenderResult.schema.json
+│   │   └── UniversalEditPlan.schema.json
+│   └── v1.1/
+│       └── ReferenceFingerprint.schema.json
+├── scripts/
+│   ├── analyze-footage.ts
+│   ├── analyze-reference.ts
+│   ├── audio-energy-smoke.ts
+│   ├── audio-provider-smoke.ts
+│   ├── audio-worker-smoke.ts
+│   ├── audit-workspace.mjs
+│   ├── check-footage-capacity.py
+│   ├── clean.mjs
+│   ├── download-so400m.py
+│   ├── export-schemas.ts
+│   ├── footage-local.ts
+│   ├── music-analysis-smoke.ts
+│   ├── music-primitives-smoke.ts
+│   ├── no-network.mjs
+│   ├── project-tree.mjs
+│   ├── reference-local.ts
+│   ├── setup-reference.ps1
+│   ├── smoke-footage-model.ts
+│   ├── smoke-reference-model.py
+│   ├── structure-determinism-smoke.ts
+│   ├── structure-provider-smoke.ts
+│   ├── test-python.py
+│   ├── transnetv2-provider-smoke.ts
+│   ├── validate-beat-receipt.ts
+│   └── verify-footage-cached-model.ts
+├── tests/
+│   ├── fixtures/
+│   │   ├── phase0-frozen-digests.json
+│   │   ├── phase1-embedding-space.json
+│   │   └── reference-v11.json
+│   ├── support/
+│   │   ├── fixtures.ts
+│   │   ├── footage-media.ts
+│   │   └── footage.ts
+│   ├── contracts.test.ts
+│   ├── evaluation.test.ts
+│   ├── footage-core.test.ts
+│   ├── footage-local.test.ts
+│   ├── footage-media.integration.ts
+│   ├── integration.test.ts
+│   ├── jobs.test.ts
+│   ├── network.test.ts
+│   ├── reference-core.test.ts
+│   ├── reference-local.test.ts
+│   ├── reference-media.integration.ts
+│   ├── reference-migration.test.ts
+│   ├── serialization.test.ts
+│   ├── telemetry.test.ts
+│   └── transnetv2-footage-contract.test.ts
+├── .gitignore
+├── .npmrc
+├── .python-version
+├── AGENTS.md
+├── PHASE1_REFERENCE_ANALYZER.md
+├── PHASE2_FOOTAGE_ANALYZER.md
+├── README.md
+├── package-lock.json
+├── package.json
+├── pyproject.toml
+├── tsconfig.json
+└── uv.lock
+
+Ignored/generated directories omitted: node_modules/, dist/, .npm-cache/, .git/, coverage/, .tools/, .venv/, venv/, venvs/, .uv-cache/, .reference-cache/, .local-media/, local-media/, .local-runs/, .test-artifacts/, __pycache__/, .pytest_cache/, checkpoints/, weights/, model-cache/, datasets/, generated-media/, .cache/huggingface/.
+Private environment files, media, model weights, logs and Python bytecode omitted; .env.example remains eligible.

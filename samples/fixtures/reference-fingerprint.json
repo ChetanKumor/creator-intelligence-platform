@@ -1,0 +1,197 @@
+{
+  "contractType": "ReferenceFingerprint",
+  "schemaVersion": "1.0.0",
+  "fingerprintId": "reference_synthetic",
+  "assetId": "asset_reference",
+  "durationSeconds": 20,
+  "fps": {
+    "numerator": 30,
+    "denominator": 1
+  },
+  "aspectRatio": {
+    "width": 9,
+    "height": 16
+  },
+  "shots": [
+    {
+      "shotId": "shot_0",
+      "sourceRange": {
+        "startSeconds": 0,
+        "endSeconds": 3
+      },
+      "role": "hook",
+      "shotType": "medium",
+      "subjectCount": 1,
+      "motion": {
+        "camera": "static",
+        "subject": "medium"
+      },
+      "composition": {
+        "framing": "medium",
+        "subjectPosition": "center"
+      },
+      "quality": {
+        "sharpness": null,
+        "exposure": null,
+        "stability": null
+      },
+      "semantics": {
+        "description": "Synthetic subject in a plain scene. No media file exists.",
+        "tags": [
+          "synthetic"
+        ]
+      },
+      "transitionOut": {
+        "type": "cut"
+      }
+    },
+    {
+      "shotId": "shot_1",
+      "sourceRange": {
+        "startSeconds": 3,
+        "endSeconds": 8
+      },
+      "role": "setup",
+      "shotType": "medium",
+      "subjectCount": 1,
+      "motion": {
+        "camera": "static",
+        "subject": "medium"
+      },
+      "composition": {
+        "framing": "medium",
+        "subjectPosition": "center"
+      },
+      "quality": {
+        "sharpness": null,
+        "exposure": null,
+        "stability": null
+      },
+      "semantics": {
+        "description": "Synthetic subject in a plain scene. No media file exists.",
+        "tags": [
+          "synthetic"
+        ]
+      },
+      "transitionOut": {
+        "type": "cut"
+      }
+    },
+    {
+      "shotId": "shot_2",
+      "sourceRange": {
+        "startSeconds": 8,
+        "endSeconds": 14
+      },
+      "role": "build",
+      "shotType": "medium",
+      "subjectCount": 1,
+      "motion": {
+        "camera": "static",
+        "subject": "medium"
+      },
+      "composition": {
+        "framing": "medium",
+        "subjectPosition": "center"
+      },
+      "quality": {
+        "sharpness": null,
+        "exposure": null,
+        "stability": null
+      },
+      "semantics": {
+        "description": "Synthetic subject in a plain scene. No media file exists.",
+        "tags": [
+          "synthetic"
+        ]
+      },
+      "transitionOut": {
+        "type": "cut"
+      }
+    },
+    {
+      "shotId": "shot_3",
+      "sourceRange": {
+        "startSeconds": 14,
+        "endSeconds": 20
+      },
+      "role": "hero",
+      "shotType": "medium",
+      "subjectCount": 1,
+      "motion": {
+        "camera": "static",
+        "subject": "medium"
+      },
+      "composition": {
+        "framing": "medium",
+        "subjectPosition": "center"
+      },
+      "quality": {
+        "sharpness": null,
+        "exposure": null,
+        "stability": null
+      },
+      "semantics": {
+        "description": "Synthetic subject in a plain scene. No media file exists.",
+        "tags": [
+          "synthetic"
+        ]
+      },
+      "transitionOut": {
+        "type": "cut"
+      }
+    }
+  ],
+  "structure": [
+    {
+      "role": "hook",
+      "range": {
+        "startSeconds": 0,
+        "endSeconds": 3
+      }
+    },
+    {
+      "role": "setup",
+      "range": {
+        "startSeconds": 3,
+        "endSeconds": 8
+      }
+    },
+    {
+      "role": "build",
+      "range": {
+        "startSeconds": 8,
+        "endSeconds": 14
+      }
+    },
+    {
+      "role": "hero",
+      "range": {
+        "startSeconds": 14,
+        "endSeconds": 20
+      }
+    }
+  ],
+  "pacing": {
+    "averageShotLengthSeconds": 5,
+    "shotsPerSecond": 0.2,
+    "trend": "decelerating"
+  },
+  "audioFingerprintId": null,
+  "captions": {
+    "density": "sparse",
+    "position": "lower",
+    "styleHint": "clean"
+  },
+  "style": {
+    "family": "synthetic_lifestyle",
+    "category": "lifestyle",
+    "energy": null
+  },
+  "provenance": {
+    "producer": "synthetic_fixture",
+    "producerVersion": "1.0.0",
+    "modelRunIds": [],
+    "createdAt": "2026-09-13T00:00:00.000Z"
+  }
+}

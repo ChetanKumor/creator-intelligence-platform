@@ -1,0 +1,265 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "protocolVersion": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "operation": {
+          "type": "string",
+          "const": "metadata"
+        },
+        "mediaPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ffprobePath": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "protocolVersion",
+        "operation",
+        "mediaPath",
+        "ffprobePath"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocolVersion": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "operation": {
+          "type": "string",
+          "const": "detect"
+        },
+        "mediaPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "config": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "content",
+                "adaptive"
+              ]
+            },
+            "threshold": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 255
+            },
+            "minSceneFrames": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 120
+            },
+            "adaptiveThreshold": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "kind",
+            "threshold",
+            "minSceneFrames",
+            "adaptiveThreshold"
+          ],
+          "additionalProperties": false
+        },
+        "frameCount": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 72000
+        }
+      },
+      "required": [
+        "protocolVersion",
+        "operation",
+        "mediaPath",
+        "config",
+        "frameCount"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocolVersion": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "operation": {
+          "type": "string",
+          "const": "sample"
+        },
+        "mediaPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ffmpegPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "frameRoot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "samples": {
+          "minItems": 1,
+          "maxItems": 3000,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sampleId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+              },
+              "shotId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+              },
+              "frameIndex": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "atSeconds": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "sampleId",
+              "shotId",
+              "frameIndex",
+              "atSeconds"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "protocolVersion",
+        "operation",
+        "mediaPath",
+        "ffmpegPath",
+        "frameRoot",
+        "samples"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocolVersion": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "operation": {
+          "type": "string",
+          "const": "embed"
+        },
+        "frameRoot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "modelRoot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "config": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "siglip",
+                "stub"
+              ]
+            },
+            "model": {
+              "type": "string",
+              "enum": [
+                "google/siglip2-base-patch16-naflex",
+                "google/siglip2-so400m-patch16-naflex",
+                "synthetic-frame-statistics"
+              ]
+            },
+            "revision": {
+              "type": "string",
+              "pattern": "^(?:[a-f0-9]{40}|stub-v1)$"
+            },
+            "device": {
+              "type": "string",
+              "enum": [
+                "cpu",
+                "cuda"
+              ]
+            },
+            "cpuFallback": {
+              "type": "boolean"
+            },
+            "maxPatches": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "const": 256
+                },
+                {
+                  "type": "number",
+                  "const": 512
+                },
+                {
+                  "type": "number",
+                  "const": 1024
+                }
+              ]
+            }
+          },
+          "required": [
+            "mode",
+            "model",
+            "revision",
+            "device",
+            "cpuFallback",
+            "maxPatches"
+          ],
+          "additionalProperties": false
+        },
+        "sampleIds": {
+          "minItems": 1,
+          "maxItems": 3000,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+          }
+        }
+      },
+      "required": [
+        "protocolVersion",
+        "operation",
+        "frameRoot",
+        "modelRoot",
+        "config",
+        "sampleIds"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "$id": "urn:creator-intelligence:interchange:WorkerRequest:1.0.0",
+  "$comment": "Generated from TypeScript-owned schemas. TypeScript semantic validation remains mandatory."
+}

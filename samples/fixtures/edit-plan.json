@@ -1,0 +1,164 @@
+{
+  "contractType": "UniversalEditPlan",
+  "schemaVersion": "1.0.0",
+  "planId": "plan_synthetic_v0",
+  "projectId": "project_synthetic",
+  "revision": 0,
+  "parentPlanId": null,
+  "output": {
+    "aspectRatio": "9:16",
+    "resolution": {
+      "width": 1080,
+      "height": 1920
+    },
+    "fps": {
+      "numerator": 30,
+      "denominator": 1
+    },
+    "targetDurationSeconds": 20
+  },
+  "clips": [
+    {
+      "clipId": "timeline_0",
+      "segmentId": "segment_hook",
+      "assetId": "asset_red",
+      "sourceRange": {
+        "startSeconds": 1,
+        "endSeconds": 4
+      },
+      "outputStartSeconds": 0,
+      "role": "hook",
+      "speed": 1,
+      "transform": {
+        "fit": "cover",
+        "focalPoint": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "scale": 1
+      },
+      "sourceAudioGain": 0,
+      "transitionOut": {
+        "type": "cut"
+      },
+      "reason": "Fixed synthetic recipe; no matching algorithm or model was run.",
+      "confidence": 1,
+      "decisionId": "decision_0"
+    },
+    {
+      "clipId": "timeline_1",
+      "segmentId": "segment_setup",
+      "assetId": "asset_scene",
+      "sourceRange": {
+        "startSeconds": 0,
+        "endSeconds": 5
+      },
+      "outputStartSeconds": 3,
+      "role": "setup",
+      "speed": 1,
+      "transform": {
+        "fit": "cover",
+        "focalPoint": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "scale": 1
+      },
+      "sourceAudioGain": 0,
+      "transitionOut": {
+        "type": "cut"
+      },
+      "reason": "Fixed synthetic recipe; no matching algorithm or model was run.",
+      "confidence": 1,
+      "decisionId": "decision_1"
+    },
+    {
+      "clipId": "timeline_2",
+      "segmentId": "segment_build",
+      "assetId": "asset_red",
+      "sourceRange": {
+        "startSeconds": 5,
+        "endSeconds": 11
+      },
+      "outputStartSeconds": 8,
+      "role": "build",
+      "speed": 1,
+      "transform": {
+        "fit": "cover",
+        "focalPoint": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "scale": 1
+      },
+      "sourceAudioGain": 0,
+      "transitionOut": {
+        "type": "cut"
+      },
+      "reason": "Fixed synthetic recipe; no matching algorithm or model was run.",
+      "confidence": 1,
+      "decisionId": "decision_2"
+    },
+    {
+      "clipId": "timeline_3",
+      "segmentId": "segment_hero",
+      "assetId": "asset_scene",
+      "sourceRange": {
+        "startSeconds": 6,
+        "endSeconds": 12
+      },
+      "outputStartSeconds": 14,
+      "role": "hero",
+      "speed": 1,
+      "transform": {
+        "fit": "cover",
+        "focalPoint": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "scale": 1
+      },
+      "sourceAudioGain": 0,
+      "transitionOut": {
+        "type": "cut"
+      },
+      "reason": "Fixed synthetic recipe; no matching algorithm or model was run.",
+      "confidence": 1,
+      "decisionId": "decision_3"
+    }
+  ],
+  "music": {
+    "assetId": "asset_music",
+    "audioFingerprintId": "audio_synthetic",
+    "sourceRange": {
+      "startSeconds": 0,
+      "endSeconds": 20
+    },
+    "outputStartSeconds": 0,
+    "gain": 0.7,
+    "fadeInSeconds": 0.25,
+    "fadeOutSeconds": 0.5
+  },
+  "captions": [
+    {
+      "captionId": "caption_synthetic",
+      "range": {
+        "startSeconds": 0,
+        "endSeconds": 3
+      },
+      "text": "మొదటి అడుగు",
+      "language": "te",
+      "position": "lower",
+      "style": "clean"
+    }
+  ],
+  "overlays": [],
+  "effects": [],
+  "metadata": {
+    "planner": "fixture_planner",
+    "plannerVersion": "1.0.0",
+    "modelRunIds": [],
+    "referenceFingerprintId": "reference_synthetic",
+    "createdAt": "2026-09-13T00:00:00.000Z"
+  }
+}

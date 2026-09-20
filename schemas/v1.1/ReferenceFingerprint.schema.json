@@ -1,0 +1,625 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "contractType": {
+      "type": "string",
+      "const": "ReferenceFingerprint"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.1.0"
+    },
+    "fingerprintId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "assetId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "durationSeconds": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 600
+    },
+    "fps": {
+      "type": "object",
+      "properties": {
+        "numerator": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 120000
+        },
+        "denominator": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 1001
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator"
+      ],
+      "additionalProperties": false
+    },
+    "aspectRatio": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 10000
+        },
+        "height": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 10000
+        }
+      },
+      "required": [
+        "width",
+        "height"
+      ],
+      "additionalProperties": false
+    },
+    "shots": {
+      "minItems": 1,
+      "maxItems": 1000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "shotId": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+          },
+          "sourceRange": {
+            "type": "object",
+            "properties": {
+              "startSeconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "endSeconds": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "startSeconds",
+              "endSeconds"
+            ],
+            "additionalProperties": false
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "hook",
+                  "setup",
+                  "build",
+                  "reveal",
+                  "hero",
+                  "outro",
+                  "supporting"
+                ]
+              },
+              {
+                "type": "string",
+                "const": "unknown"
+              }
+            ]
+          },
+          "shotType": {
+            "type": "string",
+            "enum": [
+              "close_up",
+              "medium",
+              "wide",
+              "detail",
+              "aerial",
+              "unknown"
+            ]
+          },
+          "subjectCount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "motion": {
+            "type": "object",
+            "properties": {
+              "camera": {
+                "type": "string",
+                "enum": [
+                  "static",
+                  "pan",
+                  "tilt",
+                  "tracking",
+                  "handheld",
+                  "zoom",
+                  "unknown"
+                ]
+              },
+              "subject": {
+                "type": "string",
+                "enum": [
+                  "still",
+                  "low",
+                  "medium",
+                  "high",
+                  "unknown"
+                ]
+              }
+            },
+            "required": [
+              "camera",
+              "subject"
+            ],
+            "additionalProperties": false
+          },
+          "composition": {
+            "type": "object",
+            "properties": {
+              "framing": {
+                "type": "string",
+                "enum": [
+                  "close_up",
+                  "medium",
+                  "wide",
+                  "detail",
+                  "unknown"
+                ]
+              },
+              "subjectPosition": {
+                "type": "string",
+                "enum": [
+                  "left",
+                  "center",
+                  "right",
+                  "unknown"
+                ]
+              }
+            },
+            "required": [
+              "framing",
+              "subjectPosition"
+            ],
+            "additionalProperties": false
+          },
+          "quality": {
+            "type": "object",
+            "properties": {
+              "sharpness": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "exposure": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "stability": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "sharpness",
+              "exposure",
+              "stability"
+            ],
+            "additionalProperties": false
+          },
+          "semantics": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "tags": {
+                "maxItems": 32,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+                }
+              }
+            },
+            "required": [
+              "description",
+              "tags"
+            ],
+            "additionalProperties": false
+          },
+          "transitionOut": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "cut"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "dissolve"
+                      },
+                      "durationSeconds": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 2
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "durationSeconds"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "unknown"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "semanticEmbedding": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "embeddingId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+                  },
+                  "spaceId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+                  },
+                  "spaceVersion": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "dimensions": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 65536
+                  },
+                  "distance": {
+                    "type": "string",
+                    "enum": [
+                      "cosine",
+                      "euclidean",
+                      "dot"
+                    ]
+                  },
+                  "objectId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+                  }
+                },
+                "required": [
+                  "embeddingId",
+                  "spaceId",
+                  "spaceVersion",
+                  "dimensions",
+                  "distance",
+                  "objectId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "shotId",
+          "sourceRange",
+          "role",
+          "shotType",
+          "subjectCount",
+          "motion",
+          "composition",
+          "quality",
+          "semantics",
+          "transitionOut",
+          "semanticEmbedding"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "structure": {
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "hook",
+                  "setup",
+                  "build",
+                  "reveal",
+                  "hero",
+                  "outro",
+                  "supporting"
+                ]
+              },
+              {
+                "type": "string",
+                "const": "unknown"
+              }
+            ]
+          },
+          "range": {
+            "type": "object",
+            "properties": {
+              "startSeconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "endSeconds": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "startSeconds",
+              "endSeconds"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "role",
+          "range"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "pacing": {
+      "type": "object",
+      "properties": {
+        "averageShotLengthSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "shotsPerSecond": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "trend": {
+          "type": "string",
+          "enum": [
+            "accelerating",
+            "steady",
+            "decelerating",
+            "mixed",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "averageShotLengthSeconds",
+        "shotsPerSecond",
+        "trend"
+      ],
+      "additionalProperties": false
+    },
+    "audioFingerprintId": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "captions": {
+      "type": "object",
+      "properties": {
+        "density": {
+          "type": "string",
+          "enum": [
+            "none",
+            "sparse",
+            "moderate",
+            "dense",
+            "unknown"
+          ]
+        },
+        "position": {
+          "type": "string",
+          "enum": [
+            "upper",
+            "middle",
+            "lower",
+            "mixed",
+            "unknown"
+          ]
+        },
+        "styleHint": {
+          "type": "string",
+          "enum": [
+            "clean",
+            "emphasis",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "density",
+        "position",
+        "styleHint"
+      ],
+      "additionalProperties": false
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "family": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "fashion",
+            "lifestyle",
+            "gym",
+            "dance",
+            "travel",
+            "college",
+            "talking_head",
+            "ad",
+            "product",
+            "brand",
+            "other",
+            "unknown"
+          ]
+        },
+        "energy": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "family",
+        "category",
+        "energy"
+      ],
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "producer": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+        },
+        "producerVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "modelRunIds": {
+          "maxItems": 32,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}(?:Z))$"
+        }
+      },
+      "required": [
+        "producer",
+        "producerVersion",
+        "modelRunIds",
+        "createdAt"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "contractType",
+    "schemaVersion",
+    "fingerprintId",
+    "assetId",
+    "durationSeconds",
+    "fps",
+    "aspectRatio",
+    "shots",
+    "structure",
+    "pacing",
+    "audioFingerprintId",
+    "captions",
+    "style",
+    "provenance"
+  ],
+  "additionalProperties": false,
+  "$id": "urn:creator-intelligence:ReferenceFingerprint:1.1.0",
+  "$comment": "Generated from TypeScript-owned schemas. TypeScript semantic validation remains mandatory."
+}

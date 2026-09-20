@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "contractType": {
+      "type": "string",
+      "const": "BenchmarkManifest"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "benchmarkId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "benchmarkVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "provenance": {
+      "type": "string",
+      "enum": [
+        "synthetic",
+        "creator_opt_in"
+      ]
+    },
+    "split": {
+      "type": "string",
+      "enum": [
+        "validation",
+        "test"
+      ]
+    },
+    "splitUnit": {
+      "type": "string",
+      "const": "creator"
+    },
+    "frozenAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}(?:Z))$"
+    },
+    "cases": {
+      "maxItems": 10000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+          },
+          "creatorGroupId": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+          },
+          "candidateSegmentIds": {
+            "minItems": 1,
+            "maxItems": 256,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+            }
+          },
+          "acceptableSegmentIds": {
+            "minItems": 1,
+            "maxItems": 256,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+            }
+          },
+          "referenceFingerprintId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "audioFingerprintId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "slotRole": {
+            "type": "string",
+            "enum": [
+              "hook",
+              "setup",
+              "build",
+              "reveal",
+              "hero",
+              "outro",
+              "supporting"
+            ]
+          }
+        },
+        "required": [
+          "caseId",
+          "creatorGroupId",
+          "candidateSegmentIds",
+          "acceptableSegmentIds",
+          "referenceFingerprintId",
+          "audioFingerprintId",
+          "slotRole"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "casesDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "required": [
+    "contractType",
+    "schemaVersion",
+    "benchmarkId",
+    "benchmarkVersion",
+    "provenance",
+    "split",
+    "splitUnit",
+    "frozenAt",
+    "cases",
+    "casesDigest"
+  ],
+  "additionalProperties": false,
+  "$id": "urn:creator-intelligence:BenchmarkManifest:1.0.0",
+  "$comment": "Structural interchange schema. Cross-field and cross-asset checks in packages/contracts and packages/validation are also mandatory."
+}

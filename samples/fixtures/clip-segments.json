@@ -1,0 +1,212 @@
+[
+  {
+    "contractType": "ClipSegment",
+    "schemaVersion": "1.0.0",
+    "segmentId": "segment_hook",
+    "assetId": "asset_red",
+    "sourceRange": {
+      "startSeconds": 1,
+      "endSeconds": 4
+    },
+    "shotType": "medium",
+    "subjectCount": 1,
+    "motion": {
+      "camera": "static",
+      "subject": "medium"
+    },
+    "composition": {
+      "framing": "medium",
+      "subjectPosition": "center"
+    },
+    "quality": {
+      "sharpness": null,
+      "exposure": null,
+      "stability": null
+    },
+    "semantics": {
+      "description": "Synthetic subject in a plain scene. No media file exists.",
+      "tags": [
+        "synthetic"
+      ]
+    },
+    "facePresence": "unknown",
+    "personPresence": "present",
+    "poseTags": [],
+    "semanticEmbedding": null,
+    "motionEmbedding": null,
+    "provenance": {
+      "producer": "synthetic_fixture",
+      "producerVersion": "1.0.0",
+      "modelRunIds": [],
+      "createdAt": "2026-09-13T00:00:00.000Z"
+    }
+  },
+  {
+    "contractType": "ClipSegment",
+    "schemaVersion": "1.0.0",
+    "segmentId": "segment_setup",
+    "assetId": "asset_scene",
+    "sourceRange": {
+      "startSeconds": 0,
+      "endSeconds": 5
+    },
+    "shotType": "medium",
+    "subjectCount": 1,
+    "motion": {
+      "camera": "static",
+      "subject": "medium"
+    },
+    "composition": {
+      "framing": "medium",
+      "subjectPosition": "center"
+    },
+    "quality": {
+      "sharpness": null,
+      "exposure": null,
+      "stability": null
+    },
+    "semantics": {
+      "description": "Synthetic subject in a plain scene. No media file exists.",
+      "tags": [
+        "synthetic"
+      ]
+    },
+    "facePresence": "unknown",
+    "personPresence": "present",
+    "poseTags": [],
+    "semanticEmbedding": null,
+    "motionEmbedding": null,
+    "provenance": {
+      "producer": "synthetic_fixture",
+      "producerVersion": "1.0.0",
+      "modelRunIds": [],
+      "createdAt": "2026-09-13T00:00:00.000Z"
+    }
+  },
+  {
+    "contractType": "ClipSegment",
+    "schemaVersion": "1.0.0",
+    "segmentId": "segment_build",
+    "assetId": "asset_red",
+    "sourceRange": {
+      "startSeconds": 5,
+      "endSeconds": 11
+    },
+    "shotType": "medium",
+    "subjectCount": 1,
+    "motion": {
+      "camera": "static",
+      "subject": "medium"
+    },
+    "composition": {
+      "framing": "medium",
+      "subjectPosition": "center"
+    },
+    "quality": {
+      "sharpness": null,
+      "exposure": null,
+      "stability": null
+    },
+    "semantics": {
+      "description": "Synthetic subject in a plain scene. No media file exists.",
+      "tags": [
+        "synthetic"
+      ]
+    },
+    "facePresence": "unknown",
+    "personPresence": "present",
+    "poseTags": [],
+    "semanticEmbedding": null,
+    "motionEmbedding": null,
+    "provenance": {
+      "producer": "synthetic_fixture",
+      "producerVersion": "1.0.0",
+      "modelRunIds": [],
+      "createdAt": "2026-09-13T00:00:00.000Z"
+    }
+  },
+  {
+    "contractType": "ClipSegment",
+    "schemaVersion": "1.0.0",
+    "segmentId": "segment_hero",
+    "assetId": "asset_scene",
+    "sourceRange": {
+      "startSeconds": 6,
+      "endSeconds": 12
+    },
+    "shotType": "medium",
+    "subjectCount": 1,
+    "motion": {
+      "camera": "static",
+      "subject": "medium"
+    },
+    "composition": {
+      "framing": "medium",
+      "subjectPosition": "center"
+    },
+    "quality": {
+      "sharpness": null,
+      "exposure": null,
+      "stability": null
+    },
+    "semantics": {
+      "description": "Synthetic subject in a plain scene. No media file exists.",
+      "tags": [
+        "synthetic"
+      ]
+    },
+    "facePresence": "unknown",
+    "personPresence": "present",
+    "poseTags": [],
+    "semanticEmbedding": null,
+    "motionEmbedding": null,
+    "provenance": {
+      "producer": "synthetic_fixture",
+      "producerVersion": "1.0.0",
+      "modelRunIds": [],
+      "createdAt": "2026-09-13T00:00:00.000Z"
+    }
+  },
+  {
+    "contractType": "ClipSegment",
+    "schemaVersion": "1.0.0",
+    "segmentId": "segment_alternative",
+    "assetId": "asset_alternative",
+    "sourceRange": {
+      "startSeconds": 0,
+      "endSeconds": 6
+    },
+    "shotType": "medium",
+    "subjectCount": 1,
+    "motion": {
+      "camera": "static",
+      "subject": "medium"
+    },
+    "composition": {
+      "framing": "medium",
+      "subjectPosition": "center"
+    },
+    "quality": {
+      "sharpness": null,
+      "exposure": null,
+      "stability": null
+    },
+    "semantics": {
+      "description": "Synthetic subject in a plain scene. No media file exists.",
+      "tags": [
+        "synthetic"
+      ]
+    },
+    "facePresence": "unknown",
+    "personPresence": "present",
+    "poseTags": [],
+    "semanticEmbedding": null,
+    "motionEmbedding": null,
+    "provenance": {
+      "producer": "synthetic_fixture",
+      "producerVersion": "1.0.0",
+      "modelRunIds": [],
+      "createdAt": "2026-09-13T00:00:00.000Z"
+    }
+  }
+]

@@ -1,0 +1,30 @@
+import type { z } from "zod";
+import type { AnyReferenceFingerprintSchema, ReferenceFingerprintV11Schema } from "../contracts/reference-v11.js";
+import type { contractSchemas, DecisionValueSchema, EmbeddingReferenceSchema, FeatureSchema, JobFailureSchema, JobStatusSchema, ProcessingStageSchema, EventScopeSchema } from "../contracts/index.js";
+
+// Types are inferred from executable contracts so a second handwritten model cannot drift.
+export type Contracts = { [K in keyof typeof contractSchemas]: z.infer<(typeof contractSchemas)[K]> };
+export type ReferenceFingerprint = Contracts["ReferenceFingerprint"];
+export type ReferenceFingerprintV11 = z.infer<typeof ReferenceFingerprintV11Schema>;
+export type AnyReferenceFingerprint = z.infer<typeof AnyReferenceFingerprintSchema>;
+export type ClipSegment = Contracts["ClipSegment"];
+export type AudioFingerprint = Contracts["AudioFingerprint"];
+export type UniversalEditPlan = Contracts["UniversalEditPlan"];
+export type DecisionEvent = Contracts["DecisionEvent"];
+export type FeedbackEvent = Contracts["FeedbackEvent"];
+export type CostEvent = Contracts["CostEvent"];
+export type ModelRun = Contracts["ModelRun"];
+export type CreatorPreferenceEvent = Contracts["CreatorPreferenceEvent"];
+export type RenderResult = Contracts["RenderResult"];
+export type QCResult = Contracts["QCResult"];
+export type JobState = Contracts["JobState"];
+export type MediaAsset = Contracts["MediaAsset"];
+export type DecisionValue = z.infer<typeof DecisionValueSchema>;
+export type EmbeddingReference = z.infer<typeof EmbeddingReferenceSchema>;
+export type Feature = z.infer<typeof FeatureSchema>;
+export type JobStatus = z.infer<typeof JobStatusSchema>;
+export type ProcessingStage = z.infer<typeof ProcessingStageSchema>;
+export type JobFailure = z.infer<typeof JobFailureSchema>;
+export type EventScope = z.infer<typeof EventScopeSchema>;
+export type TelemetryEvent = DecisionEvent | FeedbackEvent | CostEvent | CreatorPreferenceEvent;
+export type DeepReadonly<T> = T extends readonly (infer U)[] ? readonly DeepReadonly<U>[] : T extends object ? { readonly [K in keyof T]: DeepReadonly<T[K]> } : T;

@@ -1,0 +1,282 @@
+[
+  {
+    "contractType": "DecisionEvent",
+    "schemaVersion": "1.0.0",
+    "eventId": "event_decision_0",
+    "scope": {
+      "projectId": "project_synthetic",
+      "jobId": "job_synthetic",
+      "creatorId": "creator_synthetic",
+      "environment": "synthetic"
+    },
+    "occurredAt": "2026-09-13T00:00:00.000Z",
+    "decisionId": "decision_0",
+    "decisionKind": "clip_selection",
+    "context": {
+      "planId": "plan_synthetic_v0",
+      "revision": 0,
+      "slotId": "timeline_0",
+      "referenceFingerprintId": "reference_synthetic",
+      "audioFingerprintId": "audio_synthetic",
+      "creatorMemoryRevision": null,
+      "featureSetVersion": "synthetic-features-1",
+      "features": [
+        {
+          "kind": "numeric",
+          "name": "target_duration_seconds",
+          "value": 3
+        }
+      ]
+    },
+    "candidates": [
+      {
+        "candidateId": "candidate_0_chosen",
+        "value": {
+          "kind": "clip_segment",
+          "segmentId": "segment_hook"
+        },
+        "features": [
+          {
+            "kind": "boolean",
+            "name": "fixture_selected",
+            "value": true
+          }
+        ],
+        "score": 1
+      },
+      {
+        "candidateId": "candidate_0_alternative",
+        "value": {
+          "kind": "clip_segment",
+          "segmentId": "segment_alternative"
+        },
+        "features": [
+          {
+            "kind": "boolean",
+            "name": "fixture_selected",
+            "value": false
+          }
+        ],
+        "score": 0
+      }
+    ],
+    "winnerCandidateId": "candidate_0_chosen",
+    "confidence": 1,
+    "policy": {
+      "kind": "rule",
+      "name": "fixed_synthetic_recipe",
+      "version": "1.0.0"
+    },
+    "modelRunIds": []
+  },
+  {
+    "contractType": "DecisionEvent",
+    "schemaVersion": "1.0.0",
+    "eventId": "event_decision_1",
+    "scope": {
+      "projectId": "project_synthetic",
+      "jobId": "job_synthetic",
+      "creatorId": "creator_synthetic",
+      "environment": "synthetic"
+    },
+    "occurredAt": "2026-09-13T00:00:00.000Z",
+    "decisionId": "decision_1",
+    "decisionKind": "clip_selection",
+    "context": {
+      "planId": "plan_synthetic_v0",
+      "revision": 0,
+      "slotId": "timeline_1",
+      "referenceFingerprintId": "reference_synthetic",
+      "audioFingerprintId": "audio_synthetic",
+      "creatorMemoryRevision": null,
+      "featureSetVersion": "synthetic-features-1",
+      "features": [
+        {
+          "kind": "numeric",
+          "name": "target_duration_seconds",
+          "value": 5
+        }
+      ]
+    },
+    "candidates": [
+      {
+        "candidateId": "candidate_1_chosen",
+        "value": {
+          "kind": "clip_segment",
+          "segmentId": "segment_setup"
+        },
+        "features": [
+          {
+            "kind": "boolean",
+            "name": "fixture_selected",
+            "value": true
+          }
+        ],
+        "score": 1
+      },
+      {
+        "candidateId": "candidate_1_alternative",
+        "value": {
+          "kind": "clip_segment",
+          "segmentId": "segment_alternative"
+        },
+        "features": [
+          {
+            "kind": "boolean",
+            "name": "fixture_selected",
+            "value": false
+          }
+        ],
+        "score": 0
+      }
+    ],
+    "winnerCandidateId": "candidate_1_chosen",
+    "confidence": 1,
+    "policy": {
+      "kind": "rule",
+      "name": "fixed_synthetic_recipe",
+      "version": "1.0.0"
+    },
+    "modelRunIds": []
+  },
+  {
+    "contractType": "DecisionEvent",
+    "schemaVersion": "1.0.0",
+    "eventId": "event_decision_2",
+    "scope": {
+      "projectId": "project_synthetic",
+      "jobId": "job_synthetic",
+      "creatorId": "creator_synthetic",
+      "environment": "synthetic"
+    },
+    "occurredAt": "2026-09-13T00:00:00.000Z",
+    "decisionId": "decision_2",
+    "decisionKind": "clip_selection",
+    "context": {
+      "planId": "plan_synthetic_v0",
+      "revision": 0,
+      "slotId": "timeline_2",
+      "referenceFingerprintId": "reference_synthetic",
+      "audioFingerprintId": "audio_synthetic",
+      "creatorMemoryRevision": null,
+      "featureSetVersion": "synthetic-features-1",
+      "features": [
+        {
+          "kind": "numeric",
+          "name": "target_duration_seconds",
+          "value": 6
+        }
+      ]
+    },
+    "candidates": [
+      {
+        "candidateId": "candidate_2_chosen",
+        "value": {
+          "kind": "clip_segment",
+          "segmentId": "segment_build"
+        },
+        "features": [
+          {
+            "kind": "boolean",
+            "name": "fixture_selected",
+            "value": true
+          }
+        ],
+        "score": 1
+      },
+      {
+        "candidateId": "candidate_2_alternative",
+        "value": {
+          "kind": "clip_segment",
+          "segmentId": "segment_alternative"
+        },
+        "features": [
+          {
+            "kind": "boolean",
+            "name": "fixture_selected",
+            "value": false
+          }
+        ],
+        "score": 0
+      }
+    ],
+    "winnerCandidateId": "candidate_2_chosen",
+    "confidence": 1,
+    "policy": {
+      "kind": "rule",
+      "name": "fixed_synthetic_recipe",
+      "version": "1.0.0"
+    },
+    "modelRunIds": []
+  },
+  {
+    "contractType": "DecisionEvent",
+    "schemaVersion": "1.0.0",
+    "eventId": "event_decision_3",
+    "scope": {
+      "projectId": "project_synthetic",
+      "jobId": "job_synthetic",
+      "creatorId": "creator_synthetic",
+      "environment": "synthetic"
+    },
+    "occurredAt": "2026-09-13T00:00:00.000Z",
+    "decisionId": "decision_3",
+    "decisionKind": "clip_selection",
+    "context": {
+      "planId": "plan_synthetic_v0",
+      "revision": 0,
+      "slotId": "timeline_3",
+      "referenceFingerprintId": "reference_synthetic",
+      "audioFingerprintId": "audio_synthetic",
+      "creatorMemoryRevision": null,
+      "featureSetVersion": "synthetic-features-1",
+      "features": [
+        {
+          "kind": "numeric",
+          "name": "target_duration_seconds",
+          "value": 6
+        }
+      ]
+    },
+    "candidates": [
+      {
+        "candidateId": "candidate_3_chosen",
+        "value": {
+          "kind": "clip_segment",
+          "segmentId": "segment_hero"
+        },
+        "features": [
+          {
+            "kind": "boolean",
+            "name": "fixture_selected",
+            "value": true
+          }
+        ],
+        "score": 1
+      },
+      {
+        "candidateId": "candidate_3_alternative",
+        "value": {
+          "kind": "clip_segment",
+          "segmentId": "segment_alternative"
+        },
+        "features": [
+          {
+            "kind": "boolean",
+            "name": "fixture_selected",
+            "value": false
+          }
+        ],
+        "score": 0
+      }
+    ],
+    "winnerCandidateId": "candidate_3_chosen",
+    "confidence": 1,
+    "policy": {
+      "kind": "rule",
+      "name": "fixed_synthetic_recipe",
+      "version": "1.0.0"
+    },
+    "modelRunIds": []
+  }
+]

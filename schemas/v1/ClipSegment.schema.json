@@ -1,0 +1,381 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "contractType": {
+      "type": "string",
+      "const": "ClipSegment"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "segmentId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "assetId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sourceRange": {
+      "type": "object",
+      "properties": {
+        "startSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "endSeconds": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "startSeconds",
+        "endSeconds"
+      ],
+      "additionalProperties": false
+    },
+    "shotType": {
+      "type": "string",
+      "enum": [
+        "close_up",
+        "medium",
+        "wide",
+        "detail",
+        "aerial",
+        "unknown"
+      ]
+    },
+    "subjectCount": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "motion": {
+      "type": "object",
+      "properties": {
+        "camera": {
+          "type": "string",
+          "enum": [
+            "static",
+            "pan",
+            "tilt",
+            "tracking",
+            "handheld",
+            "zoom",
+            "unknown"
+          ]
+        },
+        "subject": {
+          "type": "string",
+          "enum": [
+            "still",
+            "low",
+            "medium",
+            "high",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "camera",
+        "subject"
+      ],
+      "additionalProperties": false
+    },
+    "composition": {
+      "type": "object",
+      "properties": {
+        "framing": {
+          "type": "string",
+          "enum": [
+            "close_up",
+            "medium",
+            "wide",
+            "detail",
+            "unknown"
+          ]
+        },
+        "subjectPosition": {
+          "type": "string",
+          "enum": [
+            "left",
+            "center",
+            "right",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "framing",
+        "subjectPosition"
+      ],
+      "additionalProperties": false
+    },
+    "quality": {
+      "type": "object",
+      "properties": {
+        "sharpness": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exposure": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stability": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "sharpness",
+        "exposure",
+        "stability"
+      ],
+      "additionalProperties": false
+    },
+    "semantics": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "tags": {
+          "maxItems": 32,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+          }
+        }
+      },
+      "required": [
+        "description",
+        "tags"
+      ],
+      "additionalProperties": false
+    },
+    "facePresence": {
+      "type": "string",
+      "enum": [
+        "present",
+        "absent",
+        "unknown"
+      ]
+    },
+    "personPresence": {
+      "type": "string",
+      "enum": [
+        "present",
+        "absent",
+        "unknown"
+      ]
+    },
+    "poseTags": {
+      "maxItems": 5,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "standing",
+          "seated",
+          "hands_raised",
+          "walking",
+          "unknown"
+        ]
+      }
+    },
+    "semanticEmbedding": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "embeddingId": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+            },
+            "spaceId": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+            },
+            "spaceVersion": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "dimensions": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 65536
+            },
+            "distance": {
+              "type": "string",
+              "enum": [
+                "cosine",
+                "euclidean",
+                "dot"
+              ]
+            },
+            "objectId": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+            }
+          },
+          "required": [
+            "embeddingId",
+            "spaceId",
+            "spaceVersion",
+            "dimensions",
+            "distance",
+            "objectId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "motionEmbedding": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "embeddingId": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+            },
+            "spaceId": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+            },
+            "spaceVersion": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "dimensions": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 65536
+            },
+            "distance": {
+              "type": "string",
+              "enum": [
+                "cosine",
+                "euclidean",
+                "dot"
+              ]
+            },
+            "objectId": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+            }
+          },
+          "required": [
+            "embeddingId",
+            "spaceId",
+            "spaceVersion",
+            "dimensions",
+            "distance",
+            "objectId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "producer": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+        },
+        "producerVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "modelRunIds": {
+          "maxItems": 32,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}(?:Z))$"
+        }
+      },
+      "required": [
+        "producer",
+        "producerVersion",
+        "modelRunIds",
+        "createdAt"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "contractType",
+    "schemaVersion",
+    "segmentId",
+    "assetId",
+    "sourceRange",
+    "shotType",
+    "subjectCount",
+    "motion",
+    "composition",
+    "quality",
+    "semantics",
+    "facePresence",
+    "personPresence",
+    "poseTags",
+    "semanticEmbedding",
+    "motionEmbedding",
+    "provenance"
+  ],
+  "additionalProperties": false,
+  "$id": "urn:creator-intelligence:ClipSegment:1.0.0",
+  "$comment": "Structural interchange schema. Cross-field and cross-asset checks in packages/contracts and packages/validation are also mandatory."
+}

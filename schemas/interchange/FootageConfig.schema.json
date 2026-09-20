@@ -1,0 +1,297 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "analyzerVersion": {
+      "type": "string",
+      "const": "0.2.0"
+    },
+    "cheap": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "const": "shot-budget-pts-v1"
+        },
+        "targetSamplesPerSecond": {
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 8
+        },
+        "maximumFrames": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3000
+        }
+      },
+      "required": [
+        "version",
+        "targetSamplesPerSecond",
+        "maximumFrames"
+      ],
+      "additionalProperties": false
+    },
+    "semantic": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "const": "events-coverage-v1"
+        },
+        "maximumFrames": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "coverageGapSeconds": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 600
+        },
+        "minimumEventSeparationSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "changeThreshold": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "exposureChangeThreshold": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "sharpnessLogChangeThreshold": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10
+        },
+        "motionChangeThreshold": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "version",
+        "maximumFrames",
+        "coverageGapSeconds",
+        "minimumEventSeparationSeconds",
+        "changeThreshold",
+        "exposureChangeThreshold",
+        "sharpnessLogChangeThreshold",
+        "motionChangeThreshold"
+      ],
+      "additionalProperties": false
+    },
+    "proposal": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "const": "coverage-multiscale-v1"
+        },
+        "durationsSeconds": {
+          "minItems": 1,
+          "maxItems": 8,
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 10
+          }
+        },
+        "strideFraction": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1
+        },
+        "maximumPerShot": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "maximumPerAsset": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024
+        },
+        "maximumPerProject": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        }
+      },
+      "required": [
+        "version",
+        "durationsSeconds",
+        "strideFraction",
+        "maximumPerShot",
+        "maximumPerAsset",
+        "maximumPerProject"
+      ],
+      "additionalProperties": false
+    },
+    "deduplication": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "const": "coverage-preserving-v1"
+        },
+        "temporalIoU": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1
+        },
+        "cosineSimilarity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "durationRatio": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1
+        },
+        "maximumCenterDistanceSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        }
+      },
+      "required": [
+        "version",
+        "temporalIoU",
+        "cosineSimilarity",
+        "durationRatio",
+        "maximumCenterDistanceSeconds"
+      ],
+      "additionalProperties": false
+    },
+    "detector": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "content",
+            "adaptive"
+          ]
+        },
+        "threshold": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 255
+        },
+        "minSceneFrames": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 120
+        },
+        "adaptiveThreshold": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "kind",
+        "threshold",
+        "minSceneFrames",
+        "adaptiveThreshold"
+      ],
+      "additionalProperties": false
+    },
+    "embedding": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "siglip",
+            "stub"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "enum": [
+            "google/siglip2-base-patch16-naflex",
+            "google/siglip2-so400m-patch16-naflex",
+            "synthetic-frame-statistics"
+          ]
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^(?:[a-f0-9]{40}|stub-v1)$"
+        },
+        "device": {
+          "type": "string",
+          "enum": [
+            "cpu",
+            "cuda"
+          ]
+        },
+        "cpuFallback": {
+          "type": "boolean"
+        },
+        "maxPatches": {
+          "anyOf": [
+            {
+              "type": "number",
+              "const": 256
+            },
+            {
+              "type": "number",
+              "const": 512
+            },
+            {
+              "type": "number",
+              "const": 1024
+            }
+          ]
+        }
+      },
+      "required": [
+        "mode",
+        "model",
+        "revision",
+        "device",
+        "cpuFallback",
+        "maxPatches"
+      ],
+      "additionalProperties": false
+    },
+    "aggregationVersion": {
+      "type": "string",
+      "const": "footage-evidence-v1"
+    },
+    "workerTimeoutMilliseconds": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 600000
+    },
+    "assetTimeoutMilliseconds": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 3600000
+    }
+  },
+  "required": [
+    "analyzerVersion",
+    "cheap",
+    "semantic",
+    "proposal",
+    "deduplication",
+    "detector",
+    "embedding",
+    "aggregationVersion",
+    "workerTimeoutMilliseconds",
+    "assetTimeoutMilliseconds"
+  ],
+  "additionalProperties": false,
+  "$id": "urn:creator-intelligence:interchange:FootageConfig:1.0.0",
+  "$comment": "Generated from TypeScript-owned schemas. TypeScript semantic validation remains mandatory."
+}

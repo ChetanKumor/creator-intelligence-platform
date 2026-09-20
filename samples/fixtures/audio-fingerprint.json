@@ -1,0 +1,94 @@
+{
+  "contractType": "AudioFingerprint",
+  "schemaVersion": "1.0.0",
+  "fingerprintId": "audio_synthetic",
+  "assetId": "asset_music",
+  "durationSeconds": 20,
+  "bpm": 120,
+  "beatsSeconds": [
+    0,
+    0.5,
+    1,
+    1.5,
+    2,
+    2.5,
+    3,
+    3.5,
+    4,
+    4.5,
+    5,
+    5.5,
+    6,
+    6.5,
+    7,
+    7.5,
+    8,
+    8.5,
+    9,
+    9.5,
+    10,
+    10.5,
+    11,
+    11.5,
+    12,
+    12.5,
+    13,
+    13.5,
+    14,
+    14.5,
+    15,
+    15.5,
+    16,
+    16.5,
+    17,
+    17.5,
+    18,
+    18.5,
+    19,
+    19.5
+  ],
+  "downbeatsSeconds": [
+    0,
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    18
+  ],
+  "energy": [
+    {
+      "atSeconds": 0,
+      "energy": 0.2
+    },
+    {
+      "atSeconds": 8,
+      "energy": 0.5
+    },
+    {
+      "atSeconds": 14,
+      "energy": 0.9
+    },
+    {
+      "atSeconds": 19,
+      "energy": 0.7
+    }
+  ],
+  "mainDropSeconds": 14,
+  "phraseBoundariesSeconds": [
+    0,
+    8,
+    14
+  ],
+  "speechRegions": [],
+  "language": null,
+  "provenance": {
+    "producer": "synthetic_fixture",
+    "producerVersion": "1.0.0",
+    "modelRunIds": [],
+    "createdAt": "2026-09-13T00:00:00.000Z"
+  }
+}
