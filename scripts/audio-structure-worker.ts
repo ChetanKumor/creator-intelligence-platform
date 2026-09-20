@@ -9,7 +9,7 @@ import {
   StructureAnalysisResponseSchema,
   type StructureAnalysisRequest,
   type StructureAnalysisResponse,
-} from "./protocol.js";
+} from "../packages/audio-analyzer/protocol.js";
 
 export interface StructureWorkerLaunch {
   readonly pythonPath: string;

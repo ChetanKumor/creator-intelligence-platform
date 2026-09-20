@@ -4,7 +4,7 @@ import {
 
 import {
   LocalMusicAnalysisProvider,
-} from "../packages/audio-analyzer/music-analysis.js";
+} from "./audio-local.js";
 
 
 function hashJson(

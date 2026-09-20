@@ -4,7 +4,6 @@ import {
 
 import {
   MusicPrimitiveAnalysisSchema,
-  LocalMusicPrimitiveProvider,
   type MusicPrimitiveAnalysis,
 } from "./music-primitives.js";
 
@@ -12,11 +11,6 @@ import {
   StructureAnalysisResponseSchema,
   type StructureAnalysisResponse,
 } from "./protocol.js";
-
-import {
-  LocalStructureAnalysisProvider,
-} from "./structure.js";
-
 
 export const MUSIC_ANALYSIS_VERSION =
   "0.1.0";
@@ -176,135 +170,4 @@ export interface MusicAnalysisInput {
 
   readonly structureDevice:
     "cpu" | "cuda";
-}
-
-
-export interface LocalMusicAnalysisLaunch {
-  readonly projectRootWsl:
-    string;
-
-  readonly primitivePythonPath:
-    string;
-
-  readonly structurePythonPath:
-    string;
-
-  readonly structureModelDirectoryWsl:
-    string;
-
-  readonly structureWorkDirectoryWsl:
-    string;
-}
-
-
-/*
- * One heavy CUDA model at a time.
- *
- * Primitive provider owns Beat This.
- * It is fully closed before All-In-One
- * is launched.
- *
- * This intentionally trades some model
- * reload latency for bounded 6 GB VRAM
- * behavior during the first production
- * architecture.
- */
-export class LocalMusicAnalysisProvider {
-  constructor(
-    private readonly config:
-      LocalMusicAnalysisLaunch,
-  ) {}
-
-  async analyze(
-    input:
-      MusicAnalysisInput,
-  ): Promise<
-    MusicAnalysis
-  > {
-    const primitiveProvider =
-      new LocalMusicPrimitiveProvider({
-        projectRootWsl:
-          this.config
-            .projectRootWsl,
-
-        pythonPath:
-          this.config
-            .primitivePythonPath,
-      });
-
-    let primitives:
-      MusicPrimitiveAnalysis;
-
-    try {
-      primitives =
-        await primitiveProvider
-          .analyze({
-            audioPath:
-              input.audioPath,
-
-            checkpointPath:
-              input
-                .beatCheckpointPath,
-
-            device:
-              input.beatDevice,
-          });
-
-    } finally {
-      await primitiveProvider
-        .close();
-    }
-
-    const structureProvider =
-      new LocalStructureAnalysisProvider({
-        projectRootWsl:
-          this.config
-            .projectRootWsl,
-
-        pythonPath:
-          this.config
-            .structurePythonPath,
-
-        modelDirectoryWsl:
-          this.config
-            .structureModelDirectoryWsl,
-
-        workDirectoryWsl:
-          this.config
-            .structureWorkDirectoryWsl,
-
-        timeoutMilliseconds:
-          300_000,
-      });
-
-    let structure:
-      StructureAnalysisResponse;
-
-    try {
-      structure =
-        await structureProvider
-          .analyze({
-            protocolVersion:
-              "1.0.0",
-
-            operation:
-              "structure",
-
-            audioPath:
-              input.audioPath,
-
-            device:
-              input.structureDevice,
-          });
-
-    } finally {
-      await structureProvider
-        .close();
-    }
-
-    return combineMusicAnalysis(
-      primitives,
-      structure,
-    );
-  }
 }

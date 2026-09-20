@@ -2,6 +2,7 @@ creator-intelligence-platform/
 ├── docs/
 │   ├── phases/
 │   │   ├── phase-2.5-final-closure.md
+│   │   ├── phase-2.6a-acceptance-repair-20260920.md
 │   │   ├── phase-2.6a-editorial-contracts.md
 │   │   ├── phase-2.6a-repository-baseline-audit-20260920.md
 │   │   ├── phase-2.6a-session-1-architecture.md
@@ -23,15 +24,12 @@ creator-intelligence-platform/
 ├── packages/
 │   ├── audio-analyzer/
 │   │   ├── beat.ts
-│   │   ├── energy-worker.ts
 │   │   ├── energy.ts
 │   │   ├── index.ts
 │   │   ├── music-analysis.ts
 │   │   ├── music-primitives.ts
 │   │   ├── protocol.ts
-│   │   ├── structure-worker.ts
-│   │   ├── structure.ts
-│   │   └── worker.ts
+│   │   └── structure.ts
 │   ├── contracts/
 │   │   ├── audio.ts
 │   │   ├── common.ts
@@ -56,8 +54,7 @@ creator-intelligence-platform/
 │   │   ├── index.ts
 │   │   ├── lattice.ts
 │   │   ├── protocol.ts
-│   │   ├── transnetv2-protocol.ts
-│   │   └── transnetv2.ts
+│   │   └── transnetv2-protocol.ts
 │   ├── jobs/
 │   │   └── index.ts
 │   ├── providers/
@@ -138,8 +135,12 @@ creator-intelligence-platform/
 ├── scripts/
 │   ├── analyze-footage.ts
 │   ├── analyze-reference.ts
+│   ├── audio-beat-worker.ts
 │   ├── audio-energy-smoke.ts
+│   ├── audio-energy-worker.ts
+│   ├── audio-local.ts
 │   ├── audio-provider-smoke.ts
+│   ├── audio-structure-worker.ts
 │   ├── audio-worker-smoke.ts
 │   ├── audit-workspace.mjs
 │   ├── check-footage-capacity.py
@@ -158,6 +159,7 @@ creator-intelligence-platform/
 │   ├── structure-determinism-smoke.ts
 │   ├── structure-provider-smoke.ts
 │   ├── test-python.py
+│   ├── transnetv2-local.ts
 │   ├── transnetv2-provider-smoke.ts
 │   ├── validate-beat-receipt.ts
 │   └── verify-footage-cached-model.ts
@@ -184,7 +186,8 @@ creator-intelligence-platform/
 │   ├── reference-migration.test.ts
 │   ├── serialization.test.ts
 │   ├── telemetry.test.ts
-│   └── transnetv2-footage-contract.test.ts
+│   ├── transnetv2-footage-contract.test.ts
+│   └── workspace-boundary.test.ts
 ├── .gitignore
 ├── .npmrc
 ├── .python-version

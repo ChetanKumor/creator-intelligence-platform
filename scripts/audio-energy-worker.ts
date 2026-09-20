@@ -9,7 +9,7 @@ import {
   EnergyAnalysisResponseSchema,
   type EnergyAnalysisRequest,
   type EnergyAnalysisResponse,
-} from "./protocol.js";
+} from "../packages/audio-analyzer/protocol.js";
 
 export interface EnergyWorkerLaunch {
   readonly pythonPath: string;

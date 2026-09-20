@@ -7,7 +7,7 @@ import { DetectorConfigSchema, MetadataSchema, type EmbeddingConfig, type MediaM
 import { EMBEDDING_IMPLEMENTATION, type ArtifactCache } from "../packages/reference-analyzer/embeddings.js";
 import { CheapEvidenceSchema, MEASUREMENT_VERSION, type FootageAuthorization, type FootageConfig, type FootageDetectorConfig, type FootageManifest } from "../packages/footage-analyzer/protocol.js";
 import { FootageAnalysisError, type FootageServices } from "../packages/footage-analyzer/index.js";
-import { LocalTransNetV2Detector, type TransNetV2Launch } from "../packages/footage-analyzer/transnetv2.js";
+import { LocalTransNetV2Detector, type TransNetV2Launch } from "./transnetv2-local.js";
 import { TRANSNETV2_ADAPTER_VERSION, TRANSNETV2_PROTOCOL_VERSION, TRANSNETV2_SOURCE_COMMIT, TRANSNETV2_SOURCE_SHA256, TRANSNETV2_WEIGHT_SET_SHA256 } from "../packages/footage-analyzer/transnetv2-protocol.js";
 import { InMemoryTelemetry } from "../packages/telemetry/index.js";
 import { atomicJson, authorizedLocalPath, containedPath, FileArtifactCache, LocalReferenceMedia, localBytes, localClock, localPaths, PROJECT_ROOT, PythonWorker, readLocalJson } from "./reference-local.js";

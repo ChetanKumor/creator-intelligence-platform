@@ -1,7 +1,7 @@
 import {
   BEAT_THIS_FINAL0_SHA256,
   LocalBeatAnalysisProvider,
-} from "../packages/audio-analyzer/index.js";
+} from "./audio-local.js";
 
 const [
   projectRootWsl,

@@ -15,7 +15,7 @@ import {
 
   type TransNetV2DetectionRequest,
   type TransNetV2DetectionResponse,
-} from "./transnetv2-protocol.js";
+} from "../packages/footage-analyzer/transnetv2-protocol.js";
 
 
 export interface TransNetV2Launch {

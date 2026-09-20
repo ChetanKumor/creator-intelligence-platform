@@ -1,44 +1,33 @@
-# Current Phase - TransNetV2 Contract Integrated; Baseline Verification Blocked
+# Current Phase - Phase 2.6A Acceptance Complete
 
 Last updated: 2026-09-20
 
 ## Current ruling
 
-Phase 2 code complete: YES
+- Phase 2: CLOSED (historical real-model and real-footage closure, 2026-09-15).
+- Phase 2.6A Session 1 architecture: COMPLETE; frozen revision `editorial-architecture-0.1.0`.
+- Phase 2.6A guarded TransNetV2 integration: COMPLETE.
+- Phase 2.6A acceptance: PASS.
+- Phase 2.6A overall: COMPLETE for the owner-authorized architecture-freeze and guarded detector-integration acceptance scope.
+- Session 2 editorial-contract implementation: NOT STARTED; remains a separate, unauthorized scope.
+- Phase 2.6B: NOT STARTED. Creating its empty branch is authorized; implementation/execution is not.
+- Phase 3: NOT STARTED; not authorized.
 
-Guarded real-model smoke: PASS
+Current detector default: **PySceneDetect** (content, threshold 27, minSceneFrames 2, adaptiveThreshold 3). TransNetV2 is integrated and explicitly selectable, not yet default. The ordinary CLI supplies no TransNetV2 launch configuration and still fails explicitly with TRANSNETV2_NOT_CONFIGURED if selected without that configuration. No silent fallback was added.
 
-Full real-model verification: PASS
+Next gate: **authorized real-footage LocalFootageServices -> TransNetV2 execution before any default change**. This task does not execute that gate or approve a default change.
 
-Real-footage verification: PASS
+Fresh acceptance: `npm.cmd run verify` exited 0 on 2026-09-20: typecheck/build, 89 TypeScript tests (86 existing plus three boundary regressions), six media regressions, eleven Python tests, workspace audit (42 application files / nine explicit adapters), 33 generated schema/fixture checks and synthetic demo PASS. No skipped tests. No pretrained model download or new pretrained inference. Media tests use synthetic footage/stub embeddings; Python tests include generated tiny parameters/mocks.
 
-Phase 2 final complete: YES
+The previously failing package subprocess imports were moved to the existing scripts runtime boundary, including their local audio composition callers. Worker behavior, provider identity checks and audio sequencing are preserved. The package import policy was not relaxed; reverse imports from packages into scripts now fail explicitly. Generated FootageConfig and FootageAnalysis schemas were regenerated from their unchanged TypeScript contracts; only the detector union changed in the JSON outputs.
 
-Phase 2 closure date: 2026-09-15
+All six historical TransNetV2 source hashes matched the recovery baseline. Four still match exactly; the relocated wrapper and LocalFootageServices import differ only by verified import paths. All 66 indexed closure artifacts, 43 protected source/contract/dependency files, and all nine authorized media hashes/sizes match. MediaTruth frameTimes / timelineFromCuts remains canonical; TransNetV2 returns cut/frame indices and provenance, never canonical timestamps. Reference-analyzer and frozen SigLIP source remain unchanged.
 
-Final ruling: **A. PHASE 2 CLOSED - READY FOR PHASE 2.6**
+Git was initialized with an intentional pre-repair recovery baseline, `07eaf2c35779edf5c7febd1151dbe163522038d6`. That commit preserves the two known failures and is not a green release. Repairs were made on `fix/phase-2.6a-acceptance`; publication is gated on the green repair commit and a final sanitized tracked/history audit. Private evidence remains local and excluded.
 
-Phase 2.6A Session 1: COMPLETE — started 2026-09-15; architecture audited and frozen for implementation handoff on 2026-09-16, under the owner's explicit Session 1-only instruction.
+Historical failures remain in the [repository baseline audit](phases/phase-2.6a-repository-baseline-audit-20260920.md) and unchanged earlier architecture amendments. Their readiness/tooling findings describe those earlier sessions. The missing Session 1 verification.json remains missing; it was not reconstructed. See the [acceptance repair report](phases/phase-2.6a-acceptance-repair-20260920.md) for current gates, source relocation identities, limits and local evidence.
 
-Phase 2.6A later TransNetV2 work: IMPLEMENTED / CONTRACT INTEGRATED. The 2026-09-20 receipt's six source hashes match the current files. Fresh typecheck, build, 86 TypeScript tests (including three TransNetV2 contract tests), six synthetic-media regressions and eleven Python tests pass. This work is subsequent to Session 1; it was not performed by the architecture-freeze session.
-
-Phase 2.6A integration acceptance: BLOCKED, not fully verified complete. The established workspace audit fails on prohibited runtime imports in added audio workers; the same import rule also rejects the TransNetV2 wrapper. Generated FootageConfig and FootageAnalysis schemas do not match current TypeScript. These failures are preserved, not repaired or waived by this forensic task. Phase 2.6A as a whole is NOT COMPLETE.
-
-Session 2 editorial-contract implementation: NOT STARTED; the handoff's proposed editorial files are absent. This distinct Session 2 scope must not be conflated with the later TransNetV2 work.
-
-Phase 2.6B: NOT STARTED; not authorized.
-
-Phase 3: NOT STARTED.
-
-The Phase 2 PASS/closure statements above describe the preserved 2026-09-15 historical baseline, not acceptance of all later source. All 66 indexed closure artifacts still match. Relative to the 245-entry Session 1 snapshot, the pre-audit differences were three footage integration files and this document; additional architecture/audio/TransNetV2 files are separately inventoried. The architecture amendment's drift finding remains historical evidence. Its linked Session 1 verification.json is currently missing; baseline.json is present. No Git metadata exists in either the native or WSL view of this workspace.
-
-PySceneDetect remains the footage default. TransNetV2 is explicitly selectable through the footage contract and a supplied LocalFootageServices launch configuration, but is not approved as default. The ordinary CLI currently supplies no TransNetV2 launch configuration; selecting it there fails explicitly with TRANSNETV2_NOT_CONFIGURED. MediaTruth frameTimes / timelineFromCuts remains the canonical timestamp authority. Reference-analyzer and SigLIP implementation hashes match the Session 1 baseline; no TransNetV2 coupling was found in the reference path.
-
-Next prerequisite: resolve and verify the existing source-audit/schema failures under a bounded correction task. Next model execution gate, after acceptance and explicit authorization: authorized real-footage LocalFootageServices -> TransNetV2 execution without changing the default. No new pretrained inference was performed in this audit.
-
-Unproven: real-footage TransNetV2 service execution, superiority over PySceneDetect, professional editing quality, broad generalization and full current-workspace acceptance. The historical GPU smoke used a synthetic 90-frame fixture. Its text log reports TensorFlow 2.15.0 / CUDA / RTX 4050 Laptop GPU, but is not a fresh run; the integration receipt does not hash that log or the Python worker. The reported rollback guard is not independently established by the retained receipt/logs.
-
-See [2026-09-20 repository baseline audit](phases/phase-2.6a-repository-baseline-audit-20260920.md) for verification failures, provenance limits, worktree classification, publication prerequisites and local evidence. GitHub bootstrap is blocked: no existing Git repository/history, no configured WSL author email, and no GitHub CLI. No Git repository was initialized, no commit was made and nothing was uploaded.
+Unproven: real-footage TransNetV2 service execution, superiority over PySceneDetect, professional editing quality and broad-domain generalization. The retained historical GPU smoke used a synthetic 90-frame fixture; its receipt does not bind the GPU log or Python-worker hash, and the claimed rollback guard remains independently unverified. Current acceptance does not upgrade that historical evidence.
 
 ## Frozen model
 
@@ -95,4 +84,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains historically CLOSED and Session 1 remains an architecture freeze. Later TransNetV2 integration is acknowledged separately, with current acceptance blocked as above. Session 2 editorial implementation requires separate authorization. Phase 2.6B and Phase 3 remain NOT STARTED and are not authorized by this audit. Do not change the detector default, integrate a model, process audio/music, implement a Creative Ranker or build an Editorial Decision Graph as part of repository reconciliation.
+Phase 2 remains historically CLOSED. Phase 2.6A architecture-freeze and guarded integration acceptance are COMPLETE under the current bounded authorization. Session 2 editorial implementation, Phase 2.6B execution and Phase 3 remain NOT STARTED and require separate authorization. Do not change the detector default, introduce a model, expand audio/music, add Creative Ranker or build an Editorial Decision Graph.

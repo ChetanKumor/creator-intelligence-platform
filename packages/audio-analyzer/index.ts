@@ -22,32 +22,21 @@ export {
 } from "./protocol.js";
 
 export {
-  BeatWorker,
-  type BeatWorkerLaunch,
-} from "./worker.js";
-
-export {
   BEAT_THIS_FINAL0_SHA256,
-  LocalBeatAnalysisProvider,
   type BeatAnalysisProvider,
 } from "./beat.js";
 
 export {
-  LocalEnergyAnalysisProvider,
-  EnergyWorker,
   type EnergyAnalysisProvider,
-  type EnergyWorkerLaunch,
 } from "./energy.js";
 
 export {
   MUSIC_PRIMITIVE_VERSION,
   MusicPrimitiveAnalysisSchema,
   combineMusicPrimitives,
-  LocalMusicPrimitiveProvider,
 
   type MusicPrimitiveAnalysis,
   type MusicPrimitiveInput,
-  type LocalMusicPrimitiveLaunch,
 } from "./music-primitives.js";
 
 
@@ -64,12 +53,6 @@ export {
 } from "./protocol.js";
 
 export {
-  StructureWorker,
-  type StructureWorkerLaunch,
-} from "./structure-worker.js";
-
-export {
-  LocalStructureAnalysisProvider,
   type StructureAnalysisProvider,
 } from "./structure.js";
 
@@ -78,9 +61,7 @@ export {
   MUSIC_ANALYSIS_VERSION,
   MusicAnalysisSchema,
   combineMusicAnalysis,
-  LocalMusicAnalysisProvider,
 
   type MusicAnalysis,
   type MusicAnalysisInput,
-  type LocalMusicAnalysisLaunch,
 } from "./music-analysis.js";

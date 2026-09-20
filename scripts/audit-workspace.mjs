@@ -26,6 +26,7 @@ async function inspectDirectory(directory) {
             if (specifier.text.startsWith(".")) {
               const target = relative(projectRoot, resolve(dirname(path), specifier.text));
               assert.ok(!target.startsWith(".."), `Import outside the workspace: ${path}`);
+              assert.ok(!target.startsWith(`scripts/`) && !target.startsWith(`scripts\\`), `Application import of a local runtime adapter: ${path}`);
             } else assert.ok(allowedExternalImports.has(specifier.text), `Unapproved runtime import ${specifier.text} in ${path}`);
           }
         }
@@ -52,7 +53,8 @@ assert.deepEqual(Object.keys(manifest.dependencies).sort(), ["zod"]);
 assert.deepEqual(Object.keys(manifest.devDependencies).sort(), ["@types/node", "typescript"]);
 // Side effects are confined to the explicitly named local composition boundary.
 const runtimeImports = new Set(["zod", "node:child_process", "node:fs", "node:fs/promises", "node:path", "node:url", "node:crypto", "node:perf_hooks"]);
-for (const filename of ["scripts/reference-local.ts", "scripts/analyze-reference.ts", "scripts/footage-local.ts", "scripts/analyze-footage.ts"]) {
+const localAdapters = ["scripts/reference-local.ts", "scripts/analyze-reference.ts", "scripts/footage-local.ts", "scripts/analyze-footage.ts", "scripts/transnetv2-local.ts", "scripts/audio-local.ts", "scripts/audio-beat-worker.ts", "scripts/audio-energy-worker.ts", "scripts/audio-structure-worker.ts"];
+for (const filename of localAdapters) {
   const source = ts.createSourceFile(filename, await readFile(join(projectRoot, filename), "utf8"), ts.ScriptTarget.Latest, true);
   function inspectRuntime(node) {
     assert.notEqual(node.kind, ts.SyntaxKind.AnyKeyword, `Explicit any in ${filename}`);
@@ -78,4 +80,4 @@ assert.ok(!/snapshot_download|hf_hub_download|InferenceClient/.test(siglip));
 assert.ok((await readFile(join(projectRoot, "python/reference_analyzer/__main__.py"), "utf8")).includes("enforce_offline()"));
 for (const ignored of [".venv/", ".tools/", ".uv-cache/", ".reference-cache/", ".local-media/", ".local-runs/", ".test-artifacts/"]) assert.ok((await readFile(join(projectRoot, ".gitignore"), "utf8")).split(/\r?\n/).includes(ignored));
 process.stdout.write(`Audited ${filesChecked} application TypeScript files: bounded imports, no network clients or subprocess imports, no explicit any, no hidden clock/random/environment inputs. npm cache/logs are project-local; dependency scripts are disabled.\n`);
-process.stdout.write("Also checked the 4 explicit local runtime adapters, Python offline loading policy, and local artifact exclusions.\n");
+process.stdout.write(`Also checked the ${localAdapters.length} explicit local runtime adapters, Python offline loading policy, and local artifact exclusions.\n`);

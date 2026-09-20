@@ -172,38 +172,61 @@
       "additionalProperties": false
     },
     "detector": {
-      "type": "object",
-      "properties": {
-        "kind": {
-          "type": "string",
-          "enum": [
-            "content",
-            "adaptive"
-          ]
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "content",
+                "adaptive"
+              ]
+            },
+            "threshold": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 255
+            },
+            "minSceneFrames": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 120
+            },
+            "adaptiveThreshold": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "kind",
+            "threshold",
+            "minSceneFrames",
+            "adaptiveThreshold"
+          ],
+          "additionalProperties": false
         },
-        "threshold": {
-          "type": "number",
-          "exclusiveMinimum": 0,
-          "maximum": 255
-        },
-        "minSceneFrames": {
-          "type": "integer",
-          "exclusiveMinimum": 0,
-          "maximum": 120
-        },
-        "adaptiveThreshold": {
-          "type": "number",
-          "exclusiveMinimum": 0,
-          "maximum": 100
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "transnetv2"
+            },
+            "threshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "kind",
+            "threshold"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "kind",
-        "threshold",
-        "minSceneFrames",
-        "adaptiveThreshold"
-      ],
-      "additionalProperties": false
+      ]
     },
     "embedding": {
       "type": "object",

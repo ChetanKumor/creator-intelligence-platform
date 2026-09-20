@@ -1,6 +1,6 @@
 import {
   LocalStructureAnalysisProvider,
-} from "../packages/audio-analyzer/structure.js";
+} from "./audio-local.js";
 
 async function main():
   Promise<void> {

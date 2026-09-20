@@ -4,7 +4,7 @@ import {
 
 import {
   LocalStructureAnalysisProvider,
-} from "../packages/audio-analyzer/structure.js";
+} from "./audio-local.js";
 
 import type {
   StructureAnalysisResponse,

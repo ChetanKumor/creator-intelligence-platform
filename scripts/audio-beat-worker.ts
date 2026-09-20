@@ -9,7 +9,7 @@ import {
   BeatAnalysisResponseSchema,
   type BeatAnalysisRequest,
   type BeatAnalysisResponse,
-} from "./protocol.js";
+} from "../packages/audio-analyzer/protocol.js";
 
 export interface BeatWorkerLaunch {
   readonly pythonPath: string;

@@ -12,12 +12,7 @@ import {
 
 import {
   BEAT_THIS_FINAL0_SHA256,
-  LocalBeatAnalysisProvider,
 } from "./beat.js";
-
-import {
-  LocalEnergyAnalysisProvider,
-} from "./energy.js";
 
 export const MUSIC_PRIMITIVE_VERSION = "0.1.0";
 
@@ -315,79 +310,4 @@ export interface MusicPrimitiveInput {
   readonly audioPath: string;
   readonly checkpointPath: string;
   readonly device: "cpu" | "cuda";
-}
-
-export interface LocalMusicPrimitiveLaunch {
-  readonly projectRootWsl: string;
-  readonly pythonPath: string;
-}
-
-export class LocalMusicPrimitiveProvider {
-  private readonly beat:
-    LocalBeatAnalysisProvider;
-
-  private readonly energy:
-    LocalEnergyAnalysisProvider;
-
-  constructor(
-    config: LocalMusicPrimitiveLaunch,
-  ) {
-    this.beat =
-      new LocalBeatAnalysisProvider({
-        projectRootWsl:
-          config.projectRootWsl,
-
-        pythonPath:
-          config.pythonPath,
-
-        timeoutMilliseconds:
-          180_000,
-      });
-
-    this.energy =
-      new LocalEnergyAnalysisProvider({
-        projectRootWsl:
-          config.projectRootWsl,
-
-        pythonPath:
-          config.pythonPath,
-
-        timeoutMilliseconds:
-          60_000,
-      });
-  }
-
-  async analyze(
-    input: MusicPrimitiveInput,
-  ): Promise<MusicPrimitiveAnalysis> {
-    const beat =
-      await this.beat.analyze({
-        protocolVersion: "1.0.0",
-        operation: "beats",
-        audioPath:
-          input.audioPath,
-        checkpointPath:
-          input.checkpointPath,
-        device:
-          input.device,
-      });
-
-    const energy =
-      await this.energy.analyze({
-        protocolVersion: "1.0.0",
-        operation: "energy",
-        audioPath:
-          input.audioPath,
-      });
-
-    return combineMusicPrimitives(
-      beat,
-      energy,
-    );
-  }
-
-  async close(): Promise<void> {
-    await this.beat.close();
-    await this.energy.close();
-  }
 }

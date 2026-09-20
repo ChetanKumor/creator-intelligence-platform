@@ -1,6 +1,6 @@
 import {
   LocalTransNetV2Detector,
-} from "../packages/footage-analyzer/transnetv2.js";
+} from "./transnetv2-local.js";
 
 
 async function main():

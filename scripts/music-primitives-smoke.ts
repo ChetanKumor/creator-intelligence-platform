@@ -1,7 +1,7 @@
 import {
   LocalMusicPrimitiveProvider,
   MusicPrimitiveAnalysisSchema,
-} from "../packages/audio-analyzer/index.js";
+} from "./audio-local.js";
 
 const [
   projectRootWsl,

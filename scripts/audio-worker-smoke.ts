@@ -1,4 +1,4 @@
-import { BeatWorker } from "../packages/audio-analyzer/worker.js";
+import { BeatWorker } from "./audio-beat-worker.js";
 
 const [
   projectRootWsl,
