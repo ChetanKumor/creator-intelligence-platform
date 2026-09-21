@@ -1,4 +1,4 @@
-# Current Phase - Phase 3 Audio Analyzer Active
+# Current Phase - Phase 4 Matcher V0 Active
 
 Last updated: 2026-09-21
 
@@ -9,11 +9,31 @@ Last updated: 2026-09-21
 - Phase 2.6A guarded TransNetV2 integration: COMPLETE.
 - Phase 2.6A acceptance: PASS.
 - Phase 2.6A overall: COMPLETE for the owner-authorized architecture-freeze and guarded detector-integration acceptance scope.
-- Session 2 editorial-contract implementation: NOT STARTED; remains a separate, unauthorized scope.
+- Frozen editorial runtime subset: implemented under owner-authorized Phase 4 Gate 0. The broader historical Session 2 benchmark/metric/experiment backlog remains outside this gate.
 - Phase 2.6B: COMPLETE. TransNetV2 verified on real authorized footage through the current application path.
-- Phase 3: ACTIVE. Speech/ASR component COMPLETE and real-model/real-footage verified on authorized footage. Broader Phase 3 closure is not yet claimed.
+- Phase 3 Audio Analyzer V0: COMPLETE within the implemented/verified V0 scope at `5bfe1d0b26b4faecce4af658e6eeb8ef50cd9bd7`, per explicit owner closure authorization. This supersedes the earlier component-only status below.
+- Phase 4 Matcher V0: AUTHORIZED / ACTIVE. Gate 0 runtime implementation and focused checks PASS; full canonical verification and human diff review remain the next acceptance step. Matcher scoring is not implemented.
+- Phase 5 and later: not implemented; no execution authorization from this gate.
 
-## Phase 3 Speech/ASR component
+## Phase 4 Gate 0 - runtime substrate
+
+Execution base: `phase/4-matcher-v0`, HEAD `5bfe1d0b26b4faecce4af658e6eeb8ef50cd9bd7`, parent `1c336ca306b5585612095f6bf6274043a111c64b`; initially clean. No commit, push, merge or PR is part of this gate.
+
+The internal `packages/editorial/` implements the frozen 0.1.0 common references/missingness, fixed taxonomy, tokens, pure supplied-artifact resolver, candidate/context/decision records, and timeline linkage validation. Public contracts and the Matcher provider seam remain frozen. Ranking records allow ties, partial judgment and explicit unjudged candidates; no ranking algorithm or quality result exists. Tokens retain embedding references, never vectors. Source PTS membership remains half-open, including borrowed support at the excluded end with zero interval distance.
+
+Focused evidence: `npm.cmd run typecheck`, `npm.cmd run build`, and `node --import ./scripts/no-network.mjs --test dist/tests/editorial-common.test.js dist/tests/editorial-token.test.js dist/tests/editorial-decisions.test.js`: **75 passed, zero failed/skipped**. `npm.cmd run audit:workspace`: **52 application files / nine existing runtime adapters PASS**. Focused fixtures are synthetic data only; no provider, media decoder, model or GPU operation was invoked. Full `npm run verify` is deliberately deferred to review/acceptance, not claimed by this gate.
+
+Two new-implementation regressions were preserved and corrected: a reidentified token could contradict its referenced semantic support, and borrowed cheap evidence could claim measured in-window flow. The resolver now revalidates token projections at consumption boundaries and checks eligible temporal comparison pairs. Failure logs, successful reruns and frozen SHA-256 checks are retained in ignored `.local-runs/phase4-gate0/`. Historical evidence files were not changed.
+
+## Phase 3 closure reconciliation
+
+The owner explicitly establishes the final Phase 3 commit above as locally committed, pushed, independently verified on GitHub, and fast-forwarded/verified on remote main. Those publication facts are owner-supplied authority; this Gate 0 session verifies the local base and does not repeat remote or model execution.
+
+Verified V0 scope includes local SpeechProvider with pinned faster-whisper CUDA, Beat This CUDA, RMS energy, All-In-One Harmonix CUDA structure, AudioFingerprint composition, public AudioAnalysisProvider execution, deterministic provenance, authorized real-footage execution, empty-beat semantics, and canonical regressions. Current source includes the composer and public provider path. The structure projection policy still leaves `mainDropSeconds` null and phrase boundaries empty; internal structure execution does not imply those public music semantics have been established.
+
+This reconciliation makes no multilingual ASR, WER, diarization, word-alignment, professional music-understanding, professional edit-quality or generalization claim. The earlier Speech/ASR report below remains historical component evidence.
+
+## Preserved Phase 3 Speech/ASR component evidence
 
 Status: **COMPLETE at component scope**.
 
@@ -77,7 +97,7 @@ Post-inference `npm.cmd run verify` passed: 92 TypeScript / six media / eleven P
 
 Authority: [Phase 2.6B real-footage report](phases/phase-2.6b-real-footage.md); ignored machine receipt `.local-runs/phase2_6b_20260920/final-receipt.json`. Initial baseline was `b9068bca8e432974c0c9491200556827b4e9443b` on `phase/2.6b-real-footage`.
 
-Next gate: **continue Phase 3 Audio Analyzer after the Speech/ASR component commit**. Speech/ASR is closed at component scope; broader Phase 3 closure, detector-default changes, Session 2 editorial implementation and later phases are not implied by this result.
+Next acceptance step: human review of the Phase 4 Gate 0 diff, followed by full canonical verification. The next implementation gate is Phase 4 Matcher V0 Gate 1: deterministic baseline ranking/scoring over owned features and synthetic hand-checkable evaluation. This session does not start Gate 1 or any later phase. Detector-default changes remain outside scope.
 
 ## Preserved Phase 2.6A acceptance context
 
@@ -148,4 +168,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED. Phase 2.6A architecture-freeze and guarded integration acceptance are COMPLETE. Phase 2.6B real-footage verification is COMPLETE. Phase 3 is ACTIVE and its Speech/ASR component is COMPLETE at component scope. Session 2 editorial implementation remains NOT STARTED. Broader Phase 3 closure, detector-default changes, Creative Ranker work and Editorial Decision Graph work are not authorized by this component result.
+Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope. Phase 4 Matcher V0 is AUTHORIZED / ACTIVE, with Gate 0 implementation and focused checks PASS pending human review and canonical acceptance. Gate 1 has not started. Phase 5+ are not implemented or authorized by this gate. No Matcher quality, Creative Ranker or Editorial Decision Graph result is claimed.
