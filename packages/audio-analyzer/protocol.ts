@@ -38,7 +38,7 @@ const BeatAudioEvidenceSchema = z.strictObject({
 
 const BeatValueSchema = z.strictObject({
   bpm: z.number().finite().min(20).max(400).nullable(),
-  beatsSeconds: z.array(SecondsSchema).min(1).max(50000),
+  beatsSeconds: z.array(SecondsSchema).max(50000),
   downbeatsSeconds: z.array(SecondsSchema).max(15000),
 });
 

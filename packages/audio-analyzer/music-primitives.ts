@@ -81,7 +81,6 @@ export const MusicPrimitiveAnalysisSchema =
 
       beatsSeconds:
         z.array(SecondsSchema)
-          .min(1)
           .max(50000),
 
       downbeatsSeconds:

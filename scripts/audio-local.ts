@@ -23,6 +23,13 @@ import {
 } from "../packages/audio-analyzer/speech.js";
 import { combineMusicPrimitives, type MusicPrimitiveAnalysis, type MusicPrimitiveInput } from "../packages/audio-analyzer/music-primitives.js";
 import { combineMusicAnalysis, type MusicAnalysis, type MusicAnalysisInput } from "../packages/audio-analyzer/music-analysis.js";
+import {
+  AudioFingerprintAnalysisProvider,
+  AudioMusicProviderAdapter,
+  type AudioAnalysisClock,
+  type AudioMusicMediaPathResolver,
+  type AudioMusicProviderRuntimeConfig,
+} from "../packages/audio-analyzer/audio-analysis.js";
 import { BeatWorker, type BeatWorkerLaunch } from "./audio-beat-worker.js";
 import { EnergyWorker, type EnergyWorkerLaunch } from "./audio-energy-worker.js";
 import { StructureWorker, type StructureWorkerLaunch } from "./audio-structure-worker.js";
@@ -571,5 +578,160 @@ export class LocalMusicAnalysisProvider {
       primitives,
       structure,
     );
+  }
+}
+export interface LocalAudioMusicProviderLaunch
+  extends LocalMusicAnalysisLaunch
+{
+  readonly beatCheckpointPathWsl:
+    string;
+
+  readonly resolveMediaPath:
+    AudioMusicMediaPathResolver;
+
+  readonly clock:
+    AudioAnalysisClock;
+
+  readonly beatDevice?:
+    AudioMusicProviderRuntimeConfig[
+      "beatDevice"
+    ];
+
+  readonly structureDevice?:
+    AudioMusicProviderRuntimeConfig[
+      "structureDevice"
+    ];
+}
+
+
+/*
+ * Public music-provider bridge.
+ *
+ * objectId is never interpreted as a path.
+ * The resolver supplies execution-only local
+ * media location.
+ *
+ * LocalMusicAnalysisProvider already guarantees
+ * Beat This is closed before All-In-One starts.
+ */
+export class LocalAudioMusicProvider
+  extends AudioMusicProviderAdapter
+{
+  constructor(
+    config:
+      LocalAudioMusicProviderLaunch,
+  ) {
+    const analysis =
+      new LocalMusicAnalysisProvider({
+        projectRootWsl:
+          config.projectRootWsl,
+
+        primitivePythonPath:
+          config.primitivePythonPath,
+
+        structurePythonPath:
+          config.structurePythonPath,
+
+        structureModelDirectoryWsl:
+          config.structureModelDirectoryWsl,
+
+        structureWorkDirectoryWsl:
+          config.structureWorkDirectoryWsl,
+      });
+
+    super(
+      analysis,
+
+      config.resolveMediaPath,
+
+      {
+        beatCheckpointPath:
+          config.beatCheckpointPathWsl,
+
+        beatDevice:
+          config.beatDevice ??
+          "cuda",
+
+        structureDevice:
+          config.structureDevice ??
+          "cuda",
+      },
+
+      config.clock,
+    );
+  }
+}
+
+
+export interface LocalAudioFingerprintProviderLaunch {
+  readonly music:
+    Omit<
+      LocalAudioMusicProviderLaunch,
+      "clock"
+    >;
+
+  readonly speech:
+    Omit<
+      LocalSpeechProviderLaunch,
+      "clock"
+    >;
+
+  readonly clock:
+    AudioAnalysisClock;
+}
+
+
+/*
+ * Full local AudioAnalysisProvider composition.
+ *
+ * SpeechWorker process is created eagerly but
+ * faster-whisper model loading is request-lazy.
+ *
+ * AudioFingerprintAnalysisProvider invokes music
+ * before speech. LocalMusicAnalysisProvider has
+ * already closed Beat This and All-In-One workers
+ * before speech inference begins, preserving the
+ * one-heavy-CUDA-model-at-a-time development rule.
+ */
+export class LocalAudioFingerprintProvider
+  extends AudioFingerprintAnalysisProvider
+{
+  private readonly localSpeech:
+    LocalSpeechProvider;
+
+  constructor(
+    config:
+      LocalAudioFingerprintProviderLaunch,
+  ) {
+    const music =
+      new LocalAudioMusicProvider({
+        ...config.music,
+
+        clock:
+          config.clock,
+      });
+
+    const speech =
+      new LocalSpeechProvider({
+        ...config.speech,
+
+        clock:
+          config.clock,
+      });
+
+    super(
+      music,
+      speech,
+      config.clock,
+    );
+
+    this.localSpeech =
+      speech;
+  }
+
+  close():
+    Promise<void> {
+    return this.localSpeech
+      .close();
   }
 }

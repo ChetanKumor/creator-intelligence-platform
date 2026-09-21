@@ -162,8 +162,13 @@ class BeatRuntime:
 
         duration = float(stats["durationSeconds"])
 
+        # Beat This's minimal postprocessor can emit
+        # independent downbeat peaks when it detects no
+        # beats. Downbeats are subordinate to beats in our
+        # contract, so orphan downbeats carry no valid
+        # timeline evidence and are discarded.
         if not beats:
-            raise RuntimeError("NO_BEATS")
+            downbeats = []
 
         if not strictly_increasing(beats):
             raise RuntimeError("BEATS_NOT_MONOTONIC")

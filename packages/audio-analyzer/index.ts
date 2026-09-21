@@ -67,6 +67,27 @@ export {
 } from "./music-analysis.js";
 
 export {
+  AUDIO_FINGERPRINT_COMPOSER_VERSION,
+  AUDIO_STRUCTURE_PROJECTION_POLICY,
+  composeAudioFingerprint,
+  type AudioFingerprintComposerInput,
+} from "./audio-fingerprint.js";
+
+
+export {
+  AUDIO_ANALYSIS_PROVIDER_VERSION,
+  AUDIO_MUSIC_PROVIDER_ADAPTER_VERSION,
+  AudioFingerprintAnalysisProvider,
+  AudioMusicProviderAdapter,
+  type AudioAnalysisClock,
+  type AudioMusicMediaPathResolver,
+  type AudioMusicProvider,
+  type AudioMusicProviderRuntimeConfig,
+  type MusicAnalysisRuntime,
+} from "./audio-analysis.js";
+
+
+export {
   SPEECH_PROTOCOL_VERSION,
   SPEECH_ADAPTER_VERSION,
   SPEECH_MODEL_REPO,
