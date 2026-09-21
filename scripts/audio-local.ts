@@ -3,13 +3,41 @@ import { BEAT_ADAPTER_VERSION, ENERGY_ADAPTER_VERSION, STRUCTURE_ADAPTER_VERSION
 import { BEAT_THIS_FINAL0_SHA256, type BeatAnalysisProvider } from "../packages/audio-analyzer/beat.js";
 import type { EnergyAnalysisProvider } from "../packages/audio-analyzer/energy.js";
 import type { StructureAnalysisProvider } from "../packages/audio-analyzer/structure.js";
+import {
+  SPEECH_ADAPTER_VERSION,
+  SPEECH_MODEL_BIN_SHA256,
+  SPEECH_MODEL_REPO,
+  SPEECH_MODEL_REVISION,
+  SPEECH_MODEL_SET_SHA256,
+  SpeechAnalysisRequestSchema,
+  SpeechAnalysisResponseSchema,
+  type SpeechAnalysisRequest,
+  type SpeechAnalysisResponse,
+} from "../packages/audio-analyzer/speech-protocol.js";
+import {
+  SpeechProviderAdapter,
+  type SpeechAnalysisProvider,
+  type SpeechClock,
+  type SpeechMediaPathResolver,
+  type SpeechProviderRuntimeConfig,
+} from "../packages/audio-analyzer/speech.js";
 import { combineMusicPrimitives, type MusicPrimitiveAnalysis, type MusicPrimitiveInput } from "../packages/audio-analyzer/music-primitives.js";
 import { combineMusicAnalysis, type MusicAnalysis, type MusicAnalysisInput } from "../packages/audio-analyzer/music-analysis.js";
 import { BeatWorker, type BeatWorkerLaunch } from "./audio-beat-worker.js";
 import { EnergyWorker, type EnergyWorkerLaunch } from "./audio-energy-worker.js";
 import { StructureWorker, type StructureWorkerLaunch } from "./audio-structure-worker.js";
+import { SpeechWorker, type SpeechWorkerLaunch } from "./audio-speech-worker.js";
 export * from "../packages/audio-analyzer/index.js";
-export { BeatWorker, type BeatWorkerLaunch, EnergyWorker, type EnergyWorkerLaunch, StructureWorker, type StructureWorkerLaunch };
+export {
+  BeatWorker,
+  type BeatWorkerLaunch,
+  EnergyWorker,
+  type EnergyWorkerLaunch,
+  StructureWorker,
+  type StructureWorkerLaunch,
+  SpeechWorker,
+  type SpeechWorkerLaunch,
+};
 
 export class LocalBeatAnalysisProvider
   implements BeatAnalysisProvider
@@ -169,6 +197,178 @@ export class LocalStructureAnalysisProvider
     return this.worker.close();
   }
 }
+
+export class LocalSpeechAnalysisProvider
+  implements SpeechAnalysisProvider
+{
+  private readonly worker:
+    SpeechWorker;
+
+  constructor(
+    config:
+      SpeechWorkerLaunch,
+  ) {
+    this.worker =
+      new SpeechWorker(
+        config,
+      );
+  }
+
+  async analyze(
+    input:
+      SpeechAnalysisRequest,
+  ): Promise<
+    SpeechAnalysisResponse
+  > {
+    const request =
+      SpeechAnalysisRequestSchema
+        .parse(input);
+
+    const result =
+      SpeechAnalysisResponseSchema
+        .parse(
+          await this.worker
+            .request(request),
+        );
+
+    if (
+      result.toolVersion !==
+      SPEECH_ADAPTER_VERSION
+    ) {
+      throw new Error(
+        "SPEECH_ADAPTER_VERSION_MISMATCH",
+      );
+    }
+
+    if (
+      result.model.repository !==
+        SPEECH_MODEL_REPO ||
+      result.model.revision !==
+        SPEECH_MODEL_REVISION ||
+      result.model.modelBinSha256 !==
+        SPEECH_MODEL_BIN_SHA256 ||
+      result.model.modelSetSha256 !==
+        SPEECH_MODEL_SET_SHA256
+    ) {
+      throw new Error(
+        "SPEECH_MODEL_IDENTITY_MISMATCH",
+      );
+    }
+
+    if (
+      result.model.device !==
+        request.device ||
+      result.model.computeType !==
+        request.computeType
+    ) {
+      throw new Error(
+        "SPEECH_RUNTIME_IDENTITY_MISMATCH",
+      );
+    }
+
+    return result;
+  }
+
+  close():
+    Promise<void> {
+    return this.worker.close();
+  }
+}
+
+
+export interface LocalSpeechProviderLaunch
+  extends SpeechWorkerLaunch
+{
+  readonly modelDirectoryWsl:
+    string;
+
+  readonly resolveMediaPath:
+    SpeechMediaPathResolver;
+
+  readonly clock:
+    SpeechClock;
+
+  readonly device?:
+    SpeechProviderRuntimeConfig[
+      "device"
+    ];
+
+  readonly computeType?:
+    SpeechProviderRuntimeConfig[
+      "computeType"
+    ];
+
+  readonly language?:
+    string | null;
+}
+
+
+export class LocalSpeechProvider
+  extends SpeechProviderAdapter
+{
+  private readonly localAnalysis:
+    LocalSpeechAnalysisProvider;
+
+  constructor(
+    config:
+      LocalSpeechProviderLaunch,
+  ) {
+    const analysis =
+      new LocalSpeechAnalysisProvider({
+        projectRootWsl:
+          config.projectRootWsl,
+
+        pythonPath:
+          config.pythonPath,
+
+        cudaLibraryPathsWsl:
+          config.cudaLibraryPathsWsl,
+
+        ...(config.timeoutMilliseconds ===
+          undefined
+          ? {}
+          : {
+              timeoutMilliseconds:
+                config.timeoutMilliseconds,
+            }),
+      });
+
+    super(
+      analysis,
+
+      config.resolveMediaPath,
+
+      {
+        modelDirectory:
+          config.modelDirectoryWsl,
+
+        device:
+          config.device ??
+          "cuda",
+
+        computeType:
+          config.computeType ??
+          "float16",
+
+        language:
+          config.language ??
+          null,
+      },
+
+      config.clock,
+    );
+
+    this.localAnalysis =
+      analysis;
+  }
+
+  close():
+    Promise<void> {
+    return this.localAnalysis
+      .close();
+  }
+}
+
 
 export interface LocalMusicPrimitiveLaunch {
   readonly projectRootWsl: string;

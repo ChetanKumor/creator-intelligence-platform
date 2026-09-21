@@ -1,4 +1,4 @@
-# Current Phase - Phase 2.6B Real-Footage Verification Complete
+# Current Phase - Phase 3 Audio Analyzer Active
 
 Last updated: 2026-09-21
 
@@ -11,7 +11,59 @@ Last updated: 2026-09-21
 - Phase 2.6A overall: COMPLETE for the owner-authorized architecture-freeze and guarded detector-integration acceptance scope.
 - Session 2 editorial-contract implementation: NOT STARTED; remains a separate, unauthorized scope.
 - Phase 2.6B: COMPLETE. TransNetV2 verified on real authorized footage through the current application path.
-- Phase 3: NOT STARTED; not authorized.
+- Phase 3: ACTIVE. Speech/ASR component COMPLETE and real-model/real-footage verified on authorized footage. Broader Phase 3 closure is not yet claimed.
+
+## Phase 3 Speech/ASR component
+
+Status: **COMPLETE at component scope**.
+
+The owned speech path is now:
+
+`SpeechProvider.transcribe(MediaAsset, AnalysisContext)`
+→ execution-only media resolver
+→ `LocalSpeechProvider`
+→ persistent TypeScript worker
+→ owned Python worker
+→ pinned faster-whisper
+→ CTranslate2 CUDA
+→ validated `Transcript`
+→ validated `ModelRun`.
+
+Verified runtime:
+
+- Model repository: `Systran/faster-whisper-small`.
+- Revision: `536b0662742c02347bc0e980a01041f333bce120`.
+- faster-whisper: `1.2.1`.
+- CTranslate2: `4.8.2`.
+- Device: NVIDIA GeForce RTX 4050 Laptop GPU.
+- Compute type: `float16`.
+- Model set SHA-256: `1327706b2cad006266912ab307bcf5903f768c066af00dbc7c7b434cb2664d3b`.
+- Authorized real-footage proof: `ChrisRaw.mp4`, SHA-256 `5bd959cd99ab5b8c3bc7ceb19c70898a1eb4c852cd159fccd502b024177af3f0`, duration 13.523603 seconds.
+- Real public-provider result: English detected; one validated region `[0.000, 1.640]`, text `Jason Pargin says,`.
+- Persistent-worker repeat reused the already-loaded model (`modelLoadSeconds = 0`) and returned the same transcript.
+- Media `objectId` remains identity only; filesystem resolution is explicitly injected at the execution boundary.
+- Region confidence remains `null`; Whisper log-probability is not mislabeled as calibrated confidence.
+
+Final component verification:
+
+- frozen public `SpeechProvider` real CUDA smoke: PASS;
+- 99 TypeScript tests: PASS;
+- six media integration tests: PASS;
+- 15 Python tests: PASS;
+- workspace audit: 44 application TypeScript files and nine explicit local runtime adapters: PASS;
+- 33 generated schema/synthetic fixture artifacts: PASS;
+- synthetic demo: PASS;
+- no network-dependent model loading in the owned runtime.
+
+Limits:
+
+- this proof does not establish multilingual accuracy, WER, diarization, word-level alignment, noisy-event robustness or professional transcription quality;
+- Hindi/Telugu and other target languages remain unverified on real authorized footage;
+- WhisperX alignment/diarization is not part of this component;
+- `faster-whisper-small` is the verified current component model, not a claim that it is the final production-quality checkpoint;
+- completion of this component does not by itself close all of Phase 3.
+
+Authority: [Phase 3 Speech/ASR report](phases/phase-3-speech-asr.md).
 
 Current detector default: **PySceneDetect** (content, threshold 27, minSceneFrames 2, adaptiveThreshold 3). TransNetV2 is integrated and explicitly selectable, not yet default. The ordinary CLI supplies no TransNetV2 launch configuration and still fails explicitly with TRANSNETV2_NOT_CONFIGURED if selected without that configuration. No silent fallback was added.
 
@@ -25,7 +77,7 @@ Post-inference `npm.cmd run verify` passed: 92 TypeScript / six media / eleven P
 
 Authority: [Phase 2.6B real-footage report](phases/phase-2.6b-real-footage.md); ignored machine receipt `.local-runs/phase2_6b_20260920/final-receipt.json`. Initial baseline was `b9068bca8e432974c0c9491200556827b4e9443b` on `phase/2.6b-real-footage`.
 
-Next gate: **separate owner authorization for further evaluation or phase work**. No detector-default change, Session 2 editorial implementation, merge to main or Phase 3 start is authorized by this closure.
+Next gate: **continue Phase 3 Audio Analyzer after the Speech/ASR component commit**. Speech/ASR is closed at component scope; broader Phase 3 closure, detector-default changes, Session 2 editorial implementation and later phases are not implied by this result.
 
 ## Preserved Phase 2.6A acceptance context
 
@@ -96,4 +148,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED. Phase 2.6A architecture-freeze and guarded integration acceptance are COMPLETE. Phase 2.6B real-footage verification is COMPLETE. Session 2 editorial implementation and Phase 3 remain NOT STARTED and require separate authorization. Do not change the detector default, introduce a model, expand audio/music, add Creative Ranker or build an Editorial Decision Graph.
+Phase 2 remains CLOSED. Phase 2.6A architecture-freeze and guarded integration acceptance are COMPLETE. Phase 2.6B real-footage verification is COMPLETE. Phase 3 is ACTIVE and its Speech/ASR component is COMPLETE at component scope. Session 2 editorial implementation remains NOT STARTED. Broader Phase 3 closure, detector-default changes, Creative Ranker work and Editorial Decision Graph work are not authorized by this component result.

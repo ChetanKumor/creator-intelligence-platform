@@ -65,3 +65,27 @@ export {
   type MusicAnalysis,
   type MusicAnalysisInput,
 } from "./music-analysis.js";
+
+export {
+  SPEECH_PROTOCOL_VERSION,
+  SPEECH_ADAPTER_VERSION,
+  SPEECH_MODEL_REPO,
+  SPEECH_MODEL_REVISION,
+  SPEECH_MODEL_BIN_SHA256,
+  SPEECH_MODEL_SET_SHA256,
+  SpeechAnalysisRequestSchema,
+  SpeechAnalysisResponseSchema,
+  SpeechAnalysisFailureSchema,
+  SpeechRegionSchema,
+  type SpeechAnalysisRequest,
+  type SpeechAnalysisResponse,
+  type SpeechAnalysisFailure,
+} from "./speech-protocol.js";
+
+export {
+  SpeechProviderAdapter,
+  type SpeechAnalysisProvider,
+  type SpeechClock,
+  type SpeechMediaPathResolver,
+  type SpeechProviderRuntimeConfig,
+} from "./speech.js";
