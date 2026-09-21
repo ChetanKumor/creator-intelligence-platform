@@ -12,7 +12,7 @@ Last updated: 2026-09-21
 - Frozen editorial runtime subset: implemented under owner-authorized Phase 4 Gate 0. The broader historical Session 2 benchmark/metric/experiment backlog remains outside this gate.
 - Phase 2.6B: COMPLETE. TransNetV2 verified on real authorized footage through the current application path.
 - Phase 3 Audio Analyzer V0: COMPLETE within the implemented/verified V0 scope at `5bfe1d0b26b4faecce4af658e6eeb8ef50cd9bd7`, per explicit owner closure authorization. This supersedes the earlier component-only status below.
-- Phase 4 Matcher V0: AUTHORIZED / ACTIVE. Gate 0 runtime implementation and focused checks PASS; full canonical verification and human diff review remain the next acceptance step. Matcher scoring is not implemented.
+- Phase 4 Matcher V0: AUTHORIZED / ACTIVE. Gate 0 runtime implementation, independent source review and full canonical verification PASS. Matcher scoring is not implemented; Gate 1 has not started.
 - Phase 5 and later: not implemented; no execution authorization from this gate.
 
 ## Phase 4 Gate 0 - runtime substrate
@@ -97,7 +97,7 @@ Post-inference `npm.cmd run verify` passed: 92 TypeScript / six media / eleven P
 
 Authority: [Phase 2.6B real-footage report](phases/phase-2.6b-real-footage.md); ignored machine receipt `.local-runs/phase2_6b_20260920/final-receipt.json`. Initial baseline was `b9068bca8e432974c0c9491200556827b4e9443b` on `phase/2.6b-real-footage`.
 
-Next acceptance step: human review of the Phase 4 Gate 0 diff, followed by full canonical verification. The next implementation gate is Phase 4 Matcher V0 Gate 1: deterministic baseline ranking/scoring over owned features and synthetic hand-checkable evaluation. This session does not start Gate 1 or any later phase. Detector-default changes remain outside scope.
+Gate 0 acceptance is complete: independent source review PASS and canonical `npm run verify` PASS with 223 TypeScript tests, six media integration tests, 15 Python tests, 33 schema/synthetic fixture artifacts, and exit 0. The next implementation gate is Phase 4 Matcher V0 Gate 1: deterministic baseline ranking/scoring over owned features and synthetic hand-checkable evaluation. This session does not start Gate 1 or any later phase. Detector-default changes remain outside scope.
 
 ## Preserved Phase 2.6A acceptance context
 
@@ -168,4 +168,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope. Phase 4 Matcher V0 is AUTHORIZED / ACTIVE, with Gate 0 implementation and focused checks PASS pending human review and canonical acceptance. Gate 1 has not started. Phase 5+ are not implemented or authorized by this gate. No Matcher quality, Creative Ranker or Editorial Decision Graph result is claimed.
+Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope. Phase 4 Matcher V0 is AUTHORIZED / ACTIVE, with Gate 0 accepted after independent source review and full canonical verification. Gate 1 has not started. Phase 5+ are not implemented or authorized by this gate. No Matcher quality, Creative Ranker or Editorial Decision Graph result is claimed.
