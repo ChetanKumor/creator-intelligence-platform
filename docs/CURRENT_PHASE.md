@@ -1,4 +1,4 @@
-# Current Phase - Phase 4 Matcher V0 Complete
+# Current Phase - Phase 5 Gate 0 Architecture Freeze
 
 Last updated: 2026-09-22
 
@@ -13,7 +13,15 @@ Last updated: 2026-09-22
 - Phase 2.6B: COMPLETE. TransNetV2 verified on real authorized footage through the current application path.
 - Phase 3 Audio Analyzer V0: COMPLETE within the implemented/verified V0 scope at `5bfe1d0b26b4faecce4af658e6eeb8ef50cd9bd7`, per explicit owner closure authorization. This supersedes the earlier component-only status below.
 - Phase 4 Matcher V0: COMPLETE within its implemented and verified V0 scope. Gates 0–4 are accepted. Gate 4 adds the internal explicit-policy Matcher V0 dispatcher over the accepted technical baseline and evaluation-authorized reference-semantic ranking paths without score fusion, fallback, automatic mode selection, audio consumption or plan-bound `DecisionEvent` output.
-- Phase 5 Edit Planner V0: NEXT / NOT STARTED. This Phase 4 closure does not implement or verify planning, narrative direction, sequence construction or `UniversalEditPlan` quality.
+- Phase 5 Edit Planner V0: Gate 0 architecture freeze documentation verification PASS; awaiting owner review before commit. Runtime planning, narrative direction, sequence construction and `UniversalEditPlan` quality remain unimplemented/unverified. No later implementation gate is authorized.
+
+## Phase 5 Gate 0 - documentation-only architecture freeze
+
+Authority: [Creative Intelligence Architecture v1 Freeze](phases/phase-5-gate-0-creative-intelligence-architecture-v1.md). The owner authorized this gate on 2026-09-22. Base HEAD is `2c8cdd1771dfc538f2ce6813b61ce592e210a30f` (`docs: close Phase 4 Matcher V0`), branch `phase/5-edit-planner-v0`, initially clean. Local `origin/main` matches HEAD; live GitHub state is not queried under the no-network verification restriction.
+
+Scope is normative representations, authority, exact artifact/cache identities, compute/cost/model selection, provider-neutral Director direction, internal planning/edit/critic boundaries and A-to-B-to-C migration. Phase 4 source, public contracts, dependencies, schemas, fixtures and historical evidence are preserved. No runtime, LLM/provider connection, model/media operation, Perception Evidence Store or ProjectWorldModel implementation is authorized. UEP remains 1.0.0 with its actual 15-30 second limit; longer target edits require a later explicit compatibility gate.
+
+Gate 0 documentation verification PASS on 2026-09-22: all 31 required sections and acceptance boundaries reviewed; `git diff --check` PASS; all 210 protected tracked files match the pre-edit SHA-256 baseline; all 28 frozen-manifest entries match; manifests/locks, source and generated artifacts unchanged. The inspected static workspace audit passed for 56 application TypeScript files and nine runtime adapters without executing those adapters. Document links, code fences and whitespace checks passed. The protected inventory digest and selected exact hashes are recorded in the Gate 0 specification. No application tests, media/model execution or network verification ran; historical regression results were not relabeled as fresh. Owner review remains pending. No commit, push or PR; stop here. Next proposed gate: Perception Evidence Store, not authorized or started.
 
 ## Phase 4 Gate 0 - runtime substrate
 
@@ -240,4 +248,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope; and Phase 4 Matcher V0 is COMPLETE within the implemented/verified V0 scope documented above. Gates 0–4 are accepted. Phase 4 closes without technical+semantic score fusion, audio-aware matching, a learned ranker, public plan-bound Matcher events, real-reference semantic execution, professional shot-selection quality, narrative intelligence or professional editing quality. Phase 5 Edit Planner V0 is the next planned phase and is not started by this closure documentation.
+Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope; and Phase 4 Matcher V0 is COMPLETE within the implemented/verified V0 scope documented above. Gates 0–4 are accepted. Phase 4 closes without technical+semantic score fusion, audio-aware matching, a learned ranker, public plan-bound Matcher events, real-reference semantic execution, professional shot-selection quality, narrative intelligence or professional editing quality. The separate Phase 5 Gate 0 documentation verification is PASS, awaiting owner review as recorded above. Phase 5 runtime and all later gates remain not started. Stop for review; Perception Evidence Store requires separate authorization.

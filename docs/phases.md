@@ -1,5 +1,7 @@
 # Authorized scope and sequence
 
+Phase 5 evolution, 2026-09-22: the public label **Phase 5 - Edit Planner V0** is retained. Work is now staged through explicitly authorized capability gates, beginning with the documentation-only [Creative Intelligence Architecture v1 Freeze](phases/phase-5-gate-0-creative-intelligence-architecture-v1.md). See [CURRENT_PHASE](CURRENT_PHASE.md) for verification/review status. Architecture A's 30-60 second target does not widen the released 15-30 second UEP contract; longer exports require a later authorized compatibility gate. The historical phase objectives and closure evidence below remain intact. Gate 0 does not authorize Perception Evidence Store, planning runtime, rendering or any later phase.
+
 ## Phase 0 boundary
 
 Phase 0 establishes owned contracts/types, validation, canonical serialization, provider ports, local telemetry, job/QC gates, synthetic fixtures, a dry-run contract demonstration, evaluation interfaces and small evidence-based calculations, documentation, and deterministic tests.

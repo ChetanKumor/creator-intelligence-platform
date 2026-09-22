@@ -1,5 +1,7 @@
 # Architecture
 
+Evolution note, 2026-09-22: [Phase 5 Gate 0 - Creative Intelligence Architecture v1](phases/phase-5-gate-0-creative-intelligence-architecture-v1.md) defines the normative Phase 5+ authority and representation boundaries. Its verification/review state is recorded in [CURRENT_PHASE](CURRENT_PHASE.md). The historical foundation below is preserved. The evolution places a rich internal EditGraph above the frozen UEP 1.0.0 compatibility projection and separates source evidence from creative direction. It does not implement that pipeline or change today's 15-30 second UEP limit.
+
 Phase 1 implementation note: the local reference analyzer now lives in `packages/reference-analyzer`, with narrow Python primitives and local process/filesystem adapters under `python/reference_analyzer` and `scripts`. See [the implemented boundary](reference-analyzer.md) and [reference-only 1.1.0 evolution](reference-contract-v11.md). The Phase 0 foundation and deployment direction below remain intact; later-phase provider descriptions are design seams, not implemented services.
 
 ## Product boundary
