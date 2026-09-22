@@ -1,6 +1,6 @@
 # Current Phase - Phase 4 Matcher V0 Active
 
-Last updated: 2026-09-21
+Last updated: 2026-09-22
 
 ## Current ruling
 
@@ -12,7 +12,7 @@ Last updated: 2026-09-21
 - Frozen editorial runtime subset: implemented under owner-authorized Phase 4 Gate 0. The broader historical Session 2 benchmark/metric/experiment backlog remains outside this gate.
 - Phase 2.6B: COMPLETE. TransNetV2 verified on real authorized footage through the current application path.
 - Phase 3 Audio Analyzer V0: COMPLETE within the implemented/verified V0 scope at `5bfe1d0b26b4faecce4af658e6eeb8ef50cd9bd7`, per explicit owner closure authorization. This supersedes the earlier component-only status below.
-- Phase 4 Matcher V0: AUTHORIZED / ACTIVE. Gate 0 runtime implementation, independent source review and full canonical verification PASS. Matcher scoring is not implemented; Gate 1 has not started.
+- Phase 4 Matcher V0: AUTHORIZED / ACTIVE. Gate 0 is accepted. Gate 1 deterministic technical-baseline ranking is implemented and accepted after independent source review and full canonical verification. Phase 4 remains open; semantic/reference/audio matching and professional Matcher quality are not established.
 - Phase 5 and later: not implemented; no execution authorization from this gate.
 
 ## Phase 4 Gate 0 - runtime substrate
@@ -24,6 +24,18 @@ The internal `packages/editorial/` implements the frozen 0.1.0 common references
 Focused evidence: `npm.cmd run typecheck`, `npm.cmd run build`, and `node --import ./scripts/no-network.mjs --test dist/tests/editorial-common.test.js dist/tests/editorial-token.test.js dist/tests/editorial-decisions.test.js`: **75 passed, zero failed/skipped**. `npm.cmd run audit:workspace`: **52 application files / nine existing runtime adapters PASS**. Focused fixtures are synthetic data only; no provider, media decoder, model or GPU operation was invoked. Full `npm run verify` is deliberately deferred to review/acceptance, not claimed by this gate.
 
 Two new-implementation regressions were preserved and corrected: a reidentified token could contradict its referenced semantic support, and borrowed cheap evidence could claim measured in-window flow. The resolver now revalidates token projections at consumption boundaries and checks eligible temporal comparison pairs. Failure logs, successful reruns and frozen SHA-256 checks are retained in ignored `.local-runs/phase4-gate0/`. Historical evidence files were not changed.
+
+## Phase 4 Gate 1 - deterministic technical baseline
+
+Accepted implementation commit: `607420b40efe93d100ad0a45cf438d6f6549922a`.
+
+Gate 1 adds the internal `EditorialRankingPrediction` 0.1.0 artifact and a pure deterministic rule baseline over the exact validated `EditorialCandidateSet`. It uses only `sharpnessIndicator` and `unclippedPixelFraction`, with score `0.5 * sharpnessIndicator + 0.5 * unclippedPixelFraction`. Missing required features remain explicitly unavailable and never become zero. Equal scores remain explicit tie groups; lexical candidate ordering inside a tie is canonical serialization only, not editorial preference.
+
+The prediction artifact remains separate from `EditorialDecision` / `TaskJudgment`, public `DecisionEvent`, plans and slots. It contains no invented winner, confidence, human judgment or editor explanation. No provider, LLM, model, embedding-vector comparison, media decode or runtime adapter executes in this gate. Semantic/reference/audio features are intentionally deferred.
+
+Independent source review PASS. Canonical `npm run verify` PASS with **243 TypeScript tests, six media integration tests, 15 Python tests, 33 schema/synthetic fixture artifacts, workspace audit PASS, exit 0**. The canonical verification preserved exactly the intended three-file Gate 1 worktree before commit. No dependency or public Matcher seam change occurred.
+
+Gate 1 establishes only a deterministic technical baseline suitable for later comparison. It does not establish semantic matching, narrative intelligence, reference-style matching, audio matching, learned ranking, professional shot selection or professional editing quality.
 
 ## Phase 3 closure reconciliation
 
@@ -168,4 +180,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope. Phase 4 Matcher V0 is AUTHORIZED / ACTIVE, with Gate 0 accepted after independent source review and full canonical verification. Gate 1 has not started. Phase 5+ are not implemented or authorized by this gate. No Matcher quality, Creative Ranker or Editorial Decision Graph result is claimed.
+Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope. Phase 4 Matcher V0 is AUTHORIZED / ACTIVE: Gate 0 and Gate 1 are accepted within their documented scopes. Gate 1 is only a deterministic two-feature technical baseline; Phase 4 is not closed. Phase 5+ are not implemented or authorized by this gate. No semantic/reference/audio Matcher quality, professional editing quality, Creative Ranker or Editorial Decision Graph result is claimed.
