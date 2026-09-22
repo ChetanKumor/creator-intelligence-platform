@@ -1,6 +1,6 @@
-# Current Phase - Phase 5 Gate 0 Architecture Freeze
+# Current Phase - Phase 5 Gate 1 Perception Evidence Store
 
-Last updated: 2026-09-22
+Last updated: 2026-09-23
 
 ## Current ruling
 
@@ -13,7 +13,17 @@ Last updated: 2026-09-22
 - Phase 2.6B: COMPLETE. TransNetV2 verified on real authorized footage through the current application path.
 - Phase 3 Audio Analyzer V0: COMPLETE within the implemented/verified V0 scope at `5bfe1d0b26b4faecce4af658e6eeb8ef50cd9bd7`, per explicit owner closure authorization. This supersedes the earlier component-only status below.
 - Phase 4 Matcher V0: COMPLETE within its implemented and verified V0 scope. Gates 0–4 are accepted. Gate 4 adds the internal explicit-policy Matcher V0 dispatcher over the accepted technical baseline and evaluation-authorized reference-semantic ranking paths without score fusion, fallback, automatic mode selection, audio consumption or plan-bound `DecisionEvent` output.
-- Phase 5 Edit Planner V0: Gate 0 architecture freeze documentation verification PASS; awaiting owner review before commit. Runtime planning, narrative direction, sequence construction and `UniversalEditPlan` quality remain unimplemented/unverified. No later implementation gate is authorized.
+- Phase 5 Edit Planner V0: Gate 0 architecture freeze is accepted at `9e4aea433123eeae85aefc1318200220e1bf0789`. Gate 1 Perception Evidence Store implementation verification PASS; awaiting owner review. Runtime planning, ProjectWorldModel, narrative direction, sequence construction and `UniversalEditPlan` quality remain unimplemented/unverified. Gate 2 is not authorized.
+
+## Phase 5 Gate 1 - Perception Evidence Store
+
+Authority: [Gate-1 implementation and verification record](phases/phase-5-gate-1-perception-evidence-store.md), governed by the accepted [Creative Intelligence Architecture v1](phases/phase-5-gate-0-creative-intelligence-architecture-v1.md). Starting state was branch `phase/5-edit-planner-v0`, HEAD `9e4aea433123eeae85aefc1318200220e1bf0789` (`docs: freeze creative intelligence architecture v1`), with a clean worktree.
+
+Gate 1 adds only the internal `packages/perception/` substrate: strict deterministic computation identity, exact dependency manifests, immutable attempt lineage, explicit accepted-output selection, lifecycle and scope eligibility, exact-byte artifact integrity, pure lookup results and reuse receipts that create no `ModelRun`. A deterministic tool uses explicit model `not_applicable`; learned computation requires exact revision evidence. Request identity remains distinct from output identity. Conflicting deterministic successful outputs are hard integrity failures.
+
+Lookup returns explicit hit, miss, incompatible, failed, stale/retired, unavailable or unsupported states. Exact and related evidence is discoverable only through an eligible binding for the exact requested project, creator and purpose. Foreign, revoked and expired evidence returns the same miss payload as absent evidence, cannot contribute incompatibility details, and is not artifact-validated. No unscoped snapshot/index enumeration remains. Lookup has no computation/provider/decoder/network/repair/fallback hook. Existing reference/footage cache formulas and legacy repair behavior remain unchanged; no compatibility adapter falsely relabels them as Gate-1 compliant.
+
+Independent owner review before acceptance found a bounded non-discoverability defect: inaccessible exact and related entries could reveal cache existence, and an unscoped snapshot exposed the index. The repair was verified on 2026-09-23 without broadening the gate. `npm run typecheck` and build PASS; 29 focused Gate-1 tests PASS; 74 focused perception/editorial/reference/footage cache tests PASS; the full safe non-media TypeScript suite passed 332/332 under the no-network guard. Final workspace/preservation commands, original first-failure chronology and later owner-review red evidence are recorded in the Gate-1 report. Public contracts, provider seams, Phase 1-4 source, dependencies, schemas and fixtures remain protected. No dependency, model, media, Python or network operation was introduced. Gate 1 remains implementation verification PASS; awaiting owner review. No commit, push, merge or PR. Gate 2 is not authorized or started.
 
 ## Phase 5 Gate 0 - documentation-only architecture freeze
 
@@ -21,7 +31,7 @@ Authority: [Creative Intelligence Architecture v1 Freeze](phases/phase-5-gate-0-
 
 Scope is normative representations, authority, exact artifact/cache identities, compute/cost/model selection, provider-neutral Director direction, internal planning/edit/critic boundaries and A-to-B-to-C migration. Phase 4 source, public contracts, dependencies, schemas, fixtures and historical evidence are preserved. No runtime, LLM/provider connection, model/media operation, Perception Evidence Store or ProjectWorldModel implementation is authorized. UEP remains 1.0.0 with its actual 15-30 second limit; longer target edits require a later explicit compatibility gate.
 
-Gate 0 documentation verification PASS on 2026-09-22: all 31 required sections and acceptance boundaries reviewed; `git diff --check` PASS; all 210 protected tracked files match the pre-edit SHA-256 baseline; all 28 frozen-manifest entries match; manifests/locks, source and generated artifacts unchanged. The inspected static workspace audit passed for 56 application TypeScript files and nine runtime adapters without executing those adapters. Document links, code fences and whitespace checks passed. The protected inventory digest and selected exact hashes are recorded in the Gate 0 specification. No application tests, media/model execution or network verification ran; historical regression results were not relabeled as fresh. Owner review remains pending. No commit, push or PR; stop here. Next proposed gate: Perception Evidence Store, not authorized or started.
+Gate 0 documentation verification PASS on 2026-09-22: all 31 required sections and acceptance boundaries reviewed; `git diff --check` PASS; all 210 protected tracked files match the pre-edit SHA-256 baseline; all 28 frozen-manifest entries match; manifests/locks, source and generated artifacts unchanged. The inspected static workspace audit passed for 56 application TypeScript files and nine runtime adapters without executing those adapters. Document links, code fences and whitespace checks passed. The protected inventory digest and selected exact hashes are recorded in the Gate 0 specification. No application tests, media/model execution or network verification ran; historical regression results were not relabeled as fresh. The freeze was subsequently owner-reviewed and committed at `9e4aea433123eeae85aefc1318200220e1bf0789`; Gate 1 was separately authorized afterward.
 
 ## Phase 4 Gate 0 - runtime substrate
 
@@ -248,4 +258,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope; and Phase 4 Matcher V0 is COMPLETE within the implemented/verified V0 scope documented above. Gates 0–4 are accepted. Phase 4 closes without technical+semantic score fusion, audio-aware matching, a learned ranker, public plan-bound Matcher events, real-reference semantic execution, professional shot-selection quality, narrative intelligence or professional editing quality. The separate Phase 5 Gate 0 documentation verification is PASS, awaiting owner review as recorded above. Phase 5 runtime and all later gates remain not started. Stop for review; Perception Evidence Store requires separate authorization.
+Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope; and Phase 4 Matcher V0 is COMPLETE within the implemented/verified V0 scope documented above. Gates 0–4 are accepted. Phase 4 closes without technical+semantic score fusion, audio-aware matching, a learned ranker, public plan-bound Matcher events, real-reference semantic execution, professional shot-selection quality, narrative intelligence or professional editing quality. Phase 5 Gate 0 is accepted. Phase 5 Gate 1 implementation verification PASS is awaiting owner review. Stop here; ProjectWorldModel-lite and all later gates remain unauthorized and not started.
