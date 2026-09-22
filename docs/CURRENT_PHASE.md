@@ -12,7 +12,7 @@ Last updated: 2026-09-22
 - Frozen editorial runtime subset: implemented under owner-authorized Phase 4 Gate 0. The broader historical Session 2 benchmark/metric/experiment backlog remains outside this gate.
 - Phase 2.6B: COMPLETE. TransNetV2 verified on real authorized footage through the current application path.
 - Phase 3 Audio Analyzer V0: COMPLETE within the implemented/verified V0 scope at `5bfe1d0b26b4faecce4af658e6eeb8ef50cd9bd7`, per explicit owner closure authorization. This supersedes the earlier component-only status below.
-- Phase 4 Matcher V0: AUTHORIZED / ACTIVE. Gates 0, 1 and 2 are accepted within their documented scopes. Gate 1 is the deterministic technical baseline; Gate 2 is the owned semantic-comparison primitive only. Phase 4 remains open; reference-conditioned matching, audio matching and professional Matcher quality are not established.
+- Phase 4 Matcher V0: AUTHORIZED / ACTIVE. Gates 0, 1, 2 and 3 are accepted within their documented scopes. Gate 1 is the deterministic technical baseline; Gate 2 is the owned semantic-comparison primitive; Gate 3 is evaluation-authorized explicit-reference-shot semantic ranking only. Phase 4 remains open; technical+semantic Matcher integration, audio matching and professional Matcher quality are not established.
 - Phase 5 and later: not implemented; no execution authorization from this gate.
 
 ## Phase 4 Gate 0 - runtime substrate
@@ -50,6 +50,24 @@ The primitive computes deterministic cosine similarity in `[-1, 1]`, where large
 Independent source review PASS. Canonical `npm run verify` PASS with **266 TypeScript tests, six media integration tests, 15 Python tests, workspace audit over 54 application TypeScript files plus nine explicit runtime adapters, 33 schema/synthetic fixture artifacts, and exit 0**. Canonical receipt SHA-256: `c945e908837d34126603d2bb18956f610923b87cddda3f76943244d30f3a8bf3`. Verification preserved exactly the intended three-file Gate 2 worktree before commit.
 
 Gate 2 establishes only that compatible owned embedding references can be explicitly resolved, integrity-checked and compared with deterministic cosine similarity. It does not establish semantic Matcher quality, reference matching quality, style compatibility, professional candidate ranking, narrative intelligence or professional editing quality.
+
+## Phase 4 Gate 3 - evaluation-authorized reference semantic ranking
+
+Accepted implementation commit: `8c3d22f96ab515d07c8d9ac0b81b849eb0e1b9ff`.
+
+Gate 3 adds the internal `EditorialReferenceSemanticRankingPrediction` 0.1.0 artifact. It takes an exact validated `EditorialCandidateSet`, an explicitly supplied `ReferenceFingerprint` 1.1.0, an explicitly selected reference shot, the matching supplied `ReferenceAnalysis`, and an injected `EditorialVectorResolver`. The task remains `candidate_ranking`; `reference_style_compatibility` remains reserved and unused.
+
+Gate 3 is evaluation-authorized only. The reference authorization and every candidate FootageAnalysis authorization must contain `local_evaluation`. Reference and candidate evidence must share project scope and creator scope. The reference fingerprint is bound to the supplied authorized content and analysis identity; the selected fingerprint embedding must agree with the same-shot ReferenceAnalysis embedding-batch reference when present. The embedding-batch identity is recomputed and checked. A selected reference shot with null semantic embedding remains explicitly unavailable, is never backfilled from ReferenceAnalysis, causes all candidates to remain unscored, and invokes no vector resolution.
+
+Each candidate remains exactly once in the supplied universe. Candidate semantic evidence comes only from the validated EditorialToken semantic channel. Existing locality is preserved, including `within_segment` and `same_shot_context`; locality does not modify the score. Source semantic missingness remains explicit, while derived similarity becomes unavailable rather than zero. Present target/candidate embeddings are compared only through the accepted Gate 2 `compareEditorialSemantics()` primitive. Incompatible embedding spaces and malformed resolved vectors fail closed.
+
+Ranking uses the raw Gate 2 cosine similarity in `[-1, 1]` only. Scores are not remapped, normalized, thresholded or combined with Gate 1 technical scores. Exact equal similarities remain explicit tie groups. Gate 3 performs no reference-shot auto-selection and records no winner, confidence, plan, slot, judgment, explanation or vectors.
+
+Independent source review identified and corrected two bounded integrity issues before acceptance: ReferenceAnalysis embedding-batch identity is now checked against its exact ordered shot references, and candidate source semantic missingness is preserved separately from derived similarity missingness.
+
+Canonical `npm run verify` PASS with **291 TypeScript tests, six media integration tests, 15 Python tests, workspace audit over 55 application TypeScript files plus nine explicit runtime adapters, 33 schema/synthetic fixture artifacts, and exit 0**. Canonical receipt SHA-256: `7cca9ff4b1ce9740df5490d2ed5a2eec4411b78fe12cc68d7bf90fa74e0ffc8b`. Verification preserved exactly the intended three-file Gate 3 implementation worktree before commit.
+
+Gate 3 establishes only that an explicitly selected, locally evaluation-authorized reference shot can condition an exact candidate universe and produce deterministic raw-cosine semantic ranking evidence with explicit locality and missingness. It does not establish reference-style understanding, technical+semantic Matcher quality, audio matching, professional shot ranking, learned ranking, narrative intelligence or professional editing quality.
 
 ## Phase 3 closure reconciliation
 
@@ -194,4 +212,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope. Phase 4 Matcher V0 is AUTHORIZED / ACTIVE: Gates 0, 1 and 2 are accepted within their documented scopes. Gate 1 is only a deterministic two-feature technical baseline and Gate 2 is only an owned semantic-comparison primitive; Phase 4 is not closed. Phase 5+ are not implemented or authorized by this gate. No reference-conditioned/audio Matcher quality, professional editing quality, Creative Ranker or Editorial Decision Graph result is claimed.
+Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope. Phase 4 Matcher V0 is AUTHORIZED / ACTIVE: Gates 0, 1, 2 and 3 are accepted within their documented scopes. Gate 1 is only a deterministic two-feature technical baseline, Gate 2 is only an owned semantic-comparison primitive, and Gate 3 is only evaluation-authorized explicit-reference-shot semantic ranking; Phase 4 is not closed. Phase 5+ are not implemented or authorized by this gate. No technical+semantic/audio Matcher quality, professional editing quality, Creative Ranker or Editorial Decision Graph result is claimed.
