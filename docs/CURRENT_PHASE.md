@@ -1,4 +1,4 @@
-# Current Phase - Phase 4 Matcher V0 Active
+# Current Phase - Phase 4 Matcher V0 Complete
 
 Last updated: 2026-09-22
 
@@ -12,8 +12,8 @@ Last updated: 2026-09-22
 - Frozen editorial runtime subset: implemented under owner-authorized Phase 4 Gate 0. The broader historical Session 2 benchmark/metric/experiment backlog remains outside this gate.
 - Phase 2.6B: COMPLETE. TransNetV2 verified on real authorized footage through the current application path.
 - Phase 3 Audio Analyzer V0: COMPLETE within the implemented/verified V0 scope at `5bfe1d0b26b4faecce4af658e6eeb8ef50cd9bd7`, per explicit owner closure authorization. This supersedes the earlier component-only status below.
-- Phase 4 Matcher V0: AUTHORIZED / ACTIVE. Gates 0, 1, 2 and 3 are accepted within their documented scopes. Gate 1 is the deterministic technical baseline; Gate 2 is the owned semantic-comparison primitive; Gate 3 is evaluation-authorized explicit-reference-shot semantic ranking only. Phase 4 remains open; technical+semantic Matcher integration, audio matching and professional Matcher quality are not established.
-- Phase 5 and later: not implemented; no execution authorization from this gate.
+- Phase 4 Matcher V0: COMPLETE within its implemented and verified V0 scope. Gates 0–4 are accepted. Gate 4 adds the internal explicit-policy Matcher V0 dispatcher over the accepted technical baseline and evaluation-authorized reference-semantic ranking paths without score fusion, fallback, automatic mode selection, audio consumption or plan-bound `DecisionEvent` output.
+- Phase 5 Edit Planner V0: NEXT / NOT STARTED. This Phase 4 closure does not implement or verify planning, narrative direction, sequence construction or `UniversalEditPlan` quality.
 
 ## Phase 4 Gate 0 - runtime substrate
 
@@ -68,6 +68,34 @@ Independent source review identified and corrected two bounded integrity issues 
 Canonical `npm run verify` PASS with **291 TypeScript tests, six media integration tests, 15 Python tests, workspace audit over 55 application TypeScript files plus nine explicit runtime adapters, 33 schema/synthetic fixture artifacts, and exit 0**. Canonical receipt SHA-256: `7cca9ff4b1ce9740df5490d2ed5a2eec4411b78fe12cc68d7bf90fa74e0ffc8b`. Verification preserved exactly the intended three-file Gate 3 implementation worktree before commit.
 
 Gate 3 establishes only that an explicitly selected, locally evaluation-authorized reference shot can condition an exact candidate universe and produce deterministic raw-cosine semantic ranking evidence with explicit locality and missingness. It does not establish reference-style understanding, technical+semantic Matcher quality, audio matching, professional shot ranking, learned ranking, narrative intelligence or professional editing quality.
+
+## Phase 4 Gate 4 - explicit-policy Matcher V0 and Phase 4 closure
+
+Accepted implementation commit: `2e63f3ee0d373bf0a64d41319f570de4568d45d6`.
+
+Gate 4 adds the internal `EditorialMatcherV0Prediction` 0.1.0 artifact and one explicit caller-selected Matcher V0 entry point. Its dispatch policy is `rule / explicit_matcher_mode / 0.1.0`. Exactly two modes are accepted: `technical_baseline` and `reference_semantic`.
+
+`technical_baseline` delegates unchanged to the accepted Gate 1 `createEditorialRankingPrediction()` path. `reference_semantic` delegates unchanged to the accepted Gate 3 `createEditorialReferenceSemanticRankingPrediction()` path and therefore retains Gate 3 authorization, provenance, locality, missingness and embedding-compatibility requirements. Gate 4 does not reimplement either ranking algorithm.
+
+There is no automatic mode selection and no fallback between modes. A missing or unavailable reference-semantic result remains unavailable rather than being rescued by the technical baseline. Gate 4 does not combine technical and semantic scores, normalize or remap them, introduce cross-mode tie-breaking, consume AudioFingerprint evidence, activate `reference_style_compatibility`, choose a reference shot, emit embedding vectors, or introduce a learned ranker.
+
+The public `packages/providers/index.ts` Matcher seam remains unchanged. Gate 4 deliberately does not emit public `DecisionEvent` records because that contract requires real plan-bound `planId`, `slotId`, winner and confidence state that does not exist until planning. No fake plan, slot, winner, confidence, judgment or editor explanation is created.
+
+Independent source review PASS. Source-review receipt SHA-256: `829dc11ff20ff88962962de29529d72fa47c4fb37a9dfacc9aab4a518d4c2a3a`. The preserved first-red receipt SHA-256 is `2c3828d5997a3130cbdb76256aa45c3af3d381ed345629c6973bee634c46e45c`.
+
+Canonical `npm run verify` PASS with **303 TypeScript tests, six media integration tests, 15 Python tests, workspace audit over 56 application TypeScript files plus nine explicit runtime adapters, 33 schema/synthetic fixture artifacts, and exit 0**. Canonical receipt SHA-256: `6eff6a43201763ed28fb9016358f1736040e9149a996328ff3b95c4fe2609e19`. Verification preserved exactly the intended three-file Gate 4 implementation worktree before commit.
+
+A separate real-evidence preflight found **three technical-smoke-eligible footage runs but zero authorized real reference runs and zero exact compatible reference-semantic pairs**. It also found zero previously persisted real EditorialToken or EditorialCandidateSet files, so the closure smoke did not falsely claim that those internal artifacts already existed. Preflight receipt SHA-256: `a8b8a16843307ef88cf71a4b96136016d9c02199a8385ef5fcacf385d4a8479a`.
+
+The final real-evidence Gate 4 smoke used the strongest eligible persisted real footage run, `.local-runs/footage_36099c27-da31-40da-a3ec-0f5fe666f3da`, whose `run.json` SHA-256 is `2fabb8ecd170c8ba5d4688bdb624cf5b4265162fbf3dc81f57c5dbc642694e58`. The run is succeeded and contains 108 model-run provenance records, nine owner-supplied real FootageAnalysis snapshots, and exactly **872 retained candidates**.
+
+The smoke deterministically hydrated **872 EditorialToken artifacts** and one exact `retained` EditorialCandidateSet in memory from that persisted real evidence, then executed Gate 4 in `technical_baseline` mode. Gate 4 returned **872 candidate results, 872 scored candidates, zero unscored candidates and 872 score groups**. Its nested ranking was exactly equal to direct Gate 1 execution, repeated Gate 4 execution reproduced the same prediction identity, and Gate 4 validator recomputation reproduced the same full prediction. The injected semantic vector resolver was called **zero times**.
+
+The real-evidence smoke performed no fresh model inference, embedding-vector resolution, media decoding or audio consumption and ran under the repository no-network guard. Smoke harness SHA-256: `a423eee1ea3502b6c7ec6ac66ae93221f941c0b1c0bc07fa3c117459bb280a02`. Smoke receipt SHA-256: `98530a8a4ff49b0b0a77595013a900ce081c4862f1bcc0692caf38779695bca4`.
+
+A real `reference_semantic` Gate 4 smoke was deliberately **not executed** because the preflight found no authorized compatible real reference pair. No authorization, creator/project scope, reference evidence or vectors were fabricated to manufacture a passing result. The reference-semantic dispatch path remains covered by the canonical deterministic Gate 4 tests and the accepted Gate 3 evaluation-authorized implementation, but this Phase 4 closure does not claim real-reference execution or reference-matching quality.
+
+Phase 4 therefore closes only the Matcher V0 engineering scope established by these gates: a validated internal candidate substrate, a deterministic technical baseline, an owned semantic-comparison primitive, evaluation-authorized explicit-reference semantic ranking, and a single explicit-policy dispatcher that preserves those policies without inventing planning state. It does **not** establish professional shot-selection quality, technical+semantic fusion quality, audio-aware matching, reference-style understanding, broad-domain generalization, narrative intelligence, sequence planning, learned ranking or professional editing quality.
 
 ## Phase 3 closure reconciliation
 
@@ -212,4 +240,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope. Phase 4 Matcher V0 is AUTHORIZED / ACTIVE: Gates 0, 1, 2 and 3 are accepted within their documented scopes. Gate 1 is only a deterministic two-feature technical baseline, Gate 2 is only an owned semantic-comparison primitive, and Gate 3 is only evaluation-authorized explicit-reference-shot semantic ranking; Phase 4 is not closed. Phase 5+ are not implemented or authorized by this gate. No technical+semantic/audio Matcher quality, professional editing quality, Creative Ranker or Editorial Decision Graph result is claimed.
+Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope; and Phase 4 Matcher V0 is COMPLETE within the implemented/verified V0 scope documented above. Gates 0–4 are accepted. Phase 4 closes without technical+semantic score fusion, audio-aware matching, a learned ranker, public plan-bound Matcher events, real-reference semantic execution, professional shot-selection quality, narrative intelligence or professional editing quality. Phase 5 Edit Planner V0 is the next planned phase and is not started by this closure documentation.
