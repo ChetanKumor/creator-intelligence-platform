@@ -2,7 +2,7 @@
 
 Date: 2026-09-22. Owner-review repair verified: 2026-09-23. Scope: bounded internal runtime substrate and synthetic verification only.
 
-Status: **implementation verification PASS; awaiting owner review.** No commit, push, merge or PR is part of this gate. Gate 2 is not authorized.
+Status: **ACCEPTED.** Independent owner review passed after the bounded non-discoverability repair. The implementation is committed and pushed at `93d7ce9d27cd66be9c71389c9ad03ca134ce8fc5`. Gate 2 is separately authorized and is not part of this Gate-1 implementation.
 
 ## Baseline and authority
 
@@ -151,4 +151,4 @@ The final protected-file and changed-path audit shows only the new internal perc
 
 This is an in-memory index over explicitly supplied immutable artifacts. It is not a database, object store, global deduplicator, scheduler, cache migration, retry policy, retention/deletion service or production authorization service. It does not adapt current caches or run perception. Related-evidence discovery is bounded to the same operation with a shared exact source/artifact anchor. Producer registrations, durable atomic publication and full lifecycle services remain future work.
 
-Gate-1 implementation has no unresolved code/test blocker after the final audit passes. Owner acceptance remains pending. The next gate name is **ProjectWorldModel-lite**; it is not authorized or started.
+Gate-1 implementation has no unresolved code/test blocker after the final audit passes. Owner acceptance is complete. The accepted implementation is committed and pushed at `93d7ce9d27cd66be9c71389c9ad03ca134ce8fc5`. The next gate is **ProjectWorldModel-lite**; it is separately owner-authorized and has not started in this Gate-1 record.
