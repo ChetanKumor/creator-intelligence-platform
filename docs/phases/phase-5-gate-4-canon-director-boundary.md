@@ -1,6 +1,6 @@
 # Phase 5 Gate 4 — Canon v0 / Director boundary
 
-Date: 2026-09-23. Status: **implementation verification PASS; awaiting independent owner acceptance**. This is an internal boundary gate. It neither executes a Director model nor establishes editing quality. Phase 5 Gate 5 is not authorized by this record.
+Date: 2026-09-23. Status: **OWNER-ACCEPTED** at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f` after independent owner review and final post-repair source inspection. This is an internal boundary gate. It neither executes a Director model nor establishes editing quality. Phase 5 Gate 5 is not authorized or started by this record.
 
 ## Baseline and authority
 
@@ -68,6 +68,38 @@ All 16 protected paths are byte-identical to HEAD. Fifteen supplied SHA-256 stri
 
 No model, pretrained inference, provider, media decode, GPU, Python/media suite, real footage, or external network operation was run. Fixtures are synthetic. The gate proves strict boundary behavior under supplied artifacts, not current production authorization, actual Director model eligibility, semantic satisfaction of prose requirements, creative quality, professional editing quality, or live multiworker budget safety. Hard requirement “addressed” means a structurally bound direction node or exclusion constraint; it is not a human quality judgment. Exact external runtime supply and current access/capacity rechecks remain obligations of later execution boundaries.
 
-**Phase 5 Gate 4: implementation verification PASS; awaiting independent owner acceptance.** Gate 5 is not started or authorized by this implementation record.
+**Phase 5 Gate 4: OWNER-ACCEPTED at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`.** Gate 5 is not started or authorized by this acceptance record.
 
 Next gate name only: **Phase 5 Gate 5 — Retrieval / sequence / exact boundary planning**.
+
+## Owner acceptance
+
+Independent owner review accepted Phase 5 Gate 4 at implementation commit `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`.
+
+Acceptance followed:
+
+- genuine test-first initial failure evidence;
+- three adversarial self-review red/repair rounds;
+- independent owner review that reproduced two additional authority defects before repair;
+- explicit repair of creative-constraint subject authority and polarity handling;
+- explicit runtime ownership of sanitized failed-result claims;
+- final post-repair inspection of the actual `packages/director/` source and focused regressions.
+
+Final independent verification confirmed:
+
+- Gate-4 focused suite **48/48**;
+- focused compatibility suite **254/254**;
+- full safe TypeScript suite **449/449**, zero failures/skips/cancellations;
+- typecheck PASS;
+- build PASS;
+- workspace audit PASS across 64 application TypeScript files and nine explicit runtime adapters;
+- `git diff --check` PASS;
+- protected-path diff empty;
+- all 16 protected paths byte-identical to the Gate-4 baseline;
+- no model, provider, media, GPU, Python/media-suite, real-footage, or external-network execution.
+
+The accepted boundary preserves the central authority split: Canon is guidance rather than project evidence; the Director expresses creative intention rather than trusted executable source timing; candidate/evidence references remain exact and scoped; Gate-3 owns model/budget authority; runtime-owned producer evidence attests execution outcome/failure; and no fake public planning or billing telemetry is emitted.
+
+This acceptance establishes boundary correctness only. It does not establish Director intelligence, semantic satisfaction of prose requirements, production model eligibility, professional editing quality, or live execution/runtime quality.
+
+Phase 5 Gate 5 — Retrieval / sequence / exact boundary planning — remains **not authorized and not started**.
