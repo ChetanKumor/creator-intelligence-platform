@@ -1,4 +1,4 @@
-# Current Phase - Phase 5 Gate 1 Perception Evidence Store
+# Current Phase - Phase 5 Gate 2 ProjectWorldModel-lite
 
 Last updated: 2026-09-23
 
@@ -13,7 +13,15 @@ Last updated: 2026-09-23
 - Phase 2.6B: COMPLETE. TransNetV2 verified on real authorized footage through the current application path.
 - Phase 3 Audio Analyzer V0: COMPLETE within the implemented/verified V0 scope at `5bfe1d0b26b4faecce4af658e6eeb8ef50cd9bd7`, per explicit owner closure authorization. This supersedes the earlier component-only status below.
 - Phase 4 Matcher V0: COMPLETE within its implemented and verified V0 scope. Gates 0–4 are accepted. Gate 4 adds the internal explicit-policy Matcher V0 dispatcher over the accepted technical baseline and evaluation-authorized reference-semantic ranking paths without score fusion, fallback, automatic mode selection, audio consumption or plan-bound `DecisionEvent` output.
-- Phase 5 Edit Planner V0: Gate 0 architecture freeze is accepted at `9e4aea433123eeae85aefc1318200220e1bf0789`. Gate 1 Perception Evidence Store is ACCEPTED at `93d7ce9d27cd66be9c71389c9ad03ca134ce8fc5` after independent owner review and the bounded non-discoverability repair. Runtime planning, ProjectWorldModel, narrative direction, sequence construction and `UniversalEditPlan` quality remain unimplemented/unverified. Gate 2 ProjectWorldModel-lite is owner-authorized for bounded implementation from this accepted baseline; it has not started yet.
+- Phase 5 Edit Planner V0: Gate 0 architecture freeze is accepted at `9e4aea433123eeae85aefc1318200220e1bf0789`. Gate 1 Perception Evidence Store is ACCEPTED at `93d7ce9d27cd66be9c71389c9ad03ca134ce8fc5` after independent owner review. Gate 2 ProjectWorldModel-lite has bounded internal implementation and synthetic verification PASS from the clean `68eb90a7` baseline. Independent owner review found bounded defects, which were reproduced and repaired; Gate 2 awaits independent owner acceptance and is not yet accepted. Director, retrieval/search, sequence construction and `UniversalEditPlan` quality remain unimplemented/unverified. Gate 3 is not authorized.
+
+## Phase 5 Gate 2 - ProjectWorldModel-lite
+
+Authority: [Gate-2 implementation and verification record](phases/phase-5-gate-2-project-world-model-lite.md), governed by the accepted [Creative Intelligence Architecture v1](phases/phase-5-gate-0-creative-intelligence-architecture-v1.md). The bounded internal `packages/world-model/` substrate links explicitly supplied source evidence, observed facts, derived interpretations, exact legacy token snapshots and authorized Gate-1 reuse receipts. It supports pure immutable child publication, dependency invalidation and scoped bounded views with explicit coverage. Current `MediaAsset` retention is checked separately from historical source authorization at a caller-declared access time. It neither enumerates Gate-1 evidence nor performs perception, model, provider, decoder, media or network work.
+
+The test-first compiler failure and later self-review failure are preserved under ignored `.local-runs/phase5-gate2/`. Independent owner review defects were reproduced in the preserved `owner-review-red.md` receipt (31 focused tests, 19 pass, 12 fail before repair), then repaired with focused regressions. The earlier pre-owner-review PASS remains historical evidence in the Gate-2 report. Gate 2 remains **implementation verification PASS; awaiting independent owner acceptance**. No real-footage Gate-2, production persistence, full current authorization service, narrative intelligence, professional editing quality or Gate-3 authorization is claimed.
+
+Final independent owner review confirmed the first repair but found candidate-bound existence leakage, unresolved present uncertainty evidence, direct non-initial snapshot construction, and a membership-capacity contradiction. New test-first red evidence is preserved in `final-owner-review-red.md`; a corrected fixture rerun is preserved in `final-owner-review-red-confirmed.md`. The bounded repairs pass the focused Gate-2 suite (36/36). Gate 2 is still **implementation verification PASS; awaiting independent owner acceptance**. Gate 3 remains unauthorized.
 
 ## Phase 5 Gate 1 - Perception Evidence Store
 
@@ -258,4 +266,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope; and Phase 4 Matcher V0 is COMPLETE within the implemented/verified V0 scope documented above. Gates 0–4 are accepted. Phase 4 closes without technical+semantic score fusion, audio-aware matching, a learned ranker, public plan-bound Matcher events, real-reference semantic execution, professional shot-selection quality, narrative intelligence or professional editing quality. Phase 5 Gate 0 is accepted. Phase 5 Gate 1 is owner-accepted and committed/pushed at `93d7ce9d27cd66be9c71389c9ad03ca134ce8fc5`. Gate 2 ProjectWorldModel-lite is owner-authorized for bounded implementation but has not started; all later gates remain unauthorized.
+Phase 2 remains CLOSED; Phase 2.6A is COMPLETE within its accepted scope; Phase 2.6B is COMPLETE; Phase 3 Audio Analyzer V0 is COMPLETE within its verified V0 scope; and Phase 4 Matcher V0 is COMPLETE within the implemented/verified V0 scope documented above. Gates 0–4 are accepted. Phase 5 Gate 0 is accepted. Phase 5 Gate 1 is owner-accepted and committed/pushed at `93d7ce9d27cd66be9c71389c9ad03ca134ce8fc5`. Gate 2 ProjectWorldModel-lite is implemented and locally verified but awaits owner review; all later gates remain unauthorized.
