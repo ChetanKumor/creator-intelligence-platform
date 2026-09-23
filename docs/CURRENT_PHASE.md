@@ -1,4 +1,4 @@
-# Current Phase - Phase 5 Gate 2 ProjectWorldModel-lite
+# Current Phase - Phase 5 Gate 3 Budgeted Perception / Model Routing
 
 Last updated: 2026-09-23
 
@@ -13,7 +13,13 @@ Last updated: 2026-09-23
 - Phase 2.6B: COMPLETE. TransNetV2 verified on real authorized footage through the current application path.
 - Phase 3 Audio Analyzer V0: COMPLETE within the implemented/verified V0 scope at `5bfe1d0b26b4faecce4af658e6eeb8ef50cd9bd7`, per explicit owner closure authorization. This supersedes the earlier component-only status below.
 - Phase 4 Matcher V0: COMPLETE within its implemented and verified V0 scope. Gates 0–4 are accepted. Gate 4 adds the internal explicit-policy Matcher V0 dispatcher over the accepted technical baseline and evaluation-authorized reference-semantic ranking paths without score fusion, fallback, automatic mode selection, audio consumption or plan-bound `DecisionEvent` output.
-- Phase 5 Edit Planner V0: Gate 0 architecture freeze is accepted at `9e4aea433123eeae85aefc1318200220e1bf0789`. Gate 1 Perception Evidence Store is ACCEPTED at `93d7ce9d27cd66be9c71389c9ad03ca134ce8fc5` after independent owner review. Gate 2 ProjectWorldModel-lite is OWNER-ACCEPTED at `2c9b80b49549d5c56b7cdb48d39aeb4d58d1bae2` after independent review, reproduced defects, bounded repairs, and final independent verification. Director, retrieval/search, sequence construction and `UniversalEditPlan` quality remain unimplemented/unverified. Gate 3 is owner-authorized for bounded implementation but has not started.
+- Phase 5 Edit Planner V0: Gate 0 architecture freeze is accepted at `9e4aea433123eeae85aefc1318200220e1bf0789`. Gate 1 Perception Evidence Store is ACCEPTED at `93d7ce9d27cd66be9c71389c9ad03ca134ce8fc5`. Gate 2 ProjectWorldModel-lite is OWNER-ACCEPTED at `2c9b80b49549d5c56b7cdb48d39aeb4d58d1bae2`. Gate 3 Budgeted Perception / Model Routing has **implementation verification PASS; awaiting independent owner acceptance**. Director, retrieval/search, sequence construction and `UniversalEditPlan` quality remain unimplemented/unverified. Gate 4 has not started and is not authorized by Gate 3 implementation verification.
+
+## Phase 5 Gate 3 - Budgeted perception / model routing
+
+Authority: [Gate-3 implementation and verification record](phases/phase-5-gate-3-budgeted-perception-routing.md), governed by the accepted [Creative Intelligence Architecture v1](phases/phase-5-gate-0-creative-intelligence-architecture-v1.md). The bounded internal `packages/routing/` module validates pinned provider-neutral profiles, separately authorized capability evidence, exact compute budgets, explicit child/parallel reservations, supplied guard evidence, deterministic model selection, Gate-1 receipt reuse, future-compute authorization and CostTrace links to the frozen public ledger. It performs no model/media/provider/network operation. First red and self-review red receipts are preserved under ignored `.local-runs/phase5-gate3/`. This is implementation verification only; owner acceptance and Gate 4 authorization remain outstanding.
+
+Independent owner review found bounded Gate-3 correctness defects despite the earlier green suite. Test-first owner red and confirmed red receipts, followed by separate self-review regression receipts, are preserved under `.local-runs/phase5-gate3/`. The repair binds exact compute ceilings, cumulative reservation history, declared child allocations, chosen-profile resource needs, typed guard/availability and quality evidence, exact routing artifact refs, and truthful CostTrace telemetry joins. Gate 3 remains **implementation verification PASS; awaiting independent owner acceptance**. No Gate 4 work is authorized by this repair.
 
 ## Phase 5 Gate 2 - ProjectWorldModel-lite
 
