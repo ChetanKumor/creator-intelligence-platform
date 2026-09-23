@@ -1,6 +1,6 @@
 # Phase 5 Gate 3 — Budgeted perception / model routing
 
-Date: 2026-09-23. Status: **implementation verification PASS; awaiting independent owner acceptance**.
+Date: 2026-09-23. Status: **OWNER-ACCEPTED** at `0239d7bfa7b99b95cf0984ccbd35add50e47fb7f` after independent owner review, bounded repair and final independent verification. Gate 4 is owner-authorized for bounded implementation but has not started.
 
 ## Baseline and scope
 
@@ -32,7 +32,7 @@ Focused Gate 3 tests use synthetic fixtures only. Final local verification: `npm
 
 Gate 1 lookup, including its foreign/revoked/expired non-discoverability, remains the source of cache authority; a caller-supplied lookup result is not an independently authenticated store transcript. This module neither enumerates Gate 1 nor broadens Gate 2. Evaluation attestations are supplied evidence, not benchmark results; neither quality nor production pricing is established. The in-memory reservation validator cannot prevent a race between workers or prove a current machine/provider capacity snapshot.
 
-No model load, inference, media decode, GPU work, provider call, external network call, or Python/media suite was run. The status remains **implementation verification PASS; awaiting independent owner acceptance**. Gate 4 is not authorized by this record.
+No model load, inference, media decode, GPU work, provider call, external network call, or Python/media suite was run. At that implementation checkpoint, status was **implementation verification PASS; awaiting independent owner acceptance** and Gate 4 was not yet authorized. This statement is retained as historical chronology and is superseded by the owner-acceptance section below.
 
 ## Independent owner review repair
 
@@ -48,7 +48,7 @@ CostTrace replays exact budget, reservation and selection artifacts. Linked publ
 
 After the first repair green, self-review exposed reuse of one declared child allocation and acceptance of a schema-valid forged prior reservation. Regression-first red evidence is preserved at `owner-repair-self-review-red.md` (33 tests, 30 pass, three fail); recursive prior-reservation replay, allocation single use and routing reader state invariants repaired them. A later regression for a CostEvent omitting the selected model and a failed ModelRun on a succeeded trace was preserved at `owner-repair-trace-red.md` (33 tests, 32 pass, one fail), then repaired. The focused suite passes 33/33 after these repairs.
 
-The original pre-review verification counts above remain historical. Final owner-repair verification counts and path audit follow. Status remains **implementation verification PASS; awaiting independent owner acceptance**. Gate 4 remains unauthorized.
+The original pre-review verification counts above remain historical. Final owner-repair verification counts and path audit follow. At that intermediate checkpoint, status remained **implementation verification PASS; awaiting independent owner acceptance** and Gate 4 remained unauthorized. This was before the final independent closure review.
 
 ## Owner-repair final verification
 
@@ -58,4 +58,31 @@ On the unchanged `phase/5-edit-planner-v0` branch at `91ea7491821b07a691c9c3c870
 
 Adversarial review checked arbitrary budget minting, cumulative and concurrent accounting, declared child allocation joins, chosen-profile reservation coverage, generic guard replay, model-independent availability, separate requirement and evaluation, exact artifact types and replay, route state evidence, operation joins and reuse billing. The two newly found defects were regression-first repaired with the separate red receipts above. The pure supplied history does not prove that a caller supplied every real-world reservation or prevent concurrent workers from racing. No model, media, GPU, provider, Python or network operation was run. The earlier statement that a current retrieval CostEvent could be linked is superseded here: the frozen public operations cannot truthfully label it, so reuse CostTrace permits no public CostEvent in this gate.
 
-Final status: **implementation verification PASS; awaiting independent owner acceptance**. Next gate name only: **Phase 5 Gate 4**; it is not authorized or started.
+At the end of the implementation/repair run, status was **implementation verification PASS; awaiting independent owner acceptance**. The next gate name was **Phase 5 Gate 4**, but it had not yet been authorized or started. Final owner acceptance occurred afterward and is recorded below.
+
+## Owner acceptance
+
+Independent owner closure review accepted Phase 5 Gate 3 at implementation commit `0239d7bfa7b99b95cf0984ccbd35add50e47fb7f`.
+
+The final independent closure verification confirmed:
+
+- typecheck PASS;
+- build PASS;
+- Gate-3 focused suite **33/33**;
+- Gate-1 and Gate-2 compatibility **65/65**;
+- contracts, telemetry and evaluation compatibility **35/35**;
+- compatibility total **100/100**;
+- full safe suite **401/401**, zero failures, skips or cancellations;
+- no-network workspace audit PASS across 61 application TypeScript files and nine local runtime adapters;
+- protected-path diff empty;
+- `git diff --check` PASS;
+- aggregate verification `FAIL_FLAG=0`;
+- no model, media, GPU, provider, Python or network operation.
+
+The implementation commit was amended before acceptance only to remove two trailing blank lines from the focused test file; no semantic implementation or test behavior changed.
+
+Gate 3 is therefore **OWNER-ACCEPTED** at `0239d7bfa7b99b95cf0984ccbd35add50e47fb7f` within its bounded scope.
+
+This acceptance does not claim production model quality, production pricing, live capacity measurement, durable multiworker reservation locking, Director quality, retrieval/search quality, sequence construction quality, or professional-edit quality.
+
+**Phase 5 Gate 4 is owner-authorized for bounded implementation but has not started.**
