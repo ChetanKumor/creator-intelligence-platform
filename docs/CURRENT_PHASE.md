@@ -1,6 +1,6 @@
-# Current Phase - Phase 5 Gate 4 Canon v0 / Director Boundary
+# Current Phase - Phase 5 Gate 5 Retrieval / Sequence / Boundary Planning
 
-Last updated: 2026-09-23
+Last updated: 2026-09-24
 
 ## Current ruling
 
@@ -13,11 +13,15 @@ Last updated: 2026-09-23
 - Phase 2.6B: COMPLETE. TransNetV2 verified on real authorized footage through the current application path.
 - Phase 3 Audio Analyzer V0: COMPLETE within the implemented/verified V0 scope at `5bfe1d0b26b4faecce4af658e6eeb8ef50cd9bd7`, per explicit owner closure authorization. This supersedes the earlier component-only status below.
 - Phase 4 Matcher V0: COMPLETE within its implemented and verified V0 scope. Gates 0–4 are accepted. Gate 4 adds the internal explicit-policy Matcher V0 dispatcher over the accepted technical baseline and evaluation-authorized reference-semantic ranking paths without score fusion, fallback, automatic mode selection, audio consumption or plan-bound `DecisionEvent` output.
-- Phase 5 Edit Planner V0: Gates 0–4 are owner-accepted within their recorded bounded scopes. Gate 3 Budgeted Perception / Model Routing is accepted at `0239d7bfa7b99b95cf0984ccbd35add50e47fb7f`. Gate 4 Canon v0 / Director Boundary is **OWNER-ACCEPTED** at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f` after test-first implementation, adversarial self-review, independent owner review, two reproduced authority defects, bounded repairs, and final post-repair source inspection. No Director model execution or editing-quality verification has occurred. Gate 5 is not authorized or started.
+- Phase 5 Edit Planner V0: Gates 0–4 are owner-accepted within their recorded bounded scopes. Gate 3 Budgeted Perception / Model Routing is accepted at `0239d7bfa7b99b95cf0984ccbd35add50e47fb7f`. Gate 4 Canon v0 / Director Boundary is **OWNER-ACCEPTED** at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f` after test-first implementation, adversarial self-review, independent owner review, two reproduced authority defects, bounded repairs, and final post-repair source inspection. No Director model execution or editing-quality verification has occurred. Gate 5: **implementation verification PASS; awaiting independent owner acceptance**. Gate 6 is not authorized.
+
+## Phase 5 Gate 5 - Retrieval / sequence / boundary planning
+
+Authority: [Gate-5 implementation and verification record](phases/phase-5-gate-5-retrieval-sequence-boundary-planning.md), governed by the accepted [Creative Intelligence Architecture v1](phases/phase-5-gate-0-creative-intelligence-architecture-v1.md) and Gates 1–4. Starting branch/HEAD were `phase/5-edit-planner-v0` / `7b82de13cb49022d2f08cef577f4cb7056274fd9`, with no tracked modifications. The new internal `packages/planning/` module binds exact direction/world/candidate/token/policy/budget/history snapshots, deterministic retrieval, evidence-authorized source boundaries, finite sequence search, full considered/pruned lineage and replay-validated PlanningDecision/runtime receipts. Initial red and three self-review red receipts are preserved under `.local-runs/phase5-gate5/`. Typecheck/build PASS; 56/56 focused tests, 377/377 compatibility tests and 505/505 full safe tests PASS; workspace audit PASS. Protected accepted code remains unchanged. All new evidence is synthetic; no model/media execution, calibrated quality/confidence, public DecisionEvent, EditGraph or UEP generation is claimed. Status: **implementation verification PASS; awaiting independent owner acceptance**. Work remains uncommitted. Gate 6 is not authorized.
 
 ## Phase 5 Gate 4 - Canon v0 / Director boundary
 
-Authority: [Gate-4 implementation and verification record](phases/phase-5-gate-4-canon-director-boundary.md), governed by the accepted [Creative Intelligence Architecture v1](phases/phase-5-gate-0-creative-intelligence-architecture-v1.md) and Gates 1–3. The internal `packages/director/` module binds a small first-party Canon, explicit intent and candidate summaries, exact world/budget/model-selection artifacts, provider-neutral creative direction, grounding, and strong result outcomes. Independent owner-review regressions repaired constraint-subject authority and bound sanitized failed-result claims to the exact runtime-owned producer receipt. Final post-repair review confirmed 48/48 focused tests, 254/254 compatibility tests, 449/449 full safe tests, workspace audit PASS, protected-path preservation, and clean diff checks. Gate 4 is **OWNER-ACCEPTED** at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`. It establishes no Director-model or editing-quality claim. Gate 5 is not authorized or started.
+Authority: [Gate-4 implementation and verification record](phases/phase-5-gate-4-canon-director-boundary.md), governed by the accepted [Creative Intelligence Architecture v1](phases/phase-5-gate-0-creative-intelligence-architecture-v1.md) and Gates 1–3. The internal `packages/director/` module binds a small first-party Canon, explicit intent and candidate summaries, exact world/budget/model-selection artifacts, provider-neutral creative direction, grounding, and strong result outcomes. Independent owner-review regressions repaired constraint-subject authority and bound sanitized failed-result claims to the exact runtime-owned producer receipt. Final post-repair review confirmed 48/48 focused tests, 254/254 compatibility tests, 449/449 full safe tests, workspace audit PASS, protected-path preservation, and clean diff checks. Gate 4 is **OWNER-ACCEPTED** at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`. It establishes no Director-model or editing-quality claim. Gate 5 was not authorized or started at that acceptance checkpoint; its current status is recorded above.
 
 ## Phase 5 Gate 3 - Budgeted perception / model routing
 
@@ -276,4 +280,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED; Phase 2.6A and 2.6B are COMPLETE; Phase 3 Audio Analyzer V0 and Phase 4 Matcher V0 are COMPLETE within their accepted scopes. Phase 5 Gates 0–4 are owner-accepted within their bounded scopes. Gate 4 is accepted at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`. Gate 5 remains unauthorized and unstarted.
+Phase 2 remains CLOSED; Phase 2.6A and 2.6B are COMPLETE; Phase 3 Audio Analyzer V0 and Phase 4 Matcher V0 are COMPLETE within their accepted scopes. Phase 5 Gates 0–4 are owner-accepted within their bounded scopes. Gate 4 is accepted at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`. Gate 5: **implementation verification PASS; awaiting independent owner acceptance**. Gate 6 is not authorized.
