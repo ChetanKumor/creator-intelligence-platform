@@ -187,7 +187,7 @@ GATE 7: NOT AUTHORIZED
 
 ## Independent owner-review repair — 2026-09-24
 
-Status: **post-owner-review verification PASS; awaiting independent owner acceptance**.
+Status: **OWNER-ACCEPTED** at implementation commit `0cb99b6` after independent final source review.
 
 This addendum records the bounded repair of the three owner findings and the required plan-input validator audit. The chronology, receipts and counts above remain historical evidence for the original implementation; where this addendum states different semantics it supersedes them (see *Superseded statements*). Branch and HEAD remain `phase/5-edit-planner-v0` at `49f93e28831965a010459df05f5abf4f393f68e6`. The uncommitted Gate-6 implementation was preserved and repaired in place. Nothing was staged, committed, pushed, merged or submitted as a PR, and Gate 7 was not started.
 
@@ -362,3 +362,46 @@ PHASE 5 GATE 6 POST-OWNER-REVIEW VERIFICATION: PASS
 OWNER ACCEPTANCE: PENDING
 
 GATE 7: NOT AUTHORIZED
+## Independent owner acceptance closure — 2026-09-24
+
+Gate 6 is **OWNER-ACCEPTED** at implementation commit `0cb99b6`.
+
+The final independent source review inspected the repaired Gate-6 production source, test support, owner regressions, self-review regressions, compatibility behavior and closure evidence. No remaining Gate-6 correctness blocker was found.
+
+Accepted bounded semantics include:
+
+- EditGraph V0 is created only from a replay-valid chosen Gate-5 decision; tie, abstention and infeasibility never acquire an invented winner.
+- Exact Gate-5 source authority is preserved while source time and output time remain separate.
+- Typed operations arise only from explicit typed resolutions; unresolved Gate-5 obligations remain visible and fail closed.
+- `AVAILABLE` capability requires an exact attributed `CapabilityAttestation` bound to scope, environment, executor build and capability.
+- Capability readiness is distinct from execution readiness. V0 remains `not_execution_ready` because execution-budget feasibility is explicitly unverified; the Gate-5 planning budget is not repurposed.
+- No execution permission is granted by Gate 6.
+- UEP compatibility is refusal-first and does not silently drop operations, truncate duration, fabricate confidence, fabricate a `DecisionEvent`, coerce reference versions or invent plan metadata.
+- Reference, asset, ClipSegment and validation-time-access joins are either checked from exact supplied evidence or explicitly reported unavailable/incompatible.
+- `planInputEligibility` remains `not_eligible` for V0 under current frozen requirements.
+- Public contracts, validators, provider seams and accepted Gate 1–5 production bytes remain unchanged.
+
+Final accepted verification evidence:
+
+- typecheck: PASS
+- build: PASS
+- Gate-6 focused: 79/79 PASS
+- Gate-5 regression: 97/97 PASS
+- accepted compatibility set: 377/377 PASS
+- full safe suite: 625/625 PASS
+- workspace audit: PASS
+- protected-byte comparison: PASS
+- diff/whitespace/link checks: PASS
+
+Verification remains synthetic/offline. This acceptance does **not** establish professional editing quality, real-footage generalization, render correctness, executor conformance, production latency/cost or human-level editing quality.
+
+`GATE 7: NOT AUTHORIZED / NOT STARTED at this closure checkpoint.`
+
+PHASE 5 GATE 6:
+OWNER-ACCEPTED
+
+ACCEPTED IMPLEMENTATION:
+0cb99b6
+
+GATE 7:
+NOT AUTHORIZED
