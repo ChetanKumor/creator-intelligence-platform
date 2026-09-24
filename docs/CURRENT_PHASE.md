@@ -1,4 +1,4 @@
-# Current Phase - Phase 5 Gate 5 Retrieval / Sequence / Boundary Planning
+# Current Phase - Phase 5 Gate 6 EditGraph / Capability / Compatibility Projection
 
 Last updated: 2026-09-24
 
@@ -14,6 +14,27 @@ Last updated: 2026-09-24
 - Phase 3 Audio Analyzer V0: COMPLETE within the implemented/verified V0 scope at `5bfe1d0b26b4faecce4af658e6eeb8ef50cd9bd7`, per explicit owner closure authorization. This supersedes the earlier component-only status below.
 - Phase 4 Matcher V0: COMPLETE within its implemented and verified V0 scope. Gates 0–4 are accepted. Gate 4 adds the internal explicit-policy Matcher V0 dispatcher over the accepted technical baseline and evaluation-authorized reference-semantic ranking paths without score fusion, fallback, automatic mode selection, audio consumption or plan-bound `DecisionEvent` output.
 - Phase 5 Edit Planner V0: Gates 0–4 are owner-accepted within their recorded bounded scopes. Gate 3 Budgeted Perception / Model Routing is accepted at `0239d7bfa7b99b95cf0984ccbd35add50e47fb7f`. Gate 4 Canon v0 / Director Boundary is **OWNER-ACCEPTED** at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f` after test-first implementation, adversarial self-review, independent owner review, two reproduced authority defects, bounded repairs, and final post-repair source inspection. No Director model execution or editing-quality verification has occurred. Gate 5 is **OWNER-ACCEPTED** at `d2ffc51` after implementation verification, independent source review, test-first owner repairs, final source-authority review, 97/97 focused Gate-5 tests, 377/377 compatibility tests, 546/546 full safe tests, workspace audit PASS, and 24/24 protected paths unchanged. Verification remains synthetic/offline and establishes no professional-editing-quality, real-footage-generalization, rendering, capability-execution, EditGraph, UEP, or public DecisionEvent claim. Gate 6 is not authorized or started at this closure checkpoint.
+- Phase 5 Gate 6 EditGraph / capability / compatibility projection: owner-authorized from HEAD `49f93e28831965a010459df05f5abf4f393f68e6`. Gate 6 implementation verification: **PASS**. The independent owner review found three defects: capability availability was not semantically attested, execution readiness ignored budget feasibility, and UEP reference joins were overstated. They were repaired test-first. Post-owner-review verification: **PASS**. Owner acceptance: **PENDING**. Gate 7: **NOT AUTHORIZED**.
+
+## Phase 5 Gate 6 - EditGraph / capability / compatibility projection
+
+Authority: [Gate-6 implementation and verification record](phases/phase-5-gate-6-editgraph-capability-compatibility.md), governed by the accepted [Creative Intelligence Architecture v1](phases/phase-5-gate-0-creative-intelligence-architecture-v1.md) and Gates 1–5. The new internal `packages/edit-graph/` module builds an `EditGraph` V0 only from a replay-valid chosen Gate-5 decision (tie, abstention and infeasibility are refused), keeps exact Gate-5 source ranges on an exact integer output-tick clock, binds typed operations only from supplied attributed resolutions, retains every deferred obligation, assesses supplied capability evidence in five explicit states, and reports UEP 1.0.0 compatibility. No truthful UEP success path exists under the frozen telemetry requirements, so every report is an explicit refusal and no plan, DecisionEvent or confidence is produced. First red, self-review reds and a fixture-correction receipt are preserved under ignored `.local-runs/phase5-gate6/`. Typecheck/build PASS; 65/65 focused, 97/97 Gate-5 regression, 377/377 compatibility and 611/611 full safe tests PASS; workspace audit PASS. All evidence is synthetic; no model, media, renderer, provider or network operation ran. Work remains uncommitted.
+
+Independent owner-review repair (2026-09-24), recorded as an addendum to the Gate-6 report:
+
+- **Capability attestation.** AVAILABLE now rests only on a typed, attributed `CapabilityAttestation`. It is bound to the exact scope, environment, observation time, executor build and capability. Snapshot declarations only index these attestations.
+- **Readiness.** Capability readiness is reported separately from overall execution readiness. Overall readiness is always `not_execution_ready` with `budget_feasibility_unverified`. The Gate-5 planning budget is disclosed, never repurposed.
+- **UEP joins.** ReferenceFingerprint 1.0.0 joins are validated only from exact supplied evidence and are otherwise reported unavailable. Every frozen plan-input validator dependency is classified explicitly, and `planInputEligibility` is `not_eligible` for every V0 graph.
+- **Evidence.** Six owner and self-review red receipts are preserved under `.local-runs/phase5-gate6/`.
+- **Verification.** Typecheck/build PASS. 79/79 focused, 97/97 Gate-5 regression, 377/377 compatibility and 625/625 full safe tests PASS. Workspace audit PASS. All 46 protected files and all owner files are unchanged.
+
+Gate 6 implementation verification: **PASS**
+
+Gate 6 post-owner-review verification: **PASS**
+
+Owner acceptance: **PENDING**
+
+Gate 7: **NOT AUTHORIZED**
 
 ## Phase 5 Gate 5 - Retrieval / sequence / boundary planning
 
@@ -280,4 +301,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED; Phase 2.6A and 2.6B are COMPLETE; Phase 3 Audio Analyzer V0 and Phase 4 Matcher V0 are COMPLETE within their accepted scopes. Phase 5 Gates 0–4 are owner-accepted within their bounded scopes. Gate 4 is accepted at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`. Gate 5 is **OWNER-ACCEPTED** at `d2ffc51`. Gate 6 remains unauthorized and unstarted at this closure checkpoint.
+Phase 2 remains CLOSED; Phase 2.6A and 2.6B are COMPLETE; Phase 3 Audio Analyzer V0 and Phase 4 Matcher V0 are COMPLETE within their accepted scopes. Phase 5 Gates 0–4 are owner-accepted within their bounded scopes. Gate 4 is accepted at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`. Gate 5 is **OWNER-ACCEPTED** at `d2ffc51`. Gate 6 remains unauthorized and unstarted at this closure checkpoint. Gate 6 was subsequently owner-authorized; its implementation verification is PASS, its independent owner-review repair verification is PASS, owner acceptance is PENDING, and Gate 7 is NOT AUTHORIZED.
