@@ -1,6 +1,6 @@
-# Current Phase - Phase 5 Gate 6 EditGraph / Capability / Compatibility Projection
+# Current Phase - Phase 5 Gate 7 Batch 1 Execution Authority / Admission / DAG / Render Identity
 
-Last updated: 2026-09-24
+Last updated: 2026-09-25
 
 ## Current ruling
 
@@ -15,6 +15,75 @@ Last updated: 2026-09-24
 - Phase 4 Matcher V0: COMPLETE within its implemented and verified V0 scope. Gates 0–4 are accepted. Gate 4 adds the internal explicit-policy Matcher V0 dispatcher over the accepted technical baseline and evaluation-authorized reference-semantic ranking paths without score fusion, fallback, automatic mode selection, audio consumption or plan-bound `DecisionEvent` output.
 - Phase 5 Edit Planner V0: Gates 0–4 are owner-accepted within their recorded bounded scopes. Gate 3 Budgeted Perception / Model Routing is accepted at `0239d7bfa7b99b95cf0984ccbd35add50e47fb7f`. Gate 4 Canon v0 / Director Boundary is **OWNER-ACCEPTED** at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f` after test-first implementation, adversarial self-review, independent owner review, two reproduced authority defects, bounded repairs, and final post-repair source inspection. No Director model execution or editing-quality verification has occurred. Gate 5 is **OWNER-ACCEPTED** at `d2ffc51` after implementation verification, independent source review, test-first owner repairs, final source-authority review, 97/97 focused Gate-5 tests, 377/377 compatibility tests, 546/546 full safe tests, workspace audit PASS, and 24/24 protected paths unchanged. Verification remains synthetic/offline and establishes no professional-editing-quality, real-footage-generalization, rendering, capability-execution, EditGraph, UEP, or public DecisionEvent claim. Gate 6 is not authorized or started at this closure checkpoint.
 - Phase 5 Gate 6 EditGraph / capability / compatibility projection: owner-authorized from HEAD `49f93e28831965a010459df05f5abf4f393f68e6`. Gate 6 implementation verification: **PASS**. The independent owner review found three defects: capability availability was not semantically attested, execution readiness ignored budget feasibility, and UEP reference joins were overstated. They were repaired test-first. Post-owner-review verification: **PASS**. Gate 6 is **OWNER-ACCEPTED** at `0cb99b6` after final independent source review. Gate 7: **NOT AUTHORIZED at this closure checkpoint**.
+- Phase 5 Gate 7 execution runtime: owner-authorized for **Implementation Batch 1 only** from HEAD `5ff5750af00e91bd6a226daf5841ec4dc3873819`. Batch 1 implementation verification: **PASS**. Gate 7 overall: **NOT YET COMPLETE**. Actual media rendering: **NOT AUTHORIZED IN BATCH 1**. Owner acceptance: **PENDING**. The independent owner review found four Batch-1 defects; they were repaired test-first together with two self-found defects. Batch 1 post-owner-review verification: **PASS**. Batch 1 owner acceptance: **PENDING**. Batch 2 actual media rendering: **NOT AUTHORIZED**. A final owner hardening pass repaired four further confirmed findings and one self-found defect. Batch 1 final hardening verification: **PASS**. Batch 1 owner acceptance: **PENDING**.
+
+## Phase 5 Gate 7 Batch 1 - Execution authority / admission / DAG / render identity
+
+Authority: [Gate-7 Batch-1 implementation and verification record](phases/phase-5-gate-7-execution-runtime.md), governed by the accepted [Creative Intelligence Architecture v1](phases/phase-5-gate-0-creative-intelligence-architecture-v1.md) and Gates 1–6. The new internal `packages/edit-execution/` module is a separate EditGraph execution path; the legacy `Renderer.render(UniversalEditPlan)`, `RenderResult`, `QCResult` and `JobState` seams are untouched and never used as authority. It adds:
+
+- an owner `ExecutionPolicy` and render profiles;
+- explicit `ExecutionMediaGrant`s (analysis or evaluation authorization never renders; preview-only never authorizes final);
+- per-source `SourceAccessReceipt`s rechecked for exact full-byte hash and size, the current MediaAsset identity and lifecycle, freshness and chronology;
+- a fresh single-executor capability recheck through the unmodified Gate-6 attestation machinery;
+- a separate execution budget and a Gate-3 reservation replayed exactly, never the Gate-5 planning budget;
+- exact derived render work plus an attributed estimate;
+- exact frame-grid conformance for both intents;
+- an explicit `ExecutionGrant` and a single fail-closed `ExecutionAdmission`;
+- a provider-neutral `ExecutionDag` with Merkle computation identities and a render computation identity that never collides between preview and final.
+
+No plan, DecisionEvent, confidence, RenderResult or QCResult is produced, and no media, renderer, provider, model, subprocess or network operation runs. The first red and one self-review red receipt are preserved under `.local-runs/phase5-gate7/`. The self-review defect was evidence that postdated the grant binding it, repaired test-first. Verification:
+
+- typecheck and build PASS;
+- 51/51 focused Gate-7, 79/79 Gate-6 regression and 97/97 Gate-5 regression tests PASS;
+- 33/33 routing, 377/377 compatibility, 39/39 legacy-seam and 676/676 full safe tests PASS;
+- workspace audit PASS.
+
+All evidence is synthetic. Work remains uncommitted.
+
+Gate 7 Batch 1 implementation verification: **PASS**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Actual media rendering: **NOT AUTHORIZED IN BATCH 1**
+
+Owner acceptance: **PENDING**
+
+Independent owner-review repair (2026-09-24 to 2026-09-25), recorded as an addendum to the Gate-7 report:
+
+- **Encoding attestation.** A strict, attributed `ExecutionRuntimeAttestation` now proves the exact executor build, environment, runtime build and requested encoding. It is bound by the grant, checked for freshness, and its runtime identity binds every computation identity.
+- **Trim authority.** DAG source nodes carry the exact Gate-6 trim authority and a scope-free frame-time table identity, both bound into the source computation identity. Computation identities carry no project, creator or analysis identity and are never access authorization.
+- **Dispatch boundary.** Admission and DAG are eligibility only: `dispatch` stays `not_claimed` / `atomic_runtime_claim_required`, and the DAG names the claim key. The report specifies the Batch-2 atomic-claim invariant and one safe dispatch sequence.
+- **Operations.** Competing cuts on one join are refused (CONFIRMED). Every operation is represented exactly in the DAG, or compilation refuses.
+- **Self-found defects.** Two further defects were repaired: runtime evidence older than the graph's capability observation, and version labels able to carry a path, command or URL.
+- **Evidence.** Six red receipts are preserved under `.local-runs/phase5-gate7/`. A test-only two-source chain covers multi-asset admission and DAG identity locality.
+- **Verification.** Typecheck/build PASS. 72/72 focused, 79/79 Gate-6, 97/97 Gate-5, 33/33 routing, 377/377 compatibility, 39/39 legacy-seam and 697/697 full safe tests PASS. Workspace audit PASS. All protected and owner files are unchanged. All evidence is synthetic. Work remains uncommitted.
+
+Gate 7 Batch 1 post-owner-review verification: **PASS**
+
+Gate 7 Batch 1 owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Batch 2 actual media rendering: **NOT AUTHORIZED**
+
+Final owner hardening (2026-09-25), recorded as a further addendum to the Gate-7 report:
+
+- **Estimate.** The work estimate now binds the exact runtime identity and execution environment; a mismatch is `work_estimate_mismatch`.
+- **Executor identity.** Gate-7 executor identities are execution-safe without modifying Gate 6. A selected executor whose Gate-6 version is a path, command or URL refuses with `executor_not_execution_safe`.
+- **Claim target.** The atomic claim target is the reservation attempt only. `claimTargetId` derives from the reservation's Gate-3 content identity, the operation and the attempt, and excludes the render computation, which is a separate `renderBinding`.
+- **Environment.** Node computation identities bind the execution environment.
+- **Self-found defect.** The claim target first keyed a storage-named reservation reference; it was repaired test-first.
+- **Batch-2 responsibilities.** Source TOCTOU (verified bytes must be the bytes consumed) and measured execution accounting are documented as Batch-2 responsibilities.
+- **Evidence.** Five red receipts are preserved under `.local-runs/phase5-gate7/`.
+- **Verification.** Typecheck/build PASS. 81/81 focused, 79/79 Gate-6, 97/97 Gate-5, 33/33 routing, 377/377 compatibility, 39/39 legacy-seam and 706/706 full safe tests PASS. Workspace audit PASS. All protected and owner files are unchanged. All evidence is synthetic. Work remains uncommitted.
+
+Gate 7 Batch 1 final hardening verification: **PASS**
+
+Gate 7 Batch 1 owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Batch 2 actual media rendering: **NOT AUTHORIZED**
 
 ## Phase 5 Gate 6 - EditGraph / capability / compatibility projection
 
@@ -301,4 +370,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED; Phase 2.6A and 2.6B are COMPLETE; Phase 3 Audio Analyzer V0 and Phase 4 Matcher V0 are COMPLETE within their accepted scopes. Phase 5 Gates 0–4 are owner-accepted within their bounded scopes. Gate 4 is accepted at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`. Gate 5 is **OWNER-ACCEPTED** at `d2ffc51`. Gate 6 remains unauthorized and unstarted at this closure checkpoint. Gate 6 was subsequently owner-authorized; its implementation verification is PASS, its independent owner-review repair verification is PASS, and it is **OWNER-ACCEPTED** at `0cb99b6`. Gate 7 was NOT AUTHORIZED at the Gate-6 closure checkpoint.
+Phase 2 remains CLOSED; Phase 2.6A and 2.6B are COMPLETE; Phase 3 Audio Analyzer V0 and Phase 4 Matcher V0 are COMPLETE within their accepted scopes. Phase 5 Gates 0–4 are owner-accepted within their bounded scopes. Gate 4 is accepted at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`. Gate 5 is **OWNER-ACCEPTED** at `d2ffc51`. Gate 6 remains unauthorized and unstarted at this closure checkpoint. Gate 6 was subsequently owner-authorized; its implementation verification is PASS, its independent owner-review repair verification is PASS, and it is **OWNER-ACCEPTED** at `0cb99b6`. Gate 7 was NOT AUTHORIZED at the Gate-6 closure checkpoint. Gate 7 was subsequently owner-authorized for Implementation Batch 1 only: Batch 1 implementation verification is PASS, Gate 7 overall is NOT YET COMPLETE, actual media rendering is NOT AUTHORIZED IN BATCH 1, and owner acceptance is PENDING. No later Gate-7 batch is authorized or started. After the independent owner review, Batch 1 post-owner-review verification is PASS, Batch 1 owner acceptance is PENDING, Gate 7 overall is NOT YET COMPLETE, and Batch 2 actual media rendering is NOT AUTHORIZED. After the final owner hardening, Batch 1 final hardening verification is PASS; owner acceptance, Gate 7 overall and Batch 2 remain PENDING, NOT YET COMPLETE and NOT AUTHORIZED.
