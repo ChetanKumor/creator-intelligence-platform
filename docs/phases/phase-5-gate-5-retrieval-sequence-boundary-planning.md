@@ -321,3 +321,45 @@ PHASE 5 GATE 5 FINAL OWNER-REPAIR VERIFICATION: PASS
 OWNER ACCEPTANCE: PENDING
 
 GATE 6: NOT AUTHORIZED
+
+## Independent owner acceptance closure — 2026-09-24
+
+Gate 5 received independent owner acceptance after implementation review and three bounded
+owner-review repair rounds. The accepted implementation commit is
+`d2ffc51` (`feat(planning): add grounded sequence search`).
+
+Final accepted verification:
+
+- Gate-5 focused tests: **97/97 PASS**
+- compatibility set: **377/377 PASS**
+- full safe suite: **546/546 PASS**
+- workspace audit: **PASS**
+- protected paths: **24/24 unchanged**
+- `git diff --check`: **PASS**
+
+The accepted responsibility boundary is:
+
+- Gate-5 source/editorial authority: `narrative_objective`, `story_beat`,
+  `emotional_progression`, `sequence_intention`, `shot_role_intention`,
+  `pacing_target`, and `reaction_relationship`.
+- Later-gate operation authority: `transition_intention`,
+  `sound_design_intention`, `graphics_intention`, `color_intention`,
+  `technique_intention`, and operational `music_relationship`.
+
+Hard missing source authority remains explicit missing evidence and prevents a winner where
+required. Soft missing source authority remains explicit unresolved evidence. Only genuine
+later-gate operation intentions may remain deferred.
+
+This acceptance is bounded. Gate 5 does **not** establish professional editing quality,
+real-footage generalization, real-model execution, rendered-edit quality, EditGraph,
+TechniqueGraph, CapabilityGraph, UEP projection, executor support, calibrated confidence,
+public `DecisionEvent` export, or global optimality.
+
+PHASE 5 GATE 5:
+**OWNER-ACCEPTED**
+
+ACCEPTED IMPLEMENTATION:
+`d2ffc51`
+
+GATE 6:
+**NOT AUTHORIZED / NOT STARTED at this closure checkpoint**
