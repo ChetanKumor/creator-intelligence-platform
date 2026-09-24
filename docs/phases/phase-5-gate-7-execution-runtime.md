@@ -841,8 +841,76 @@ Each statement below is superseded as described; the original text stays as a hi
 
 PHASE 5 GATE 7 BATCH 1 FINAL HARDENING VERIFICATION: PASS
 
-GATE 7 BATCH 1 OWNER ACCEPTANCE: PENDING
+GATE 7 BATCH 1 OWNER ACCEPTANCE: OWNER-ACCEPTED at `d55f0e1`
 
 GATE 7 OVERALL: NOT YET COMPLETE
 
-BATCH 2 ACTUAL MEDIA RENDERING: NOT AUTHORIZED
+BATCH 2 ACTUAL MEDIA RENDERING: NOT AUTHORIZED at this closure checkpoint
+
+## Independent owner acceptance closure — 2026-09-25
+
+Gate 7 Batch 1 is **OWNER-ACCEPTED** at implementation commit `d55f0e1` after independent final source review.
+
+The accepted Batch-1 boundary establishes a fail-closed internal EditGraph execution foundation:
+
+- explicit render-media authorization distinct from analysis/evaluation authorization;
+- fresh full-byte source identity and lifecycle receipts;
+- fresh single-executor capability evidence;
+- exact runtime/encoding attestation;
+- execution-safe Gate-7 executor identity without changing the frozen Gate-6 contract;
+- a separate execution budget and replay-valid Gate-3 reservation;
+- work estimates bound to the exact executor, runtime and environment;
+- exact output frame-grid conformance;
+- provider-neutral typed execution DAG construction;
+- preserved source trim/timebase authority;
+- deterministic per-node and overall render computation identities;
+- execution-environment-bound computation identities;
+- exact operation accounting, with ambiguous competing operations refused rather than dropped;
+- an atomic claim target derived from the Gate-3 reservation content identity, operation and attempt, with `renderComputationId` kept as a separate binding;
+- explicit `not_claimed / atomic_runtime_claim_required` dispatch state.
+
+Final accepted verification evidence:
+
+- typecheck: PASS
+- build: PASS
+- Gate-7 focused: 81/81 PASS
+- Gate-6 regression: 79/79 PASS
+- Gate-5 regression: 97/97 PASS
+- routing/budget regression: 33/33 PASS
+- accepted compatibility set: 377/377 PASS
+- legacy seams: 39/39 PASS
+- full safe suite: 706/706 PASS
+- workspace audit: PASS
+- protected-byte comparison: PASS
+- git diff --check: PASS
+
+This acceptance remains synthetic/offline. It does **not** establish:
+
+- actual FFmpeg/media execution;
+- render correctness on real footage;
+- professional editing quality;
+- media QC correctness;
+- critic or automatic-repair quality;
+- measured runtime/cost/latency;
+- production concurrency correctness.
+
+Batch 2 must still establish, before any media subprocess may dispatch:
+
+1. one durable authoritative reservation/claim ledger;
+2. atomic exclusivity on the exact attempt claim target;
+3. protection against forked reservation histories;
+4. immediate claim-bound authority/capability/runtime rechecks;
+5. source TOCTOU protection so the verified bytes are exactly the bytes consumed;
+6. measured execution and reservation-consumption accounting.
+
+GATE 7 BATCH 1:
+OWNER-ACCEPTED
+
+ACCEPTED IMPLEMENTATION:
+d55f0e1
+
+GATE 7 OVERALL:
+NOT YET COMPLETE
+
+BATCH 2:
+NOT AUTHORIZED AT THIS CLOSURE CHECKPOINT
