@@ -6,7 +6,7 @@ Gate 7 Batch 1: **OWNER-ACCEPTED** at `d55f0e1` (frozen; [Batch-1 report](phase-
 
 Gate 7 Batch 2A implementation verification: **PASS**
 
-Gate 7 Batch 2A owner acceptance: **PENDING**
+Gate 7 Batch 2A owner acceptance: **OWNER-ACCEPTED** at implementation commit `291a04e`
 
 Actual FFmpeg execution: **NOT AUTHORIZED IN BATCH 2A**
 
@@ -921,7 +921,6 @@ Each statement below, in the sections above, is superseded as described. The ori
   - measured accounting;
   - an execution receipt;
   - independent QC of the actual media;
-  - owner acceptance of Batch 2A.
 
 PHASE 5 GATE 7 BATCH 2A OWNER-REPAIR VERIFICATION: PASS
 
@@ -930,3 +929,85 @@ GATE 7 BATCH 2A OWNER ACCEPTANCE: PENDING
 ACTUAL FFMPEG EXECUTION: NOT AUTHORIZED
 
 GATE 7 OVERALL: NOT YET COMPLETE
+
+## Owner acceptance closure — 2026-09-25
+
+Gate 7 Batch 2A is **OWNER-ACCEPTED** at implementation commit `291a04e` after independent post-repair source review.
+
+The accepted Batch-2A boundary includes:
+
+- durable logical-attempt registration;
+- forked-reservation protection;
+- non-idempotent atomic execution-claim acquisition;
+- local single-authority-root semantics;
+- real-byte SHA-256 source identity;
+- verified content-addressed staging;
+- no-overwrite final-object publication;
+- post-claim execution and media-grant checks;
+- post-stage lifecycle observations;
+- bounded causal runtime chronology;
+- bounded evidence freshness;
+- strict future-capable evidence provenance;
+- synthetic-only Batch-2A evidence authority;
+- bounded runtime artifact universes;
+- replay-valid, short-lived DispatchPreparation.
+
+Independent owner review originally found four production defects:
+
+1. DispatchPreparation could outlive evidence freshness;
+2. causal runtime chronology was incomplete;
+3. the future real-probe contract was synthetic-only and provider timing was not truthfully bounded;
+4. the supplied artifact universe was unbounded.
+
+All four were reproduced test-first on the unrepaired bytes and repaired.
+
+Two evidence/documentation issues were also corrected:
+
+- local filesystem exclusivity is scoped to workers sharing one authoritative runtime ledger root;
+- one pre-work Git fetch contacted origin solely for baseline synchronization; Batch-2A runtime/tests themselves performed no network I/O.
+
+Final accepted verification:
+
+- typecheck: PASS;
+- build: PASS;
+- focused Batch-2A: 130/130 PASS;
+- Gate-7 Batch-1 regression: 81/81 PASS;
+- Gate-6 regression: 79/79 PASS;
+- Gate-5 regression: 97/97 PASS;
+- routing/budget regression: 33/33 PASS;
+- compatibility: 377/377 PASS;
+- legacy seams: 39/39 PASS;
+- full safe suite: 836/836 PASS;
+- workspace audit: PASS;
+- protected accepted bytes: unchanged;
+- git diff --check: PASS.
+
+This acceptance does **not** authorize:
+
+- Gate 7 Batch 2B;
+- FFmpeg or ffprobe;
+- any media subprocess;
+- real lifecycle/capability/runtime probes;
+- measured render accounting;
+- immutable execution success/failure receipts;
+- actual-media QC;
+- critic or automatic repair.
+
+Before any child-process-capable renderer adapter is accepted, Batch 2B must separately resolve and verify the renderer-adapter workspace-audit policy.
+
+Historical `PENDING` statements earlier in this report are preserved as chronology and are superseded by this closure.
+
+PHASE 5 GATE 7 BATCH 2A:
+OWNER-ACCEPTED
+
+ACCEPTED IMPLEMENTATION:
+291a04e
+
+ACTUAL FFMPEG EXECUTION:
+NOT AUTHORIZED AT THIS CLOSURE CHECKPOINT
+
+GATE 7 OVERALL:
+NOT YET COMPLETE
+
+BATCH 2B:
+NOT AUTHORIZED AT THIS CLOSURE CHECKPOINT
