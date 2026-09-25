@@ -1,4 +1,4 @@
-# Current Phase - Phase 5 Gate 7 Batch 1 Execution Authority / Admission / DAG / Render Identity
+# Current Phase - Phase 5 Gate 7 Batch 2A Runtime Authority / Atomic Claim / Verified Source Staging
 
 Last updated: 2026-09-25
 
@@ -16,6 +16,60 @@ Last updated: 2026-09-25
 - Phase 5 Edit Planner V0: Gates 0–4 are owner-accepted within their recorded bounded scopes. Gate 3 Budgeted Perception / Model Routing is accepted at `0239d7bfa7b99b95cf0984ccbd35add50e47fb7f`. Gate 4 Canon v0 / Director Boundary is **OWNER-ACCEPTED** at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f` after test-first implementation, adversarial self-review, independent owner review, two reproduced authority defects, bounded repairs, and final post-repair source inspection. No Director model execution or editing-quality verification has occurred. Gate 5 is **OWNER-ACCEPTED** at `d2ffc51` after implementation verification, independent source review, test-first owner repairs, final source-authority review, 97/97 focused Gate-5 tests, 377/377 compatibility tests, 546/546 full safe tests, workspace audit PASS, and 24/24 protected paths unchanged. Verification remains synthetic/offline and establishes no professional-editing-quality, real-footage-generalization, rendering, capability-execution, EditGraph, UEP, or public DecisionEvent claim. Gate 6 is not authorized or started at this closure checkpoint.
 - Phase 5 Gate 6 EditGraph / capability / compatibility projection: owner-authorized from HEAD `49f93e28831965a010459df05f5abf4f393f68e6`. Gate 6 implementation verification: **PASS**. The independent owner review found three defects: capability availability was not semantically attested, execution readiness ignored budget feasibility, and UEP reference joins were overstated. They were repaired test-first. Post-owner-review verification: **PASS**. Gate 6 is **OWNER-ACCEPTED** at `0cb99b6` after final independent source review. Gate 7: **NOT AUTHORIZED at this closure checkpoint**.
 - Phase 5 Gate 7 execution runtime: owner-authorized from HEAD `5ff5750af00e91bd6a226daf5841ec4dc3873819`. Batch 1 implementation verification, independent owner-review repair, and final hardening verification are **PASS**. Gate 7 Batch 1 is **OWNER-ACCEPTED** at `d55f0e1` after final independent source review. Gate 7 overall remains **NOT YET COMPLETE**. Batch 2 actual media rendering is **NOT AUTHORIZED at this closure checkpoint**. All Batch-1 evidence is synthetic/offline; no actual media rendering, FFmpeg execution, media QC, critic or repair execution has occurred.
+- Phase 5 Gate 7 Batch 2A (runtime-safety foundation only): owner-authorized from HEAD `ae432248cd30e8465cd652f49b1e35f441af2e58`. Batch 2A implementation verification: **PASS**. Owner-review repair verification: **PASS**. Batch 2A owner acceptance: **PENDING**. Actual FFmpeg execution: **NOT AUTHORIZED**. Gate 7 overall: **NOT YET COMPLETE**. Batch 2B is not authorized or started. All Batch-2A evidence is synthetic providers over opaque test bytes; no media, FFmpeg, Python, model or real-footage operation ran. One pre-work `git fetch` contacted the Git remote solely to verify the frozen baseline; Batch-2A runtime code and tests performed no network I/O and ran under `scripts/no-network.mjs`.
+
+## Phase 5 Gate 7 Batch 2A - Durable runtime authority / atomic claim / verified source staging / dispatch recheck foundation
+
+Authority: [Gate-7 Batch-2A implementation and verification record](phases/phase-5-gate-7-batch-2-render-runtime.md). It is governed by the accepted [Batch-1 record](phases/phase-5-gate-7-execution-runtime.md), which is frozen and unchanged, and by the owner's explicit Batch-2A-only authorization. Batch 2A is the mandatory runtime-safety checkpoint before any media process may start, and it starts none.
+
+The workspace audit keeps `packages/` free of filesystem and clock access. The runtime therefore splits into a pure core, `packages/edit-runtime/` (records, rules and algorithms over narrow ports), and the local adapter `scripts/edit-runtime-local.ts` (system UTC clock, entropy, ledger, staging store and source locator). The adapter imports no `child_process` and launches nothing. The batch adds:
+
+- a durable logical-attempt registry. An attempt slot is unique by project, creator, operation and attempt; purpose, budget, allocation, history and storage labels never mint another. Forked, individually replay-valid reservation histories cannot win a second slot, and an occupied slot that is corrupt stays consumed;
+- an atomic execution claim on the unchanged Batch-1 `claimTargetId`. It is acquired by a synced record published through a no-overwrite hard link. Exactly one caller acquires and receives in-memory ownership; there is no release, timeout or steal;
+- verified content-addressed staging. Bytes are copied and hashed from one opened source handle, published without overwrite under a `stagedObjectId` of content identity only, and fully re-verified. The original source path never re-enters;
+- claim-bound runtime-now rechecks of the ExecutionGrant and media grants, a post-stage `SourceLifecycleObservation`, and post-claim capability and runtime recheck seams that are synthetic and test-only, and say so;
+- a short-lived `DispatchPreparation` (`preparedAt ≤ now < validUntil`, clamped to every authority window) with deterministic replay and `mediaExecution: not_started`.
+
+The first red, the test-only corrections and one self-review red receipt (a namespace-foreign ID addressed runtime state; repaired test-first) are preserved under `.local-runs/phase5-gate7/`. Verification:
+
+- typecheck and build PASS;
+- 116/116 focused Batch-2A, 81/81 Gate-7 Batch-1, 79/79 Gate-6, 97/97 Gate-5 and 33/33 routing tests PASS;
+- 377/377 compatibility, 39/39 legacy-seam and 822/822 full safe tests PASS;
+- workspace audit PASS;
+- all protected and owner files unchanged; `git diff --check` PASS.
+
+All evidence is synthetic, over opaque test bytes. No FFmpeg, ffprobe, media, Python, model, real-footage or network operation ran, and no public contract, render result, QC result, decision event or confidence was emitted. Work remains uncommitted.
+
+Gate 7 Batch 2A implementation verification: **PASS**
+
+Gate 7 Batch 2A owner acceptance: **PENDING**
+
+Actual FFmpeg execution: **NOT AUTHORIZED IN BATCH 2A**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Independent owner-review repair (2026-09-25), recorded as an addendum to the Batch-2A report. The owner review, `gate7-batch2a-owner-review.txt`, is preserved unedited. Four code findings were reproduced test-first against the unrepaired bytes: 11 regressions, each with its sub-cases confirmed separately, and four red receipts under `.local-runs/phase5-gate7/`. Each was repaired:
+
+- **Freshness (critical).** A preparation could outlive the rechecks it rested on. Freshness is now one exclusive window, `observedAt <= now < observedAt + maxAge`. `validUntil` is also bounded by every lifecycle, capability and runtime freshness expiry, and each binding records its `freshUntil`.
+- **Causal time.** A claim now requires `claimedAt >= registeredAt`. Staging checks its start against the claim before any source work, and requires completion at or after its start (`stagingStartedAt` is recorded). A clock rewound during any provider call refuses.
+- **Future real-probe contract.** Strict typed provenance can now represent a future real lifecycle observation and real local probes, with exact implementation identity, and a typed preparation grade consistent with every binding. Batch 2A still produces and accepts only synthetic provenance: real-looking provenance refuses as `evidence_provenance_unsupported`, and no executable permit exists.
+- **Observation timing.** Each check records `checkStartedAt`, `observedAt`, `checkCompletedAt` and `observedAtBasis`.
+- **Artifact bound.** `MAX_RUNTIME_ARTIFACTS = 512`, from measured universes of 82–104 artifacts and about 240 extrapolated for 16 sources, is enforced before any artifact map and at every claim-bound call.
+
+Two documentation findings were corrected:
+
+- **Authority domain.** Claim exclusivity holds only among workers sharing one authoritative runtime ledger root. Two roots are two authority domains, and a distributed deployment needs one strongly consistent shared ledger.
+- **Network wording.** The sentence above, "No FFmpeg, ffprobe, media, Python, model, real-footage or network operation ran", is superseded. One pre-work `git fetch` contacted the Git remote solely to verify the frozen baseline. Batch-2A runtime code and tests performed no network I/O and ran under `scripts/no-network.mjs`, and no provider contacted an external service. No fetch ran during the repair.
+
+The workspace audit still does not enumerate the new adapter; the owner must decide its registration before any `child_process`-capable renderer adapter is accepted in Batch 2B. Verification: typecheck and build PASS; 130/130 focused Batch-2A, 81/81 Gate-7 Batch-1, 79/79 Gate-6, 97/97 Gate-5, 33/33 routing, 377/377 compatibility, 39/39 legacy-seam and 836/836 full safe tests PASS; workspace audit PASS; all protected and owner files unchanged; `git diff --check` PASS. Work remains uncommitted.
+
+Gate 7 Batch 2A owner-review repair verification: **PASS**
+
+Gate 7 Batch 2A owner acceptance: **PENDING**
+
+Actual FFmpeg execution: **NOT AUTHORIZED**
+
+Gate 7 overall: **NOT YET COMPLETE**
 
 ## Phase 5 Gate 7 Batch 1 - Execution authority / admission / DAG / render identity
 
@@ -370,4 +424,4 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED; Phase 2.6A and 2.6B are COMPLETE; Phase 3 Audio Analyzer V0 and Phase 4 Matcher V0 are COMPLETE within their accepted scopes. Phase 5 Gates 0–4 are owner-accepted within their bounded scopes. Gate 4 is accepted at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`. Gate 5 is **OWNER-ACCEPTED** at `d2ffc51`. Gate 6 remains unauthorized and unstarted at this closure checkpoint. Gate 6 was subsequently owner-authorized; its implementation verification is PASS, its independent owner-review repair verification is PASS, and it is **OWNER-ACCEPTED** at `0cb99b6`. Gate 7 was NOT AUTHORIZED at the Gate-6 closure checkpoint. Gate 7 was subsequently owner-authorized for Implementation Batch 1 only: Batch 1 implementation verification is PASS, Gate 7 overall is NOT YET COMPLETE, actual media rendering is NOT AUTHORIZED IN BATCH 1, and owner acceptance is PENDING. No later Gate-7 batch is authorized or started. After the independent owner review, Batch 1 post-owner-review verification is PASS, Batch 1 owner acceptance is PENDING, Gate 7 overall is NOT YET COMPLETE, and Batch 2 actual media rendering is NOT AUTHORIZED. After the final owner hardening and independent source review, Gate 7 Batch 1 is OWNER-ACCEPTED at `d55f0e1`; Gate 7 overall remains NOT YET COMPLETE and Batch 2 remains NOT AUTHORIZED at this closure checkpoint.
+Phase 2 remains CLOSED; Phase 2.6A and 2.6B are COMPLETE; Phase 3 Audio Analyzer V0 and Phase 4 Matcher V0 are COMPLETE within their accepted scopes. Phase 5 Gates 0–4 are owner-accepted within their bounded scopes. Gate 4 is accepted at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`. Gate 5 is **OWNER-ACCEPTED** at `d2ffc51`. Gate 6 remains unauthorized and unstarted at this closure checkpoint. Gate 6 was subsequently owner-authorized; its implementation verification is PASS, its independent owner-review repair verification is PASS, and it is **OWNER-ACCEPTED** at `0cb99b6`. Gate 7 was NOT AUTHORIZED at the Gate-6 closure checkpoint. Gate 7 was subsequently owner-authorized for Implementation Batch 1 only: Batch 1 implementation verification is PASS, Gate 7 overall is NOT YET COMPLETE, actual media rendering is NOT AUTHORIZED IN BATCH 1, and owner acceptance is PENDING. No later Gate-7 batch is authorized or started. After the independent owner review, Batch 1 post-owner-review verification is PASS, Batch 1 owner acceptance is PENDING, Gate 7 overall is NOT YET COMPLETE, and Batch 2 actual media rendering is NOT AUTHORIZED. After the final owner hardening and independent source review, Gate 7 Batch 1 is OWNER-ACCEPTED at `d55f0e1`; Gate 7 overall remains NOT YET COMPLETE and Batch 2 remains NOT AUTHORIZED at this closure checkpoint. The owner subsequently authorized Gate 7 Batch 2A only: its implementation verification is PASS, its owner acceptance is PENDING, actual FFmpeg execution is NOT AUTHORIZED IN BATCH 2A, Gate 7 overall remains NOT YET COMPLETE, and Batch 2B is not authorized or started. After the independent owner review of Batch 2A, the owner-review repair verification is PASS; Batch 2A owner acceptance remains PENDING, actual FFmpeg execution is NOT AUTHORIZED, Gate 7 overall is NOT YET COMPLETE, and Batch 2B is not authorized or started.
