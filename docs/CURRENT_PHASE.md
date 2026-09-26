@@ -1,6 +1,6 @@
-# Current Phase - Phase 5 Gate 7 Batch 2A Runtime Authority / Atomic Claim / Verified Source Staging
+# Current Phase - Phase 5 Gate 7 Batch 2B First Truthful Actual Media Execution (synthetic media)
 
-Last updated: 2026-09-25
+Last updated: 2026-09-27
 
 ## Current ruling
 
@@ -17,6 +17,192 @@ Last updated: 2026-09-25
 - Phase 5 Gate 6 EditGraph / capability / compatibility projection: owner-authorized from HEAD `49f93e28831965a010459df05f5abf4f393f68e6`. Gate 6 implementation verification: **PASS**. The independent owner review found three defects: capability availability was not semantically attested, execution readiness ignored budget feasibility, and UEP reference joins were overstated. They were repaired test-first. Post-owner-review verification: **PASS**. Gate 6 is **OWNER-ACCEPTED** at `0cb99b6` after final independent source review. Gate 7: **NOT AUTHORIZED at this closure checkpoint**.
 - Phase 5 Gate 7 execution runtime: owner-authorized from HEAD `5ff5750af00e91bd6a226daf5841ec4dc3873819`. Batch 1 implementation verification, independent owner-review repair, and final hardening verification are **PASS**. Gate 7 Batch 1 is **OWNER-ACCEPTED** at `d55f0e1` after final independent source review. Gate 7 overall remains **NOT YET COMPLETE**. Batch 2 actual media rendering is **NOT AUTHORIZED at this closure checkpoint**. All Batch-1 evidence is synthetic/offline; no actual media rendering, FFmpeg execution, media QC, critic or repair execution has occurred.
 - Phase 5 Gate 7 Batch 2A (runtime-safety foundation only): owner-authorized from HEAD `ae432248cd30e8465cd652f49b1e35f441af2e58`. Batch 2A implementation verification: **PASS**. Owner-review repair verification: **PASS**. Batch 2A owner acceptance: **OWNER-ACCEPTED** at `291a04e`. Actual FFmpeg execution: **NOT AUTHORIZED**. Gate 7 overall: **NOT YET COMPLETE**. Batch 2B is not authorized or started. All Batch-2A evidence is synthetic providers over opaque test bytes; no media, FFmpeg, Python, model or real-footage operation ran. One pre-work `git fetch` contacted the Git remote solely to verify the frozen baseline; Batch-2A runtime code and tests performed no network I/O and ran under `scripts/no-network.mjs`.
+- Phase 5 Gate 7 Batch 2B (first truthful actual media execution through the EditGraph execution architecture; synthetic media only): owner-authorized from HEAD `d3c8302b40a5064ae0eb4408195dc35346ecc648`. Batch 2B implementation verification: **PASS** after the owner's accounting ruling (historically **FAIL**, deliberately fail-closed on one unmet frozen closure contract, Batch-2B requirement 10, measured runtime resource, cost and time accounting, while accounting was **PARTIAL**). Actual pinned-FFmpeg synthetic media execution: **PASS**. Independent technical media QC: **PASS**. Reservation-consumption accounting: **PASS** under the owner's local-execution ruling, scoped to the one pinned local executor: FFmpeg-reported CPU time and peak commit are accepted as attributed evidence, and total monetary cost is not applicable to local non-metered execution, which is not a zero cost (historically **PARTIAL**). Production user-media lifecycle authority: **NOT VERIFIED**. Real user footage: **NOT RUN**. Semantic editing quality: **NOT VERIFIED**. OWNER ACCEPTANCE: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**. Work remains uncommitted. Independent owner-review repair (three findings, test-first): trust-handle repair **PASS**, QC-liveness repair **PASS**, terminal-evidence repair **PASS**; implementation verification then remained **FAIL** while accounting was **PARTIAL**. Owner-review repair #2 (three further findings, test-first): policy-snapshot repair **PASS**, probe-completion repair **PASS**, exact-artifact-QC repair **PASS**; implementation verification then remained **FAIL** while accounting was **PARTIAL**. Owner-review repair #3 (three code findings, test-first, and one documentation finding): private-runtime-context repair **PASS**, QC-clock-binding repair **PASS**, process-termination-truth repair **PASS**, final-evidence-doc repair **PASS**; implementation verification then remained **FAIL** while accounting was **PARTIAL**. Owner accounting closure (2026-09-27, test-first, under the owner's ruling): accounting **PASS**, implementation verification **PASS**.
+
+## Phase 5 Gate 7 Batch 2B - First truthful actual media execution (synthetic media only)
+
+Authority: [Gate-7 Batch-2B implementation and verification record](phases/phase-5-gate-7-batch-2b-render-execution.md). It is governed by the accepted Batch-1 and Batch-2A records, which are frozen and unchanged, and by the owner's explicit Batch-2B-only authorization.
+
+Current status (2026-09-27): reservation-consumption accounting is **PASS**, Batch 2B implementation verification is **PASS**, and after final independent owner source review Gate 7 Batch 2B is **OWNER-ACCEPTED**. Gate 7 overall remains **NOT YET COMPLETE**. The paragraphs and status lines below record the original closure and the three owner-review repairs in order. Their **FAIL** and **PARTIAL** were true when recorded, and the accounting-closure block at the end of this section supersedes them.
+
+The batch adds a new pure package, `packages/edit-render/`, and three audited adapters:
+
+- `scripts/edit-render-local.ts`, the trusted real-execution boundary. It probes the exact pinned FFmpeg 9.0.1 build and its capabilities after the claim, checks staged-input conformance over verified handles, issues the ephemeral, non-serializable `ExecutablePermit`, executes and publishes immutable content-addressed output.
+- `scripts/edit-media-qc-local.ts`, the structurally separate technical QC.
+- `scripts/edit-render-fixture-authority-local.ts`, the synthetic-fixture lifecycle authority.
+
+Execution runs typed DAG → RenderProgram → allowlisted argv → `spawn(pinnedBinary, argv, { shell: false })` over inherited, verified staged handles and `fd`-only protocols. It produces success or failure receipts and independent technical-QC receipts. The workspace audit now enforces per-file subprocess capabilities. Nothing is written into the EditGraph, and no Batch-2A semantics changed: a synthetic DispatchPreparation still never authorizes FFmpeg.
+
+The first red, the implementation reds and six hostile self-review defects are preserved under `.local-runs/phase5-gate7/` (`batch2b-*`). Each defect has red, repair and green receipts:
+
+- the lifecycle authority was not re-queried at execution;
+- a swapped pending output could be linked under its content hash;
+- a declared aspect could stretch the picture;
+- segment identities did not bind the executor;
+- a staged object reachable through a junction was accepted;
+- accounting bases did not name FFmpeg's Windows quantities.
+
+Verification at the original closure (historical; the final verification follows owner-review repair #3 below):
+
+- typecheck and build PASS;
+- 40/40 pure Batch-2B, 10/10 audit-policy, 130/130 Batch-2A, 81/81 Batch-1, 79/79 Gate-6, 97/97 Gate-5, 33/33 routing, 377/377 compatibility, 39/39 legacy-seam and 883/883 full safe tests PASS;
+- 22/22 actual-media integration tests PASS on the pinned FFmpeg and ffprobe;
+- workspace audit PASS and `git diff --check` PASS;
+- 0/184 protected, 0/13 owner and 0/167 earlier-receipt files changed.
+
+The canonical run renders two synthetic sources with a non-zero trim, a hard cut, a clip-scoped warm look and linked audio to a 180 × 320, 30 fps H.264/AAC MP4 (`e38b21c6…`, 147,717 bytes). QC passes all 14 checks: 120 frames on the exact grid and 192,000 samples. Every frame and every 10 ms audio window is verified against the exact source selection.
+
+Accounting is PARTIAL:
+
+- wall time and output bytes are measured;
+- render work is derived;
+- GPU, VRAM, API spend and model calls are not applicable;
+- CPU time and peak memory are only FFmpeg-reported (win32 process times and PeakPagefileUsage);
+- total cost is unavailable because no owner cost model exists.
+
+Frozen Batch-2B requirement 10 requires measured resource, cost and time accounting, so implementation verification is deliberately **FAIL**. The smallest next owner decision is to rule on FFmpeg-reported CPU and peak-commit evidence, or authorize a trusted OS-level per-process measurement. It must also define a local compute cost model, or rule that total cost is not applicable to local execution.
+
+No network access, dependency change, real footage or model operation occurred. Work remains uncommitted.
+
+Gate 7 Batch 2B implementation verification: **FAIL**
+
+Actual pinned-FFmpeg synthetic media execution: **PASS**
+
+Independent technical media QC: **PASS**
+
+Reservation-consumption accounting: **PARTIAL**
+
+Production user-media lifecycle authority: **NOT VERIFIED**
+
+Real user footage: **NOT RUN**
+
+Semantic editing quality: **NOT VERIFIED**
+
+Gate 7 Batch 2B owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Independent owner-review repair (2026-09-26), recorded as an addendum to the Batch-2B report. The owner's source review found three defects in the final Batch-2B bytes. Each was reproduced test-first against the unrepaired bytes, with red receipts under `.local-runs/phase5-gate7/`, and repaired only in uncommitted Batch-2B files:
+
+- **Trust handles (critical).** The trusted handles exposed their evidence records as mutable references. Through genuine handles, a caller turned genuinely nonconforming bytes into a permit and a successful real render, and bypassed freshness for runtime, capability, lifecycle and conformance evidence. Each handle now keeps a private snapshot and exposes only copies.
+- **QC liveness (high).** QC could wait forever after its timeout, and read tool versions from runs that had not completed. It now settles after a bounded grace, reports unconfirmed termination, and uses only completed runs as evidence.
+- **Terminal evidence (high).** An error after the durable execution start could escape as a raw exception, including after this execution had already published its output. A failure could also deny an output this execution had linked. Post-start errors now end in failure records at the stage they interrupted, and a failure after this execution's own link names that output (`linked_by_this_execution_unverified` / `published_by_this_execution_uncertified`). Where truthful process timing is impossible (the runtime clock running backwards during the process), the adapter raises the owned `execution_evidence_unrecordable` refusal before publication.
+
+Verification after that repair (historical):
+
+- typecheck and build PASS;
+- 42/42 pure Batch-2B, 10/10 audit-policy, 28/28 actual-media, 130/130 Batch-2A, 81/81 Batch-1, 79/79 Gate-6, 97/97 Gate-5, 33/33 routing, 377/377 compatibility, 39/39 legacy-seam and 885/885 full safe tests PASS;
+- workspace audit PASS and `git diff --check` PASS;
+- 0/184 protected, 0/13 owner and 0/167 earlier-receipt files changed.
+
+Accounting was not changed and remains PARTIAL. No network access, dependency change, commit or stage occurred.
+
+Owner-review trust-handle repair: **PASS**
+
+Owner-review QC-liveness repair: **PASS**
+
+Owner-review terminal-evidence repair: **PASS**
+
+Gate 7 Batch 2B implementation verification: **FAIL** (unchanged; accounting **PARTIAL**)
+
+Gate 7 Batch 2B owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Owner-review repair #2 (2026-09-26), recorded as a second addendum to the Batch-2B report. The owner's post-repair source review accepted the three repairs above and found three further defects. Each was reproduced test-first against the unrepaired bytes and repaired only in `scripts/edit-render-local.ts`, `scripts/edit-media-qc-local.ts` and the media tests:
+
+- **Policy snapshot (critical).** A permit kept the caller's policy object. Widening its timeout or output bound after issuance let the render succeed under bounds the binding never authorized. The permit now keeps one private policy snapshot whose `policyId` the binding names, and execution checks that match.
+- **Probe completion (high).** Timed-out, unconfirmed or signaled runs reporting exit 0 were accepted as trusted probe evidence. One strict completion rule now governs every runtime query, listing, version query and conformance probe.
+- **Exact-artifact QC (high).** QC hashed one handle and reopened the pathname for its probes and decode. It now holds four handles proven to be one file object, inspects only through them, and re-hashes after inspection.
+
+The report's "terminates" wording for timed-out children is corrected: the adapter requests termination and reports `process_termination_unconfirmed` when close is not observed, without OS-level proof of death.
+
+Verification after repair #2 (historical):
+
+- typecheck and build PASS;
+- 42/42 pure Batch-2B, 10/10 audit-policy, 31/31 actual-media, 130/130 Batch-2A, 81/81 Batch-1, 79/79 Gate-6, 97/97 Gate-5, 33/33 routing, 377/377 compatibility, 39/39 legacy-seam and 885/885 full safe tests PASS;
+- workspace audit PASS and `git diff --check` PASS;
+- 0/184 protected, 0/13 owner and 0/167 earlier-receipt files changed; manifests and lockfile unchanged.
+
+Accounting remains PARTIAL. No network access, dependency change, commit or stage occurred.
+
+Owner-review policy-snapshot repair: **PASS**
+
+Owner-review probe-completion repair: **PASS**
+
+Owner-review exact-artifact-QC repair: **PASS**
+
+Gate 7 Batch 2B implementation verification: **FAIL** (unchanged; accounting **PARTIAL**)
+
+Gate 7 Batch 2B owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Owner-review repair #3 (2026-09-26), recorded as a third addendum to the Batch-2B report. The owner's second post-repair source review accepted the six repairs above and found three further code defects and one documentation defect. Each code defect was reproduced test-first against the unrepaired bytes and repaired only in `scripts/edit-render-local.ts`, `scripts/edit-media-qc-local.ts` and the media tests:
+
+- **Private runtime context (critical).** The permit kept the caller's `RuntimeCall` container. Putting another runtime into it after issuance let an expired permit execute (a runtime over the same root whose clock read inside the window), and a runtime over a copied root let a second permit execute an already-executed claim again. The permit now holds a private, frozen context read once at issuance (the exact DAG handle, runtime and claim ownership, and a private artifact copy); the caller's container is never retained.
+- **QC clock binding (high).** QC receipts were timed by a caller-supplied clock, including one dated a year before the render it inspected. `clock` is removed from the QC input; QC time comes only from the inspected runtime's clock.
+- **Process termination truth (high).** An error after a child had started was recorded as a spawn failure with termination confirmed. Both supervisors now track the spawn; after it, an error requests termination once and only an observed close confirms it. An unconfirmed render is `process_termination_unconfirmed` and publishes nothing, and QC marks the run incomplete.
+- **Final evidence documentation.** The report's §3 counts and final source hash table now describe the final bytes, and earlier "final" tables and headings are labelled historical.
+
+Final verification on the final bytes (after owner-review repair #3):
+
+- typecheck and build PASS;
+- 42/42 pure Batch-2B, 10/10 audit-policy, 34/34 actual-media, 130/130 Batch-2A, 81/81 Batch-1, 79/79 Gate-6, 97/97 Gate-5, 33/33 routing, 377/377 compatibility, 39/39 legacy-seam and 885/885 full safe tests PASS;
+- workspace audit PASS and `git diff --check` PASS;
+- 0/184 protected, 0/13 owner and 0/167 earlier-receipt files changed; manifests and lockfile unchanged;
+- the canonical render is still byte-identical (`e38b21c6…`, 147,717 bytes), QC passes and accounting is PARTIAL.
+
+Accounting remains PARTIAL. No network access, dependency change, commit or stage occurred.
+
+Owner-review private-runtime-context repair: **PASS**
+
+Owner-review QC-clock-binding repair: **PASS**
+
+Owner-review process-termination-truth repair: **PASS**
+
+Owner-review final-evidence-doc repair: **PASS**
+
+Gate 7 Batch 2B implementation verification: **FAIL** (unchanged; accounting **PARTIAL**)
+
+Gate 7 Batch 2B owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Owner accounting closure (2026-09-27), recorded as a fourth addendum to the Batch-2B report. The owner ruled on the two decisions the original closure named, for Gate 7 Batch 2B local-development execution only. The accounting was changed test-first in `packages/edit-render/receipts.ts` only; renderer semantics, FFmpeg execution, QC, trust handles and process supervision are unchanged.
+
+- **Attributed evidence, not relabelled.** FFmpeg's own win32 reports of CPU time (process user + kernel time) and peak memory (PeakPagefileUsage, peak private commit, not resident-set RAM) are accepted for exactly `cpuMilliseconds` and `peakRamBytes`. They stay labelled `ffmpeg_reported` with their exact bases, and are never labelled measured.
+- **No invented cost.** Total monetary cost is `not_applicable` to this local, non-metered execution: no billable provider runs and no owner-authorized local cost model exists. The row carries no value; it is not a measured or estimated zero and does not mean local compute is free. GPU, VRAM, API spend and model calls stay `not_applicable`, proven by this executor's semantics (software codecs and filters only, fd-only protocols, no provider, no model).
+- **Scoped to one executor.** The ruling names, by literal identity, the one pinned V0 executor build, the `local_win32_x64` environment and the pinned runtime. Any other executor, environment or runtime inherits none of it (those dimensions are unavailable, so it is at best PARTIAL). A metered cloud or production executor needs its own owner-approved cost model.
+- **FAIL path unchanged.** A reservation exceeded by FFmpeg-reported CPU work still fails the accounting stage before publication.
+
+Final verification on the final bytes (after the owner accounting closure):
+
+- typecheck and build PASS;
+- 43/43 pure Batch-2B, 10/10 audit-policy, 34/34 actual-media, 130/130 Batch-2A, 81/81 Batch-1, 79/79 Gate-6, 97/97 Gate-5, 33/33 routing, 377/377 compatibility, 39/39 legacy-seam and 886/886 full safe tests PASS;
+- the canonical actual-media execution, run one final time, reconciles to accounting PASS: the render is byte-identical (`e38b21c6…`, 147,717 bytes), QC passes 14/14 checks, and every dimension is within its reservation;
+- workspace audit PASS and `git diff --check` PASS;
+- 0/184 protected, 0/13 owner and 0/167 earlier-receipt files changed; manifests and lockfile unchanged.
+
+No network access, dependency change, real footage, commit or stage occurred.
+
+Reservation-consumption accounting: **PASS**
+
+Gate 7 Batch 2B implementation verification: **PASS**
+
+Actual pinned-FFmpeg synthetic media execution: **PASS**
+
+Independent technical media QC: **PASS**
+
+Production user-media lifecycle authority: **NOT VERIFIED**
+
+Real user footage: **NOT RUN**
+
+Semantic editing quality: **NOT VERIFIED**
+
+Gate 7 Batch 2B owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
 
 ## Phase 5 Gate 7 Batch 2A - Durable runtime authority / atomic claim / verified source staging / dispatch recheck foundation
 
@@ -442,4 +628,14 @@ Preserved Phase 2 closure authority and evidence:
 
 ## Stop condition
 
-Phase 2 remains CLOSED; Phase 2.6A and 2.6B are COMPLETE; Phase 3 Audio Analyzer V0 and Phase 4 Matcher V0 are COMPLETE within their accepted scopes. Phase 5 Gates 0–4 are owner-accepted within their bounded scopes. Gate 4 is accepted at `e99e98748ddc84d5932adb1c5ee1b22729d35a2f`. Gate 5 is **OWNER-ACCEPTED** at `d2ffc51`. Gate 6 remains unauthorized and unstarted at this closure checkpoint. Gate 6 was subsequently owner-authorized; its implementation verification is PASS, its independent owner-review repair verification is PASS, and it is **OWNER-ACCEPTED** at `0cb99b6`. Gate 7 was NOT AUTHORIZED at the Gate-6 closure checkpoint. Gate 7 was subsequently owner-authorized for Implementation Batch 1 only: Batch 1 implementation verification is PASS, Gate 7 overall is NOT YET COMPLETE, actual media rendering is NOT AUTHORIZED IN BATCH 1, and owner acceptance is PENDING. No later Gate-7 batch is authorized or started. After the independent owner review, Batch 1 post-owner-review verification is PASS, Batch 1 owner acceptance is PENDING, Gate 7 overall is NOT YET COMPLETE, and Batch 2 actual media rendering is NOT AUTHORIZED. After the final owner hardening and independent source review, Gate 7 Batch 1 is OWNER-ACCEPTED at `d55f0e1`; Gate 7 overall remains NOT YET COMPLETE and Batch 2 remains NOT AUTHORIZED at this closure checkpoint. The owner subsequently authorized Gate 7 Batch 2A only: its implementation verification is PASS, its owner acceptance is PENDING, actual FFmpeg execution is NOT AUTHORIZED IN BATCH 2A, Gate 7 overall remains NOT YET COMPLETE, and Batch 2B is not authorized or started. After the independent owner review of Batch 2A, the owner-review repair verification is PASS; Batch 2A owner acceptance remains PENDING, actual FFmpeg execution is NOT AUTHORIZED, Gate 7 overall is NOT YET COMPLETE, and Batch 2B is not authorized or started. After final independent post-repair source review, Gate 7 Batch 2A is OWNER-ACCEPTED at `291a04e`. Actual FFmpeg execution remains NOT AUTHORIZED at this closure checkpoint, Gate 7 overall remains NOT YET COMPLETE, and Batch 2B is not authorized or started.
+Phase 2 remains CLOSED; Phase 2.6A and Phase 2.6B are COMPLETE. Phase 3 Audio Analyzer V0 and Phase 4 Matcher V0 are COMPLETE within their accepted scopes. Phase 5 Gates 0–6 are owner-accepted within their bounded scopes.
+
+Gate 7 Batch 1 is OWNER-ACCEPTED. Gate 7 Batch 2A is OWNER-ACCEPTED.
+
+Gate 7 Batch 2B has completed its implementation, three independent owner-review repair rounds and the final owner accounting closure. Final verification is PASS for the pinned-FFmpeg synthetic execution path, independent technical media QC and reservation-consumption accounting. After final independent source review, Gate 7 Batch 2B is **OWNER-ACCEPTED** as of 2026-09-27.
+
+This Batch-2B closure does not claim production user-media lifecycle authority, real-user-footage execution quality or semantic/professional editing quality.
+
+Gate 7 overall remains **NOT YET COMPLETE**.
+
+The next authorized implementation work has not started. Gate 7 Batch 3A — editorial evidence surfaces and critic foundation, including the bounded adaptations researched from `browser-use/video-use` — must begin only after the Batch-2B closure commit.
