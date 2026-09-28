@@ -9,7 +9,7 @@
 import { z } from "zod";
 import { IdSchema } from "../contracts/common.js";
 import { checkIdentity, compareText, equal, identify, type SuppliedArtifact } from "../editorial/common.js";
-import { FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema } from "../edit-graph/common.js";
+import { FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema, convertTime, rateOf, sameInstant, secondsOf, type ExactTime } from "../edit-graph/common.js";
 import { LookSchema } from "../edit-graph/resolution.js";
 import type { ExecutionAdmission, ExecutionDag, ExecutionDagNode } from "../edit-execution/index.js";
 import { ExecutionExecutorIdentitySchema, PositiveSafeInt, RenderIntentSchema } from "../edit-execution/common.js";
@@ -75,6 +75,11 @@ export const RenderProgramSchema = ProgramBodySchema.extend({ programId: IdSchem
 export type RenderProgram = z.infer<typeof RenderProgramSchema>;
 
 // ---------------------------------------------------------------- deterministic compilation
+/**
+ * The admitted FootageAnalysis facts. `frameTimes` is legacy float-second MediaTruth evidence: it is decoded exactly once against the
+ * output frame grid (every entry must be the exact rendering of its frame instant) and never used as time again; its content identity
+ * stays the admitted table identity.
+ */
 export interface SourceFacts { frameTimes: readonly number[]; width: number; height: number }
 type Node<K extends ExecutionDagNode["kind"]> = Extract<ExecutionDagNode, { kind: K }>;
 function single<K extends ExecutionDagNode["kind"]>(nodes: readonly ExecutionDagNode[], kind: K): Node<K> {
@@ -94,6 +99,8 @@ export function compileRenderProgramFromDag(input: { dag: ExecutionDag; admissio
   check(s.audio.policy === "graph_linked_source_audio_v0" && s.audio.codecFamily === "aac" && (s.audio.sampleRateHz === 44100 || s.audio.sampleRateHz === 48000)
     && (s.audio.channelLayout === "mono" || s.audio.channelLayout === "stereo"), "render_program_unsupported", "Only the registered V0 audio encoding is executable.");
   const { numerator: num, denominator: den } = s.frameRate, sequence = single(dag.nodes, "cut_sequence"), encode = single(dag.nodes, "final_encode");
+  // The exact output frame grid: frame i is exactly i / grid seconds.
+  const grid = rateOf(num, den), onGrid = (frame: number): ExactTime => ({ value: frame, rate: grid });
   single(dag.nodes, "composition");
   for (const join of sequence.joins) check((join.transition as string) === "cut", "render_program_unsupported", "Only hard cuts are executable in V0.");
   const looks = dag.nodes.filter((n): n is Node<"color_look"> => n.kind === "color_look");
@@ -110,7 +117,9 @@ export function compileRenderProgramFromDag(input: { dag: ExecutionDag; admissio
     check(facts !== undefined && facts.frameTimes.length === node.source.frameTimes.count && frameTableIdOf(facts.frameTimes) === node.source.frameTimes.tableId,
       "source_timebase_mismatch", "The admitted frame table is not the one the DAG binds.");
     // V0 executes only sources whose every decoded frame lies exactly on the output grid from zero: never retimed, dropped or repeated.
-    check(facts.frameTimes.every((t, i) => t === (i * den) / num), "source_frame_grid_unsupported",
+    // The legacy float table is decoded exactly: entry i must be the correctly rounded double of frame i's exact instant on the grid, and
+    // then the exact timebase is frame i at i / grid. The floats are not used as time after this check.
+    check(facts.frameTimes.every((t, i) => t === secondsOf(onGrid(i))), "source_frame_grid_unsupported",
       "Variable or other-rate source timing is refused: V0 executes only constant-rate sources exactly on the output frame grid.");
     // V0 only scales. The admitted pixel geometry (which conformance proves square-pixel and unrotated on the staged bytes) must
     // already have the output's display aspect, whatever aspect the analysis declares; anything else would be stretched.
@@ -122,12 +131,14 @@ export function compileRenderProgramFromDag(input: { dag: ExecutionDag; admissio
     if (precision === "frame_pts_exact") {
       check(trim.startAuthority.kind === "frame_pts" && trim.endAuthority.kind === "frame_pts", "source_trim_invalid", "Frame-exact precision needs frame endpoints.");
       startFrame = trim.startAuthority.frameIndex; endFrame = trim.endAuthority.frameIndex;
-      check(facts.frameTimes[startFrame] === range.startSeconds && facts.frameTimes[endFrame] === range.endSeconds, "source_trim_invalid",
+      // Each endpoint names an admitted frame, and that frame's exact grid instant is exactly the range endpoint.
+      check(endFrame < facts.frameTimes.length && sameInstant(onGrid(startFrame), range.start) && sameInstant(onGrid(endFrame), range.end), "source_trim_invalid",
         "The authoritative frame endpoints do not denote the admitted range.");
     } else {
-      // The weaker precision stays weaker: exactly the admitted frames whose PTS lies in [start, end), never promoted to frame authority.
-      const first = (seconds: number) => { const i = facts.frameTimes.findIndex(t => t >= seconds); return i < 0 ? facts.frameTimes.length : i; };
-      startFrame = first(range.startSeconds); endFrame = first(range.endSeconds);
+      // The weaker precision stays weaker: exactly the admitted frames whose exact PTS lies in [start, end), never promoted to frame authority.
+      // The first frame at or after an instant is its explicit ceiling on the grid, clamped to the admitted frame count.
+      const first = (t: ExactTime) => Math.min(convertTime(t, grid, "ceil").value, facts.frameTimes.length);
+      startFrame = first(range.start); endFrame = first(range.end);
     }
     check(startFrame >= 0 && endFrame > startFrame && endFrame - startFrame === outFrames, "source_trim_invalid",
       "The selected source frames must be exactly the clip's output frames: nothing is dropped, repeated or retimed.");

@@ -6,16 +6,16 @@
  * computation identities. Batch 1 compiles and identifies work; it never executes it.
  */
 import { z } from "zod";
-import { IdSchema, TimeRangeSchema } from "../contracts/common.js";
+import { IdSchema } from "../contracts/common.js";
 import { ArtifactRefSchema, EvidenceRefSchema, availability, checkIdentity, compareText, equal, identify, missing, present, type ArtifactRef,
   type SuppliedArtifact } from "../editorial/common.js";
 import { EditGraphSchema, type AudioClipUse, type EditGraph, type Operation, type VideoClipUse } from "../edit-graph/index.js";
-import { FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema } from "../edit-graph/common.js";
+import { EDIT_GRAPH_RECORD_VERSION, FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema, SourceRangeSchema } from "../edit-graph/common.js";
 import { LookSchema } from "../edit-graph/resolution.js";
 import { FootageAnalysisSchema } from "../footage-analyzer/protocol.js";
 import { BoundaryAuthoritySchema } from "../planning/common.js";
-import { EDIT_EXECUTION_VERSION, ExecutionExecutorIdentitySchema, PositiveSafeInt, RenderIntentSchema, ScopeSchema, SuppliedArtifacts, check, envelope, guard, header, parse,
-  refSet, refuse } from "./common.js";
+import { EDIT_EXECUTION_VERSION, EXECUTION_DAG_VERSION, ExecutionExecutorIdentitySchema, PositiveSafeInt, RenderIntentSchema, ScopeSchema, SuppliedArtifacts, check, guard,
+  parse, refSet, refuse } from "./common.js";
 import { DISPATCH_NOT_CLAIMED, DispatchSchema, ExecutionAdmissionSchema, validateExecutionAdmission, type ExecutionAdmission } from "./admission.js";
 import { AudioEncodingSchema, ExecutionRenderProfileSchema, VideoEncodingSchema, type ExecutionRenderProfile } from "./policy.js";
 import { RuntimeIdentitySchema } from "./runtime.js";
@@ -30,13 +30,13 @@ const SpanSchema = z.strictObject({ startTicks: Nat, endTicks: Nat, startFrame: 
   .refine(v => v.endTicks > v.startTicks && v.endFrame > v.startFrame, "Spans must be positive.");
 /**
  * The exact source-trim authority, copied from the accepted EditGraph (never rebuilt from seconds): which source endpoints the
- * seconds range denotes and which frame-time table established them. `source_seconds` keeps its weaker authority explicitly.
+ * exact source range denotes and which frame-time table established them. `source_seconds` keeps its weaker authority explicitly.
  */
 const TrimAuthoritySchema = z.strictObject({ shotId: IdSchema, boundaryId: IdSchema, precision: z.enum(["frame_pts_exact", "source_seconds"]),
   startAuthority: BoundaryAuthoritySchema, endAuthority: BoundaryAuthoritySchema, timebase: EvidenceRefSchema, support: EvidenceRefSchema });
 /** The content of the frame-time table the timebase resolves to: the frame count and a content identity of the exact PTS values. */
 const FrameTimesSchema = z.strictObject({ count: PositiveSafeInt, tableId: IdSchema });
-const SourceFieldsSchema = z.strictObject({ assetId: IdSchema, contentHash: HashSchema, analysis: ArtifactRefSchema, receipt: ArtifactRefSchema, range: TimeRangeSchema,
+const SourceFieldsSchema = z.strictObject({ assetId: IdSchema, contentHash: HashSchema, analysis: ArtifactRefSchema, receipt: ArtifactRefSchema, range: SourceRangeSchema,
   trim: TrimAuthoritySchema, frameTimes: FrameTimesSchema });
 type Source = z.infer<typeof SourceFieldsSchema>;
 /** The accepted Gate-5 construction: every endpoint and the timebase point into the node's own analysis with their exact pointers. */
@@ -100,7 +100,7 @@ export type ExecutionDagNodeDraft = DistributiveOmit<ExecutionDagNode, "nodeId" 
 
 // ---------------------------------------------------------------- computation identity: exactly what affects a node's bytes
 /**
- * Every trim and timebase field that can change which decoded source frames or samples are selected: the seconds range, its
+ * Every trim and timebase field that can change which decoded source frames or samples are selected: the exact canonical source range, its
  * precision, each endpoint's authority kind and frame index, and the content of the frame-time table they index. Evidence
  * references, shot, boundary and support identities are lineage, bound by the occurrence identity only: they name a
  * scope-bearing FootageAnalysis, and a computation identity carries no project, creator or analysis identity.
@@ -191,7 +191,7 @@ const CLAIM_TARGET = "execution_claim_target_v0";
 const ClaimTargetSchema = z.strictObject({ claimTargetId: IdSchema, reservationId: IdSchema, operationId: IdSchema, attempt: PositiveSafeInt });
 const DagDispatchSchema = z.strictObject({ ...DispatchSchema.shape, claimTarget: ClaimTargetSchema, renderBinding: z.strictObject({ renderComputationId: IdSchema }) });
 const DagBodySchema = z.strictObject({
-  ...envelope("ExecutionDag"), scope: ScopeSchema, admission: ArtifactRefSchema, executionGrant: ArtifactRefSchema, editGraph: ArtifactRefSchema,
+  artifactType: z.literal("ExecutionDag"), artifactVersion: z.literal(EXECUTION_DAG_VERSION), stability: z.literal("internal_pre_stable"), scope: ScopeSchema, admission: ArtifactRefSchema, executionGrant: ArtifactRefSchema, editGraph: ArtifactRefSchema,
   graph: z.strictObject({ editGraphId: IdSchema, revision: z.literal(0) }), renderIntent: RenderIntentSchema, renderProfile: ArtifactRefSchema, policy: ArtifactRefSchema,
   executor: ExecutionExecutorIdentitySchema, settings: ExecutionDagSettingsSchema, nodes: z.array(ExecutionDagNodeSchema).min(3).max(MAX_DAG_NODES), root: IdSchema,
   renderIdentity: RenderIdentitySchema, execution: z.literal("not_started_no_media_process_in_batch1"), dispatch: DagDispatchSchema,
@@ -330,7 +330,8 @@ function compile(admissionRef: ArtifactRef, admission: ExecutionAdmission, graph
     sourceReceipts: admission.sources.map(s => s.receipt).sort((a, b) => compareText(a.objectId, b.objectId)), executor: admission.executor,
     renderIntent: admission.renderIntent, renderProfile: admission.renderProfile, policy: admission.policy, settings,
     root: { nodeId: root.nodeId, computationId: root.computationId }, nodes: nodes.map(n => ({ nodeId: n.nodeId, computationId: n.computationId })) });
-  return parse(ExecutionDagSchema, identify("execution_dag_v0", "dagId", { ...header("ExecutionDag"), scope: admission.scope, admission: admissionRef,
+  return parse(ExecutionDagSchema, identify("execution_dag_v0", "dagId", { artifactType: "ExecutionDag", artifactVersion: EXECUTION_DAG_VERSION,
+    stability: "internal_pre_stable", scope: admission.scope, admission: admissionRef,
     executionGrant: admission.executionGrant, editGraph: admission.editGraph, graph: admission.graph, renderIntent: admission.renderIntent,
     renderProfile: admission.renderProfile, policy: admission.policy, executor: admission.executor, settings, nodes, root: root.nodeId, renderIdentity,
     execution: "not_started_no_media_process_in_batch1", dispatch: { ...DISPATCH_NOT_CLAIMED,
@@ -346,7 +347,7 @@ export function buildExecutionDag(requestInput: unknown, artifacts: readonly Sup
   const supplied = new SuppliedArtifacts(artifacts);
   const claimed = parse(ExecutionAdmissionSchema, supplied.exact(request.admission, "ExecutionAdmission", EDIT_EXECUTION_VERSION));
   const admission = validateExecutionAdmission(claimed, artifacts);
-  const graph = parse(EditGraphSchema, supplied.exact(admission.editGraph, "EditGraph", "0.1.0"));
+  const graph = parse(EditGraphSchema, supplied.exact(admission.editGraph, "EditGraph", EDIT_GRAPH_RECORD_VERSION));
   const profile = parse(ExecutionRenderProfileSchema, supplied.exact(admission.renderProfile, "ExecutionRenderProfile", EDIT_EXECUTION_VERSION));
   const frameTables = new Map(admission.sources.map(s => [s.assetId,
     frameTimesOf(parse(FootageAnalysisSchema, supplied.exact(s.analysis, "FootageAnalysis", "1.0.0", "graph_replay_failed"), "graph_replay_failed").metadata.frameTimes)]));

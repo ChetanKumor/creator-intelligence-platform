@@ -1,6 +1,6 @@
-# Current Phase - Phase 5 Gate 7 Batch 3A Editorial Evidence Surfaces and Semantic Critic Foundation (synthetic media)
+# Current Phase - Phase 5 Gate 7 Batch 3A-F Exact Timebase Foundation (synthetic media)
 
-Last updated: 2026-09-27
+Last updated: 2026-09-28
 
 ## Current ruling
 
@@ -19,6 +19,55 @@ Last updated: 2026-09-27
 - Phase 5 Gate 7 Batch 2A (runtime-safety foundation only): owner-authorized from HEAD `ae432248cd30e8465cd652f49b1e35f441af2e58`. Batch 2A implementation verification: **PASS**. Owner-review repair verification: **PASS**. Batch 2A owner acceptance: **OWNER-ACCEPTED** at `291a04e`. Actual FFmpeg execution: **NOT AUTHORIZED**. Gate 7 overall: **NOT YET COMPLETE**. Batch 2B is not authorized or started. All Batch-2A evidence is synthetic providers over opaque test bytes; no media, FFmpeg, Python, model or real-footage operation ran. One pre-work `git fetch` contacted the Git remote solely to verify the frozen baseline; Batch-2A runtime code and tests performed no network I/O and ran under `scripts/no-network.mjs`.
 - Phase 5 Gate 7 Batch 2B (first truthful actual media execution through the EditGraph execution architecture; synthetic media only): owner-authorized from HEAD `d3c8302b40a5064ae0eb4408195dc35346ecc648`. Batch 2B implementation verification: **PASS** after the owner's accounting ruling (historically **FAIL**, deliberately fail-closed on one unmet frozen closure contract, Batch-2B requirement 10, measured runtime resource, cost and time accounting, while accounting was **PARTIAL**). Actual pinned-FFmpeg synthetic media execution: **PASS**. Independent technical media QC: **PASS**. Reservation-consumption accounting: **PASS** under the owner's local-execution ruling, scoped to the one pinned local executor: FFmpeg-reported CPU time and peak commit are accepted as attributed evidence, and total monetary cost is not applicable to local non-metered execution, which is not a zero cost (historically **PARTIAL**). Production user-media lifecycle authority: **NOT VERIFIED**. Real user footage: **NOT RUN**. Semantic editing quality: **NOT VERIFIED**. OWNER ACCEPTANCE: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**. Batch 2B closure is committed at `74bbe1e7c05a59ac24c4d9113287ce3a32b61a6c`. Independent owner-review repair (three findings, test-first): trust-handle repair **PASS**, QC-liveness repair **PASS**, terminal-evidence repair **PASS**; implementation verification then remained **FAIL** while accounting was **PARTIAL**. Owner-review repair #2 (three further findings, test-first): policy-snapshot repair **PASS**, probe-completion repair **PASS**, exact-artifact-QC repair **PASS**; implementation verification then remained **FAIL** while accounting was **PARTIAL**. Owner-review repair #3 (three code findings, test-first, and one documentation finding): private-runtime-context repair **PASS**, QC-clock-binding repair **PASS**, process-termination-truth repair **PASS**, final-evidence-doc repair **PASS**; implementation verification then remained **FAIL** while accounting was **PARTIAL**. Owner accounting closure (2026-09-27, test-first, under the owner's ruling): accounting **PASS**, implementation verification **PASS**.
 - Phase 5 Gate 7 Batch 3A (editorial evidence surfaces and semantic-critic foundation; synthetic media only): owner-authorized from HEAD `c74d5fe649ebe470ee0ea9bcb21cdfc4969641cb`, including two owner-authorized protected changes raised before modification (one workspace-audit adapter registration and the pinned Batch-2B audit count). Batch 3A implementation verification: **PASS**. Actual synthetic rendered-media verification: **PASS**. Semantic critic: port plus synthetic fixture critic only (no model). Real user footage: **NOT RUN**. Professional editing quality: **NOT VERIFIED**. ARCHITECTURE_V2_TIMEBASE_GAP: **YES** (recorded, not modified). Gate 7 Batch 3A owner acceptance: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**.
+- Phase 5 Gate 7 Batch 3A-F (exact timebase foundation; synthetic media only): owner-authorized from HEAD `f0edbb3b05724ad41c062a82585846eba9e0a4d6` to close ARCHITECTURE_V2_TIMEBASE_GAP only, with two owner decisions raised before any protected byte changed (approve hash-pin updates for changed files and float-literal translations in accepted tests; defer Gate-5 planning floats, decoded exactly at the EditGraph seam). Batch 3A-F implementation verification: **PASS**. ARCHITECTURE_V2_TIMEBASE_GAP: **RESOLVED** (the Batch-3A **YES** above was true when recorded). Real user footage: **NOT RUN**. Gate 7 Batch 3A-F owner acceptance: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**. Batch 3B: **NOT STARTED**.
+
+## Phase 5 Gate 7 Batch 3A-F - Exact timebase foundation (synthetic media only)
+
+Authority: [Gate-7 Batch-3A-F implementation and verification record](phases/phase-5-gate-7-batch-3af-exact-timebase-foundation.md). It is governed by the
+accepted Batch-1, Batch-2A, Batch-2B and Batch-3A records and by the owner's explicit 3A-F-only authorization, which is limited to closing
+ARCHITECTURE_V2_TIMEBASE_GAP.
+
+Current status (2026-09-28): implementation verification is **PASS**; owner acceptance is **PENDING**.
+
+The batch replaces float-second authority with one exact temporal vocabulary, an integer count of an explicit reduced rational rate, which is the
+accepted convention (Gate-6 ticks, Batch-1/2B frames, Batch-2B samples and stream PTS, Batch-3A transcript ticks) named once in
+`packages/edit-graph/common.ts`:
+
+- **EditGraph 0.2.0.** Source ranges are canonical exact instants, decoded exactly from the Gate-5 boundary at the declared clock by the one
+  explicit legacy decoder (the accepted `exactTicks` rule, proven equivalent). Timeline time stays integer ticks. A legacy float-second 0.1.0 graph
+  is refused `graph_version_unsupported`, never reinterpreted.
+- **ExecutionDag 0.2.0.** Source nodes carry, and computation identities bind, the canonical exact range.
+- **RenderProgram** (schema unchanged). The admitted float frame table is legacy MediaTruth evidence, decoded exactly once against the output grid;
+  endpoints and `source_seconds` membership are exact. The FFmpeg boundary already received only integers and exact rationals.
+- **Preserved.** Every baseline program's frame and sample intervals, segment computation identities, frame tables and argv digests; Batch-3A
+  joins, windows and observation computation identities; RENDER_SEMANTICS and the executor identity. Actual synthetic media through the migrated chain is byte-identical to the accepted code's last run: the canonical
+  render `e38b21c6…` (147,717 bytes), all six look renders, the determinism pair and all 30 Batch-3A observation computation identities.
+- **Owner decisions raised before modification.** Approve hash-pin updates for changed files and float-literal translations in accepted tests
+  (22 pin replacements, 12 translated lines); defer Gate-5 planning floats (decoded exactly at the EditGraph seam).
+
+Evidence under `.local-runs/phase5-gate7/` (`batch3af-*`): the baseline and invariant receipts, the first red (C01-C04 on the unmodified bytes,
+every sub-case confirmed), three hostile self-review defects (H1 undeclared alignment rounding silently, H2 primitives trusting malformed
+operands, H3 reversed ranges) each with red, repair and green, seven attempted reds that held, and the final run. Final verification (typecheck and build PASS): 35/35 3A-F, 46/46 pure
+and 8/8 actual-media Batch-3A, 43/43 pure Batch-2B, 10/10 audit-policy, 34/34 actual-media Batch-2B, 130/130 Batch-2A, 81/81 Batch-1, 79/79 Gate-6,
+97/97 Gate-5, 33/33 routing, 377/377 compatibility, 39/39 legacy-seam and 967/967 full safe tests; workspace audit and `git diff --check` PASS; source
+bytes unchanged during the run.
+
+No dependency, lockfile, contract (`packages/contracts/`), Batch-3A code, owner file or earlier receipt changed; nothing is staged or committed.
+Real user footage was not run. MediaTruth exact stream timestamps remain a documented seam.
+
+Architecture V2: **FROZEN**
+
+Gate 7 Batch 3A: **OWNER-ACCEPTED**
+
+Architecture V2 Timebase Gap: **RESOLVED**
+
+Gate 7 Batch 3A-F implementation verification: **PASS**
+
+Gate 7 Batch 3A-F owner acceptance: **OWNER-ACCEPTED**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Batch 3B: **NOT STARTED**
 
 ## Phase 5 Gate 7 Batch 3A - Editorial evidence surfaces and semantic critic foundation (synthetic media only)
 

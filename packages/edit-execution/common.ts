@@ -10,6 +10,8 @@ import { HashSchema, ScopeSchema, type Scope } from "../edit-graph/common.js";
 
 export { ScopeSchema, type Scope };
 export const EDIT_EXECUTION_VERSION = "0.1.0" as const;
+/** The ExecutionDag record's own schema version: 0.2.0 carries exact source time (Gate 7 Batch 3A-F); every other Batch-1 artifact keeps 0.1.0. */
+export const EXECUTION_DAG_VERSION = "0.2.0" as const;
 export const envelope = <const T extends string>(artifactType: T) => ({ artifactType: z.literal(artifactType), artifactVersion: z.literal(EDIT_EXECUTION_VERSION),
   stability: z.literal("internal_pre_stable") });
 export const header = <const T extends string>(artifactType: T) => ({ artifactType, artifactVersion: EDIT_EXECUTION_VERSION, stability: "internal_pre_stable" as const });

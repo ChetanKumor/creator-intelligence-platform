@@ -212,9 +212,9 @@ test("02 a mutated or re-identified DAG gains no runtime authority, and an unval
 });
 
 const ACCEPTED_SURFACES = [
-  ["packages/edit-execution/admission.ts", "5e6bfe47433f4ff736f5fdd129c4c4ead3440f55f5a070b457dc30818fe9a5d5"],
-  ["packages/edit-execution/common.ts", "68d99ee67122bc723f2e758a6b4137fe0f3047dd15124f18e0006dc89451be7d"],
-  ["packages/edit-execution/dag.ts", "3cbb2971b8aaf1385c8cf0d42b7975442886f569fd126b5034b9cb4144734d8b"],
+  ["packages/edit-execution/admission.ts", "d1fa1b90b5991fd495a6765c485123ba32b52cb332600adb06965dcf72f6d0a1"],
+  ["packages/edit-execution/common.ts", "f45a6e3a81303f3609c3a01918881e3da2eabe4a3682794f49237b0af5d69e3e"],
+  ["packages/edit-execution/dag.ts", "40e976e94cbe371d25b624b4e39c45f52a046eff4ca6f4a29d2e188f6db2f6e3"],
   ["packages/edit-execution/grant.ts", "3e7c6cb787f1c977955804921c81d41cbc1fd92fcedf74aac390857f8ca736c2"],
   ["packages/edit-execution/index.ts", "d1e0ec87c18ac77457f1c3e5b81691718483e3cfe0d2c96ae5dc97536ab16980"],
   ["packages/edit-execution/policy.ts", "3732c5e30bae7f19a8d9ca65c240014c73274d242ab7004c68e582d0ee393a9b"],
@@ -225,7 +225,7 @@ const ACCEPTED_SURFACES = [
   ["packages/edit-graph/index.ts", "fc922eb038a75aeea6d933de37ccb0dd700366ac7e0ddddfb7750b926e1a1628"],
   ["packages/editorial/common.ts", "6cd4e80f921061aaabe0d26e17b2f4beb481ff3ba617090eb0202d9db2019ca6"],
   ["packages/domain/serialization.ts", "3d4d162e873a63274e5359bde42c50c15cbdeed103342fb0900ce15f9812175d"],
-  ["tests/edit-execution.test.ts", "e62f457ff05533a45fe525764214b25aa374723729073c98dd63194822a76c63"],
+  ["tests/edit-execution.test.ts", "31251e7cb9eb181e5bf89c297286554315e0da2ff6755a471966479a62393254"],
   ["tests/support/edit-execution.ts", "bf1ace12b2b26ed46694ccf0243ed3993475366279c36fc9b66bba1c857e3828"],
   ["tests/support/edit-execution-chains.ts", "dcd3aadde2cee9c18cef2f665474a067a0361a303b06fce2e2156680a649f2f6"],
   ["tests/support/edit-graph.ts", "50e57755aff2d03b5e282e8445b399edfca1dd5af000c9981e607b2875cc0468"],

@@ -7,6 +7,7 @@ import { canonicalSerialize } from "../packages/domain/serialization.js";
 import { EditorialArtifactMap, identify, missing, present, type SuppliedArtifact } from "../packages/editorial/common.js";
 import { EditGraphError, EditGraphSchema, TechniqueResolutionSchema, UepCompatibilityReportSchema, assessUepCompatibility, buildEditGraph, createCapabilitySnapshot, supplied,
   validateEditGraph, validateUepCompatibilityReport, type EditGraph } from "../packages/edit-graph/index.js";
+import { secondsOf } from "../packages/edit-graph/common.js";
 import { createFixtures } from "../samples/fixtures.js";
 import { directionFixture } from "./support/planning.js";
 import { EXECUTOR, TIME6, VIDEO_SUPPORTS, artifact, atMost, attestation, capabilitySnapshot, chosenOption, colorLook, conformance, conformanceRefs, cutAt, declaration,
@@ -43,6 +44,8 @@ function allKeys(value: unknown, keys = new Set<string>()): Set<string> {
   return keys;
 }
 const same = (a: unknown, b: unknown) => canonicalSerialize(a) === canonicalSerialize(b);
+/** A canonical exact source instant (Gate 7 Batch 3A-F): value / perSecond seconds. */
+const instant = (value: number, perSecond = 1) => ({ value, rate: { numerator: perSecond, denominator: 1 } });
 function mappingOf(report: { mapping: { graphNode: { id: string }; projection: unknown }[] }, id: string) {
   return report.mapping.find(m => m.graphNode.id === id)!.projection;
 }
@@ -71,7 +74,8 @@ function probePlan(graph: EditGraph) {
   const tps = graph.output.clock.ticksPerSecond;
   return { contractType: "UniversalEditPlan", schemaVersion: "1.0.0", planId: "probe_plan_not_evidence", projectId: graph.scope.projectId, revision: 0, parentPlanId: null,
     output: { aspectRatio: "9:16", resolution: graph.output.resolution, fps: graph.output.frameRate, targetDurationSeconds: graph.output.durationTicks / tps },
-    clips: videoUses(graph).map((clip, i) => ({ clipId: `probe_clip_${i}`, segmentId: `probe_segment_${i}`, assetId: clip.source.assetId, sourceRange: clip.source.range,
+    clips: videoUses(graph).map((clip, i) => ({ clipId: `probe_clip_${i}`, segmentId: `probe_segment_${i}`, assetId: clip.source.assetId,
+      sourceRange: { startSeconds: secondsOf(clip.source.range.start), endSeconds: secondsOf(clip.source.range.end) },
       outputStartSeconds: clip.output.startTicks / tps, role: "hook", speed: 1, transform: { fit: "cover", focalPoint: { x: 0.5, y: 0.5 }, scale: 1 }, sourceAudioGain: 0,
       transitionOut: { type: "cut" }, reason: "probe placeholder", confidence: PROBE_PLACEHOLDER_NOT_EVIDENCE, decisionId: `probe_decision_${i}` })),
     music: null, captions: [], overlays: [], effects: [],
@@ -168,8 +172,8 @@ test("forged or substituted chosen options cannot pass Gate-5 replay", () => {
 
 test("the exact Gate-5 source range, precision and endpoint authority are preserved", () => {
   const p = offGrid(), use = chosenOption(p).uses[0]!, clip = videoUses(graphOf(p).graph)[0]!;
-  assert.deepEqual(clip.source.range, { startSeconds: 0.13, endSeconds: 1.97 });
-  assert.deepEqual(clip.source.range, use.boundary.sourceRange);
+  assert.deepEqual(clip.source.range, { start: instant(13, 100), end: instant(197, 100) });
+  assert.deepEqual({ startSeconds: secondsOf(clip.source.range.start), endSeconds: secondsOf(clip.source.range.end) }, use.boundary.sourceRange);
   assert.equal(clip.source.precision, "source_seconds");
   assert.equal(clip.source.startAuthority.kind, "candidate_endpoint");
   assert.deepEqual(clip.source.startAuthority, use.boundary.startAuthority);
@@ -177,7 +181,7 @@ test("the exact Gate-5 source range, precision and endpoint authority are preser
   assert.deepEqual(clip.source.timebase, use.boundary.timebase);
   const exact = videoUses(graphOf(basic()).graph)[0]!;
   assert.equal(exact.source.precision, "frame_pts_exact");
-  assert.deepEqual(exact.source.range, { startSeconds: 0, endSeconds: 2 });
+  assert.deepEqual(exact.source.range, { start: instant(0), end: instant(2) });
 });
 
 test("the output clock is an exact tick authority separate from source seconds", () => {
@@ -396,7 +400,7 @@ test("the graph cannot extend, re-time, relabel or substitute Gate-5 source boun
   const g = graphOf(basic()), graph = g.graph, clip = videoUses(graph)[0]!;
   const patchClip = (patch: Record<string, unknown>, extra: Record<string, unknown> = {}) =>
     reidentify({ ...graph, ...extra, clipUses: graph.clipUses.map(c => c.clipUseId === clip.clipUseId ? { ...c, ...patch } : c) }, "editGraphId", "edit_graph_v0");
-  const widened = patchClip({ source: { ...clip.source, range: { startSeconds: 0, endSeconds: 3 } }, output: { startTicks: 0, endTicks: 3e9 },
+  const widened = patchClip({ source: { ...clip.source, range: { start: instant(0), end: instant(3) } }, output: { startTicks: 0, endTicks: 3e9 },
     mapping: { ...clip.mapping, sourceEndTicks: 3e9 } }, { output: { ...graph.output, durationTicks: 3e9 } });
   const substituted = patchClip({ candidateId: `segment_${"f".repeat(64)}`, token: { ...clip.token, objectId: "substitute_token", sha256: "f".repeat(64) } });
   const retimed = patchClip({ mapping: { ...clip.mapping, sourceStartTicks: 5e8 } });
@@ -767,7 +771,7 @@ test("self-review: coordinated rehash of widened or substituted source ranges su
   const g = graphOf(basic()), clip = videoUses(g.graph)[0]!;
   const widened = structuredClone(g.graph);
   const target = widened.clipUses[0]!;
-  target.source.range = { startSeconds: 0, endSeconds: 3 };
+  target.source.range = { start: instant(0), end: instant(3) };
   target.output = { startTicks: 0, endTicks: 3e9 };
   target.mapping.sourceEndTicks = 3e9;
   widened.output.durationTicks = 3e9;
@@ -782,12 +786,12 @@ test("self-review: coordinated rehash of widened or substituted source ranges su
   const x = planningFixture({ duration: { minimumSeconds: 1, maximumSeconds: 1, preferredSeconds: 1 }, search: { ...planningPolicyBody.search, maximumDepth: 1 } },
     directionFixture(0, false, undefined, true));
   const p = memo("one_second", () => plan(x)), h = graphOf(p), use = videoUses(h.graph)[0]!;
-  assert.deepEqual(use.source.range, { startSeconds: 0.5, endSeconds: 1.5 });
+  assert.deepEqual(use.source.range, { start: instant(1, 2), end: instant(3, 2) });
   const other = p.context.candidates.find(c => c.candidateId !== use.candidateId)!;
   const substituted = structuredClone(h.graph), swapped = substituted.clipUses[0]!;
   swapped.candidateId = other.candidateId;
   swapped.token = other.token;
-  swapped.source.range = { startSeconds: 2, endSeconds: 3 };
+  swapped.source.range = { start: instant(2), end: instant(3) };
   swapped.source.startAuthority = { kind: "frame_pts", frameIndex: 20, evidence: { artifact: swapped.source.analysis, pointer: "/metadata/frameTimes/20" } };
   swapped.source.endAuthority = { kind: "frame_pts", frameIndex: 30, evidence: { artifact: swapped.source.analysis, pointer: "/metadata/frameTimes/30" } };
   swapped.mapping.sourceStartTicks = 2e9;

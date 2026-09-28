@@ -1,0 +1,405 @@
+{
+  "artifactType": "EditGraph",
+  "artifactVersion": "0.1.0",
+  "stability": "internal_pre_stable",
+  "version": "0.1.0",
+  "scope": {
+    "projectId": "project_synthetic",
+    "creatorId": "creator_synthetic",
+    "purpose": "local_evaluation"
+  },
+  "revision": 0,
+  "parent": {
+    "state": "not_applicable",
+    "reasonCode": "initial_graph",
+    "evidenceRefs": []
+  },
+  "changeSet": {
+    "kind": "initial_graph",
+    "affectedOutput": "entire_output"
+  },
+  "lineage": {
+    "planningDecision": {
+      "objectId": "planning_decision_v0_ebf587bb0abe959ebec4b4f79c94d2bfe86be46749491d2712f4cfeb92785a4a",
+      "sha256": "bb3f3e25a93c5ccb6fab8778838d10f4d48466623af92c97b170685dda0a4ad6",
+      "artifactType": "PlanningDecision",
+      "artifactVersion": "0.1.0"
+    },
+    "searchRun": {
+      "objectId": "planning_search_run_v0_cb3ecf23c66bf310bf607cda22458361c7c2f1dbb75c72efdc30f28273599d71",
+      "sha256": "a1c9a2ba457f121ef9a7693246c0f44745176bae9710dda62af9e140bc1e4db4",
+      "artifactType": "PlanningSearchRun",
+      "artifactVersion": "0.1.0"
+    },
+    "alternatives": {
+      "objectId": "planning_alternatives_v0_0b1a9fcacc964a3a74f6314ecd3425d4209953226f2e2a0ac038b23605c02605",
+      "sha256": "7e96ab142c6255881a39a9aac3171835b29825866a709a66c3767da04c0592f7",
+      "artifactType": "PlanningAlternatives",
+      "artifactVersion": "0.1.0"
+    },
+    "context": {
+      "objectId": "planning_context_v0_c51706d285bf009852d2f723a0be63b6bfd243dc571f8862783d52be6f609b02",
+      "sha256": "4f6c6cfd43b8f75ddfd9ed41ae65d540510a58f897ce0e6fdeb66d49ed38013b",
+      "artifactType": "PlanningContext",
+      "artifactVersion": "0.1.0"
+    },
+    "chosenOptionId": "planning_sequence_v0_7c7a774c66ac44582773d4dc911ba09e6cb73445d740afeb49ea946206a051b2",
+    "direction": {
+      "objectId": "gate4_direction",
+      "sha256": "cc0fea7c018e65d1ac878bc506345f01777903174523a1fd6a0a72ae33b39080",
+      "artifactType": "CreativeDirectionGraph",
+      "artifactVersion": "0.1.0"
+    },
+    "worldSnapshot": {
+      "objectId": "gate4_world",
+      "sha256": "89c938f60d99cf2beaebb0da938c4ce3fb6f984394f581589c52c26ca5d390fd",
+      "artifactType": "ProjectWorldModel",
+      "artifactVersion": "0.1.0"
+    },
+    "worldView": {
+      "objectId": "gate4_view",
+      "sha256": "41df2798ea64042f263df45737c390c040265b9b36a8d006827f5fce7dbc04d4",
+      "artifactType": "ProjectWorldView",
+      "artifactVersion": "0.1.0"
+    },
+    "candidateUniverse": {
+      "objectId": "gate4_candidate_set",
+      "sha256": "dea17f6aee1814f26379566fee9a66a25bff53b52296ee82a8694eb0d8192fc6",
+      "artifactType": "EditorialCandidateSet",
+      "artifactVersion": "0.1.0"
+    }
+  },
+  "sourceAccess": {
+    "basis": "gate5_pinned_world_view",
+    "accessAsOf": "2026-09-23T00:00:00.000Z",
+    "recheck": "required_immediately_before_execution"
+  },
+  "policy": {
+    "objectId": "edit_graph_policy_v0_de045770669b7fdb7a255a91caf78ff707be8c30695bacd6b6a76cec9a1768a8",
+    "sha256": "ec8acde5f33cca9651a4b0eacf11667b6fe36b70903cabd3830557d5c4090f11",
+    "artifactType": "EditGraphPolicy",
+    "artifactVersion": "0.1.0"
+  },
+  "outputProfile": {
+    "objectId": "edit_output_profile_v0_2bbc03d8c4fdb9eba5240ba61817ed934c4c6749f9105e22ca00790bf461bff2",
+    "sha256": "f7296695720b433249f90cd6a6700b84133cc292a51c7ce56931233dfea3ab56",
+    "artifactType": "EditOutputProfile",
+    "artifactVersion": "0.1.0"
+  },
+  "output": {
+    "aspectRatio": {
+      "width": 9,
+      "height": 16
+    },
+    "resolution": {
+      "width": 1080,
+      "height": 1920
+    },
+    "frameRate": {
+      "numerator": 30,
+      "denominator": 1
+    },
+    "clock": {
+      "ticksPerSecond": 1000
+    },
+    "durationTicks": 1840,
+    "frameAlignment": "not_asserted"
+  },
+  "tracks": [
+    {
+      "trackId": "track_video_primary",
+      "kind": "video",
+      "order": 0,
+      "overlap": "forbidden",
+      "clipUseIds": [
+        "edit_graph_clip_use_v0_9ce48d7fc644a8058843e710f99df49381407ea13bcbba600c798da22eb924e2"
+      ]
+    }
+  ],
+  "clipUses": [
+    {
+      "medium": "video",
+      "trackId": "track_video_primary",
+      "planningUse": {
+        "decision": {
+          "objectId": "planning_decision_v0_ebf587bb0abe959ebec4b4f79c94d2bfe86be46749491d2712f4cfeb92785a4a",
+          "sha256": "bb3f3e25a93c5ccb6fab8778838d10f4d48466623af92c97b170685dda0a4ad6",
+          "artifactType": "PlanningDecision",
+          "artifactVersion": "0.1.0"
+        },
+        "optionId": "planning_sequence_v0_7c7a774c66ac44582773d4dc911ba09e6cb73445d740afeb49ea946206a051b2",
+        "useId": "planning_use_v0_b992d5d3e114584d35b95cee033b110affee37a4774a1e764a3b7751f89214e1",
+        "position": 0
+      },
+      "candidateId": "segment_9369928857dd4d440a21e1d45582b2ab5103020bf9056ce8e01aa4c28aa9ddc3",
+      "token": {
+        "objectId": "gate4_token_0",
+        "sha256": "fa759a64c193bb599215939201a3f0cc86b3f6bf09958db0eb2fc52621ceded7",
+        "artifactType": "EditorialToken",
+        "artifactVersion": "0.1.0"
+      },
+      "directionNodeId": "node_hook",
+      "source": {
+        "assetId": "asset_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "analysis": {
+          "objectId": "object_analysis",
+          "sha256": "6e8c20f87d934de45c7acaa3208715bb4e3cd97a6bf524897c517bdba25297a2",
+          "artifactType": "FootageAnalysis",
+          "artifactVersion": "1.0.0"
+        },
+        "shotId": "shot_synthetic",
+        "boundaryId": "planning_boundary_v0_c1bd40a65e8f1d02212c3ce98745a356fe87263422300a0e244eba47e4dc1b66",
+        "range": {
+          "startSeconds": 0.13,
+          "endSeconds": 1.97
+        },
+        "precision": "source_seconds",
+        "startAuthority": {
+          "kind": "candidate_endpoint",
+          "evidence": {
+            "artifact": {
+              "objectId": "object_analysis",
+              "sha256": "6e8c20f87d934de45c7acaa3208715bb4e3cd97a6bf524897c517bdba25297a2",
+              "artifactType": "FootageAnalysis",
+              "artifactVersion": "1.0.0"
+            },
+            "pointer": "/candidates/0/candidate/sourceRange/startSeconds"
+          }
+        },
+        "endAuthority": {
+          "kind": "candidate_endpoint",
+          "evidence": {
+            "artifact": {
+              "objectId": "object_analysis",
+              "sha256": "6e8c20f87d934de45c7acaa3208715bb4e3cd97a6bf524897c517bdba25297a2",
+              "artifactType": "FootageAnalysis",
+              "artifactVersion": "1.0.0"
+            },
+            "pointer": "/candidates/0/candidate/sourceRange/endSeconds"
+          }
+        },
+        "timebase": {
+          "artifact": {
+            "objectId": "object_analysis",
+            "sha256": "6e8c20f87d934de45c7acaa3208715bb4e3cd97a6bf524897c517bdba25297a2",
+            "artifactType": "FootageAnalysis",
+            "artifactVersion": "1.0.0"
+          },
+          "pointer": "/metadata/frameTimes"
+        },
+        "support": {
+          "artifact": {
+            "objectId": "gate4_view",
+            "sha256": "41df2798ea64042f263df45737c390c040265b9b36a8d006827f5fce7dbc04d4",
+            "artifactType": "ProjectWorldView",
+            "artifactVersion": "0.1.0"
+          },
+          "pointer": "/returned/0/support/value"
+        }
+      },
+      "output": {
+        "startTicks": 0,
+        "endTicks": 1840
+      },
+      "mapping": {
+        "kind": "constant_speed_identity",
+        "rate": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "sourceStartTicks": 130,
+        "sourceEndTicks": 1970,
+        "exactness": "source_endpoints_exact_on_output_clock"
+      },
+      "framing": {
+        "state": "source_aspect_matches_output",
+        "sourceAspect": {
+          "width": 9,
+          "height": 16
+        },
+        "evidence": {
+          "artifact": {
+            "objectId": "object_analysis",
+            "sha256": "6e8c20f87d934de45c7acaa3208715bb4e3cd97a6bf524897c517bdba25297a2",
+            "artifactType": "FootageAnalysis",
+            "artifactVersion": "1.0.0"
+          },
+          "pointer": "/metadata/aspectRatio"
+        }
+      },
+      "sourceAudio": {
+        "state": "absent_in_source",
+        "evidence": {
+          "artifact": {
+            "objectId": "object_analysis",
+            "sha256": "6e8c20f87d934de45c7acaa3208715bb4e3cd97a6bf524897c517bdba25297a2",
+            "artifactType": "FootageAnalysis",
+            "artifactVersion": "1.0.0"
+          },
+          "pointer": "/metadata/hasAudio"
+        }
+      },
+      "clipUseId": "edit_graph_clip_use_v0_9ce48d7fc644a8058843e710f99df49381407ea13bcbba600c798da22eb924e2"
+    }
+  ],
+  "operations": [],
+  "dependencies": [],
+  "obligations": [],
+  "deferredChecks": [],
+  "techniqueResolutions": [],
+  "capabilityRequirements": [
+    {
+      "capabilityId": "timeline_video_clip",
+      "predicates": [
+        {
+          "name": "clip_count",
+          "kind": "at_most",
+          "value": 1
+        },
+        {
+          "name": "framing",
+          "kind": "member",
+          "value": "source_aspect_matches_output"
+        },
+        {
+          "name": "output_aspect",
+          "kind": "member",
+          "value": "aspect_9_16"
+        },
+        {
+          "name": "output_duration_seconds_ceiling",
+          "kind": "at_most",
+          "value": 2
+        },
+        {
+          "name": "output_frame_rate",
+          "kind": "member",
+          "value": "fps_30_1"
+        },
+        {
+          "name": "output_height",
+          "kind": "at_most",
+          "value": 1920
+        },
+        {
+          "name": "output_width",
+          "kind": "at_most",
+          "value": 1080
+        },
+        {
+          "name": "source_codec",
+          "kind": "member",
+          "value": "codec_h264"
+        },
+        {
+          "name": "source_endpoint_precision",
+          "kind": "member",
+          "value": "source_seconds"
+        },
+        {
+          "name": "source_frame_timing",
+          "kind": "member",
+          "value": "constant_frame_rate"
+        },
+        {
+          "name": "source_rotation",
+          "kind": "member",
+          "value": "rotation_0"
+        },
+        {
+          "name": "time_mapping",
+          "kind": "member",
+          "value": "constant_speed_identity"
+        }
+      ],
+      "imposedBy": [
+        "edit_graph_clip_use_v0_9ce48d7fc644a8058843e710f99df49381407ea13bcbba600c798da22eb924e2"
+      ],
+      "requirementId": "capability_requirement_v0_24e454b5cad3759378f09f3890a75d26409a4de16f17e1350996a741d4ca1d33"
+    }
+  ],
+  "capability": {
+    "snapshot": {
+      "objectId": "capability_snapshot_v0_25ad6d83ae09559b87b63f3af179d57ca335f7efd59485f0f299780a3b2e214f",
+      "sha256": "f5bd6a7efd1783e375cb71ac2af33e3a4994a60fc9bb42f1951d31a609378f42",
+      "artifactType": "CapabilitySnapshot",
+      "artifactVersion": "0.1.0"
+    },
+    "environment": "synthetic_local_declared",
+    "asOf": "2026-09-24T00:00:00.000Z",
+    "assessments": [
+      {
+        "requirementId": "capability_requirement_v0_24e454b5cad3759378f09f3890a75d26409a4de16f17e1350996a741d4ca1d33",
+        "state": "AVAILABLE",
+        "executors": [
+          {
+            "executor": {
+              "executorId": "synthetic_executor",
+              "version": "0.1.0",
+              "implementationDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "declaration": {
+              "state": "present",
+              "value": {
+                "artifact": {
+                  "objectId": "capability_snapshot_v0_25ad6d83ae09559b87b63f3af179d57ca335f7efd59485f0f299780a3b2e214f",
+                  "sha256": "f5bd6a7efd1783e375cb71ac2af33e3a4994a60fc9bb42f1951d31a609378f42",
+                  "artifactType": "CapabilitySnapshot",
+                  "artifactVersion": "0.1.0"
+                },
+                "pointer": "/executors/0/declarations/2"
+              }
+            },
+            "attestation": {
+              "state": "present",
+              "value": {
+                "objectId": "capability_attestation_v0_d87d96c9d69f5adc7315abc9acd85f3184de4cc88f1a081752167f42a432baec",
+                "sha256": "82842789fb3780969c5a75fc4bae5c8c5fea96e7ae849b925a82dca33484b220",
+                "artifactType": "CapabilityAttestation",
+                "artifactVersion": "0.1.0"
+              }
+            },
+            "state": "AVAILABLE",
+            "reasonCode": "all_predicates_proven",
+            "unmet": []
+          }
+        ]
+      }
+    ]
+  },
+  "unresolved": [],
+  "executability": {
+    "state": "not_execution_ready",
+    "capability": {
+      "state": "capability_ready",
+      "eligibleExecutors": [
+        {
+          "executorId": "synthetic_executor",
+          "version": "0.1.0",
+          "implementationDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ]
+    },
+    "budget": {
+      "state": "unverified",
+      "reasonCode": "budget_feasibility_unverified",
+      "planningBudget": {
+        "objectId": "gate4_budget",
+        "sha256": "6bdc57b35412b6d84065242e0a09e1f2fec411e9537c8ecfd64d6d547a487f05",
+        "artifactType": "ComputeBudget",
+        "artifactVersion": "0.1.0"
+      },
+      "planningBudgetMeaning": "gate5_planning_authorization_not_execution_budget"
+    },
+    "blocking": [
+      {
+        "code": "budget_feasibility_unverified",
+        "subjectId": "execution_budget"
+      }
+    ],
+    "permission": "not_granted",
+    "recheck": "required_immediately_before_execution"
+  },
+  "editGraphId": "edit_graph_v0_80f58c4239cdbdd40ebd75fff2e61a8ff7afeb53356339716a98def53f39b970"
+}

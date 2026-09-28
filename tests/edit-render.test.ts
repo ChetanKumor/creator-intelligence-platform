@@ -152,9 +152,9 @@ async function evidence(c: Claimed, o: EvidenceOptions = {}): Promise<RealEviden
 
 // ================================================================ B01-B02 accepted boundaries stay frozen; synthetic Batch-2A evidence never executes
 const FROZEN: readonly (readonly [string, string])[] = [
-  ["packages/edit-execution/admission.ts", "5e6bfe47433f4ff736f5fdd129c4c4ead3440f55f5a070b457dc30818fe9a5d5"],
-  ["packages/edit-execution/common.ts", "68d99ee67122bc723f2e758a6b4137fe0f3047dd15124f18e0006dc89451be7d"],
-  ["packages/edit-execution/dag.ts", "3cbb2971b8aaf1385c8cf0d42b7975442886f569fd126b5034b9cb4144734d8b"],
+  ["packages/edit-execution/admission.ts", "d1fa1b90b5991fd495a6765c485123ba32b52cb332600adb06965dcf72f6d0a1"],
+  ["packages/edit-execution/common.ts", "f45a6e3a81303f3609c3a01918881e3da2eabe4a3682794f49237b0af5d69e3e"],
+  ["packages/edit-execution/dag.ts", "40e976e94cbe371d25b624b4e39c45f52a046eff4ca6f4a29d2e188f6db2f6e3"],
   ["packages/edit-execution/grant.ts", "3e7c6cb787f1c977955804921c81d41cbc1fd92fcedf74aac390857f8ca736c2"],
   ["packages/edit-execution/index.ts", "d1e0ec87c18ac77457f1c3e5b81691718483e3cfe0d2c96ae5dc97536ab16980"],
   ["packages/edit-execution/policy.ts", "3732c5e30bae7f19a8d9ca65c240014c73274d242ab7004c68e582d0ee393a9b"],
@@ -171,7 +171,7 @@ const FROZEN: readonly (readonly [string, string])[] = [
   ["packages/edit-runtime/recheck.ts", "646c6e235068237d889888ec88a1681241f76e0eff714dd82bda3315b0c36e96"],
   ["packages/edit-runtime/records.ts", "ca9093398cba8bc3d7652a0dbf0189d63936fcb7f15df4fd0b3dab900380190e"],
   ["packages/edit-runtime/staging.ts", "5fcc677b643f1b9efe78087d585a071a29eda9e8884f1ab775adfeb32e7404c3"],
-  ["packages/edit-runtime/validated.ts", "c01b39d19475bb21c3d8653a06cfc2278dd9dbdfd6337217305d5ebd6cf7e14a"],
+  ["packages/edit-runtime/validated.ts", "153bace6f31cda5950f54d92920f7cef4afbdf2eaf3107900c7a0462194b595a"],
   ["scripts/edit-runtime-local.ts", "016ae90284b4181909e2dc0ffa79d0824c596d41166af376fc65282f24bc0546"],
   ["tests/support/edit-execution-chains.ts", "dcd3aadde2cee9c18cef2f665474a067a0361a303b06fce2e2156680a649f2f6"],
   ["tests/support/edit-execution.ts", "bf1ace12b2b26ed46694ccf0243ed3993475366279c36fc9b66bba1c857e3828"],

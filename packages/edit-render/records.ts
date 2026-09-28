@@ -9,7 +9,7 @@ import { IdSchema, TimestampSchema } from "../contracts/common.js";
 import { canonicalSerialize } from "../domain/serialization.js";
 import { ArtifactRefSchema, checkIdentity, compareText, equal, identify, type SuppliedArtifact } from "../editorial/common.js";
 import { EditGraphSchema } from "../edit-graph/index.js";
-import { HashSchema, OwnerSchema, ScopeSchema } from "../edit-graph/common.js";
+import { EDIT_GRAPH_RECORD_VERSION, HashSchema, OwnerSchema, ScopeSchema } from "../edit-graph/common.js";
 import { ExecutionExecutorIdentitySchema, LocationFreeVersionSchema, PositiveSafeInt } from "../edit-execution/common.js";
 import { RuntimeEncodingSchema, RuntimeIdentitySchema } from "../edit-execution/runtime.js";
 import { RuntimeArtifacts } from "../edit-runtime/common.js";
@@ -157,7 +157,8 @@ export type RealCapabilityProbe = z.infer<typeof RealCapabilityProbeSchema>;
 export function buildRealCapabilityProbe(input: { dag: ValidatedExecutionDag; artifacts: readonly SuppliedArtifact[]; claim: ExecutionClaim; observation: RuntimeObservation;
   timing: CheckTiming; session: SessionProof }): RealCapabilityProbe {
   const v = requireValidated(input.dag), claim = claimBinding(v, input.claim), timing = timingFor(input.timing, [input.claim.claimedAt]);
-  const graph = guard("capability_probe_invalid", () => EditGraphSchema.parse(new RuntimeArtifacts(input.artifacts).exact(v.admission.editGraph, "EditGraph", "0.1.0", "execution_dag_invalid")));
+  const graph = guard("capability_probe_invalid", () => EditGraphSchema.parse(new RuntimeArtifacts(input.artifacts).exact(v.admission.editGraph, "EditGraph", EDIT_GRAPH_RECORD_VERSION,
+    "execution_dag_invalid")));
   const inventory = componentInventoryOf(input.observation.listings);
   const findings = v.admission.capability.requirements.map(r => {
     const requirement = graph.capabilityRequirements.find(g => g.requirementId === r.requirementId);

@@ -8,6 +8,7 @@ import { z } from "zod";
 import { ArtifactRefSchema, equal, type ArtifactRef, type SuppliedArtifact } from "../editorial/common.js";
 import { EDIT_EXECUTION_VERSION, ExecutionAdmissionSchema, ExecutionGrantSchema, ExecutionMediaGrantSchema, validateExecutionDag, type ExecutionAdmission,
   type ExecutionDag, type ExecutionGrant, type ExecutionMediaGrant } from "../edit-execution/index.js";
+import { EXECUTION_DAG_VERSION } from "../edit-execution/common.js";
 import { MAX_RUNTIME_SOURCES, RuntimeArtifacts, check, guard, parse, refuse } from "./common.js";
 import { attemptSlot, type AttemptSlot } from "./records.js";
 
@@ -57,7 +58,7 @@ const RequestSchema = z.strictObject({ dag: ArtifactRefSchema });
 export function openValidatedDag(requestInput: unknown, artifacts: readonly SuppliedArtifact[]): ValidatedExecutionDag {
   const request = parse(RequestSchema, requestInput, "execution_dag_invalid");
   const supplied = new RuntimeArtifacts(artifacts);
-  const value = supplied.exact(request.dag, "ExecutionDag", EDIT_EXECUTION_VERSION, "execution_dag_invalid");
+  const value = supplied.exact(request.dag, "ExecutionDag", EXECUTION_DAG_VERSION, "execution_dag_invalid");
   const dag = guard("execution_dag_invalid", () => validateExecutionDag(value, artifacts));
   check(dag.dispatch.state === "not_claimed" && dag.dispatch.requirement === "atomic_runtime_claim_required", "execution_dag_invalid",
     "Only an unclaimed DAG that still requires an atomic runtime claim can gain runtime authority.");

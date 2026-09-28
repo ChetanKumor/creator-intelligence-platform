@@ -10,7 +10,7 @@ import { z } from "zod";
 import { IdSchema, MediaAssetSchema, TimestampSchema } from "../contracts/common.js";
 import { ArtifactRefSchema, EvidenceRefSchema, checkIdentity, compareText, equal, identify, type ArtifactRef, type SuppliedArtifact } from "../editorial/common.js";
 import { EditGraphSchema, validateEditGraph, type EditGraph } from "../edit-graph/index.js";
-import { FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema } from "../edit-graph/common.js";
+import { EDIT_GRAPH_RECORD_VERSION, FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema } from "../edit-graph/common.js";
 import { CapabilityIdSchema, CapabilitySnapshotSchema, ExecutorIdentitySchema, assessRequirement, bindSnapshotAttestations, checkSnapshotLimits,
   type CapabilityAttestation, type CapabilityState } from "../edit-graph/capability.js";
 import { FootageAnalysisSchema } from "../footage-analyzer/protocol.js";
@@ -297,7 +297,7 @@ export function admitExecution(requestInput: unknown, artifacts: readonly Suppli
   check(grant.issuedAt <= admittedAt && (grant.expiresAt === null || admittedAt < grant.expiresAt), "execution_grant_window_invalid", "Admission falls outside the execution grant window.");
 
   // The accepted graph: exact scope and identity first, then full Gate-6 semantic replay; no unresolved obligation survives.
-  const claimed = parse(EditGraphSchema, supplied.exact(grant.editGraph, "EditGraph", "0.1.0", "graph_replay_failed"), "graph_replay_failed");
+  const claimed = parse(EditGraphSchema, supplied.exact(grant.editGraph, "EditGraph", EDIT_GRAPH_RECORD_VERSION, "graph_replay_failed"), "graph_replay_failed");
   check(sameScope(claimed.scope, scope), "scope_mismatch", "The graph and the execution grant are in different scopes.");
   check(claimed.editGraphId === grant.graph.editGraphId && claimed.revision === grant.graph.revision, "graph_binding_mismatch", "The grant names another graph identity or revision.");
   const graph = guard("graph_replay_failed", () => validateEditGraph(claimed, artifacts));

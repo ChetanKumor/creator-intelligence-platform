@@ -14,7 +14,8 @@ import { ArtifactRefSchema, EditorialArtifactMap, EvidenceRefSchema, availabilit
   type EvidenceRef, type SuppliedArtifact } from "../editorial/common.js";
 import { CreativeDirectionGraphSchema } from "../director/index.js";
 import { PlanningContextSchema, PlanningDecisionSchema } from "../planning/index.js";
-import { Nat, OwnerSchema, ScopeSchema, at, check, envelope, exactArtifact, guard, header, parse, parseCanonical, sameScope, type Scope } from "./common.js";
+import { EDIT_GRAPH_RECORD_VERSION, Nat, OwnerSchema, ScopeSchema, at, check, envelope, exactArtifact, guard, header, parse, parseCanonical, sameScope, secondsOf,
+  type Scope } from "./common.js";
 import { EditGraphSchema, validateEditGraph, type EditGraph, type VideoClipUse } from "./graph.js";
 
 /** Frozen UEP 1.0.0 bounds as read from packages/contracts/edit-plan.ts and common.ts. A schema-oracle test cross-checks them. */
@@ -190,7 +191,7 @@ export function assessUepCompatibility(requestInput: unknown, artifacts: readonl
   const request = parse(ProjectionRequestSchema, requestInput);
   const map = guard("input_invalid", () => new EditorialArtifactMap(artifacts));
   const policy = parseCanonical(UepProjectionPolicySchema, exactArtifact(map, request.policy, "UepProjectionPolicy"));
-  const claimed = parse(EditGraphSchema, exactArtifact(map, request.editGraph, "EditGraph"));
+  const claimed = parse(EditGraphSchema, exactArtifact(map, request.editGraph, "EditGraph", EDIT_GRAPH_RECORD_VERSION));
   check(sameScope(policy.scope, claimed.scope), "scope_mismatch", "Foreign projection policy scope.");
   const graph: EditGraph = validateEditGraph(claimed, artifacts);
   const lineage = <S extends z.ZodType>(schema: S, ref: ArtifactRef, kind: string, version = "0.1.0") =>
@@ -215,11 +216,13 @@ export function assessUepCompatibility(requestInput: unknown, artifacts: readonl
   const effectCount = graph.operations.reduce((sum, o) => sum + (o.primitive === "color_look" && !rich.some(r => r.value === o) ? o.extents.length : 0), 0);
   const seconds = graph.output.durationTicks / tps;
   // The frozen UEP superRefine arithmetic, replayed on the exact projected seconds: continuity and total duration within its tolerance.
+  // UEP 1.0.0 is a public float-second contract: its seconds are derived here from exact time (the correctly rounded doubles, which are
+  // exactly the Gate-5 values the graph decoded) and never flow back into the graph.
   let expectedStart = 0, arithmetic = true;
   for (const clip of video) {
     const start = clip.output.startTicks / tps;
     if (Math.abs(start - expectedStart) > TIME_EPSILON_SECONDS) arithmetic = false;
-    expectedStart = start + (clip.source.range.endSeconds - clip.source.range.startSeconds);
+    expectedStart = start + (secondsOf(clip.source.range.end) - secondsOf(clip.source.range.start));
   }
   if (Math.abs(expectedStart - seconds) > TIME_EPSILON_SECONDS) arithmetic = false;
 
@@ -254,7 +257,7 @@ export function assessUepCompatibility(requestInput: unknown, artifacts: readonl
     const unverifiedJoin = (evidence: EvidenceRef[]) => segmentUnavailable.push(finding("clip_segment_join_unverified", [clip.clipUseId], evidence));
     if (segment === undefined) { unverifiedJoin([at(clip.token, "/clipSegment")]); continue; }
     const range = segment.value.sourceRange, access = accessOf(clip.source.assetId);
-    if (segment.value.assetId !== clip.source.assetId || range.startSeconds > clip.source.range.startSeconds || range.endSeconds < clip.source.range.endSeconds
+    if (segment.value.assetId !== clip.source.assetId || range.startSeconds > secondsOf(clip.source.range.start) || range.endSeconds < secondsOf(clip.source.range.end)
       || (access !== undefined && range.endSeconds > access.asset.durationSeconds)) {
       segmentIncompatible.push(finding("clip_segment_join_invalid", [clip.clipUseId], [segment.reference]));
     } else if (access === undefined) unverifiedJoin([segment.reference]);

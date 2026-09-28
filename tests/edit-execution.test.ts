@@ -21,6 +21,8 @@ import { EXECUTION_LIMITS, ESTIMATE, FINAL_RESOLUTION, HALF_LIMITS, OPERATION, R
 import { exactProduct } from "../packages/edit-execution/workload.js";
 
 // ---------------------------------------------------------------- helpers
+/** A canonical exact source instant (Gate 7 Batch 3A-F): value / perSecond seconds. */
+const instant = (value: number, perSecond = 1) => ({ value, rate: { numerator: perSecond, denominator: 1 } });
 function errorCode(run: () => unknown): string {
   try { run(); } catch (error) {
     assert.ok(error instanceof EditExecutionError, `expected an owned EditExecutionError, received ${String(error)}`);
@@ -71,7 +73,7 @@ type ClipDraft = Extract<ExecutionDagNodeDraft, { kind: "source_video_clip" }>;
 function shiftClip(drafts: ExecutionDagNodeDraft[], index: number): ExecutionDagNodeDraft[] {
   const mutated = structuredClone(drafts), target = mutated[index] as ClipDraft;
   assert.equal(target.kind, "source_video_clip");
-  target.source.range = { startSeconds: 1, endSeconds: 3 };
+  target.source.range = { start: instant(1), end: instant(3) };
   const frame = (frameIndex: number) => ({ kind: "frame_pts" as const, frameIndex, evidence: { artifact: target.source.analysis, pointer: `/metadata/frameTimes/${frameIndex}` } });
   target.source.trim = { ...target.source.trim, precision: "frame_pts_exact", startAuthority: frame(10), endAuthority: frame(30) };
   target.mapping.sourceStartTicks = 1_000_000_000;
@@ -188,7 +190,7 @@ test("a mutated or relabeled graph cannot survive coordinated rehash into admiss
   const g = basicGraph();
   assert.equal(refusal(forgedGraph(g, graph => {
     const clip = graph.clipUses[0]!;
-    clip.source.range = { startSeconds: 0, endSeconds: 3 };
+    clip.source.range = { start: instant(0), end: instant(3) };
     clip.output = { startTicks: 0, endTicks: 3_000_000_000 };
     clip.mapping.sourceEndTicks = 3_000_000_000;
     graph.output.durationTicks = 3_000_000_000;
@@ -671,13 +673,13 @@ const FROZEN_LEGACY_SURFACES = [
 const ACCEPTED_GATE_SURFACES = [
   ["packages/routing/index.ts", "11a6bb3472cb7ad026924b4e4ec555400bf1575e224a5e4fec11d2de8d85ac09"],
   ["packages/edit-graph/capability.ts", "e13970d956f172bb74a55de92d1b61323a016e4b3a949154b52bb5a38425139a"],
-  ["packages/edit-graph/common.ts", "08cc500d28c538567ae65a11929dc312f0e6d1994582c45cc7b2ac7cbccc5cbd"],
-  ["packages/edit-graph/compatibility.ts", "41da745f287f254585b0599cc1c3520a9a695f255d035b6e86223aa0f4c687fd"],
-  ["packages/edit-graph/graph.ts", "ca61ec8df45edff03a1d9c536da40282cc8afc81e362986fe1d7d6e1d7682f92"],
+  ["packages/edit-graph/common.ts", "f50f916dc4bf1aaf1e28b5e0617ff99b6137957b4aa64cb3071e51774e9461f3"],
+  ["packages/edit-graph/compatibility.ts", "93d10fb4d1d658d5f26183e14b81a4aefbaba44a1bf9b58f93bb6eae5d22d96c"],
+  ["packages/edit-graph/graph.ts", "3948e3583edeb37b84feee9f0f0ab8de45c25edbcb4ac724c217ba758a020eea"],
   ["packages/edit-graph/index.ts", "fc922eb038a75aeea6d933de37ccb0dd700366ac7e0ddddfb7750b926e1a1628"],
   ["packages/edit-graph/profile.ts", "5823f09e40027b8632fb5ee045327a376f8154ac878f8adaee4c358753893b14"],
   ["packages/edit-graph/resolution.ts", "f5419d21686c7cf69050b424ae658e941ec065ef4c7da50cf240982526aef753"],
-  ["tests/edit-graph.test.ts", "124d07a1ebd175018583fe3a3a8ce80a6363c16855939112e59315a515c16668"],
+  ["tests/edit-graph.test.ts", "bef2690b7cf54108ed97b17a01f835ec67bfd07db907eb3f277f483b13f91183"],
   ["tests/support/edit-graph.ts", "50e57755aff2d03b5e282e8445b399edfca1dd5af000c9981e607b2875cc0468"],
   ["docs/phases/phase-5-gate-6-editgraph-capability-compatibility.md", "7b8304cbd9585f57684059eef65a442d2e394a51a65f8e3f0c9ab7452a04c011"],
 ] as const;
@@ -1130,7 +1132,7 @@ test("owner review hard attack: linked source-audio nodes carry the exact trim a
 test("owner review hard attack: a source-seconds trim keeps its weaker authority and cannot be upgraded", () => {
   const g = secondsGraph(), clip = videoUses(g.graph)[0]!;
   assert.deepEqual([clip.source.precision, clip.source.startAuthority.kind, clip.source.endAuthority.kind, clip.source.range],
-    ["source_seconds", "candidate_endpoint", "candidate_endpoint", { startSeconds: 0.05, endSeconds: 2.05 }]);
+    ["source_seconds", "candidate_endpoint", "candidate_endpoint", { start: instant(1, 20), end: instant(41, 20) }]);
   const d = dagOf(admissionOf(g)), [index] = clipIndexes(d.dag) as [number], node = d.dag.nodes[index] as ClipNode;
   const { assetId: _assetId, sourceHash: _sourceHash, analysis: _analysis, range: _range, ...trim } = clip.source;
   assert.deepEqual(node.source.trim, trim);
