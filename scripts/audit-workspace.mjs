@@ -73,6 +73,7 @@ const adapterPolicy = {
   "scripts/edit-render-fixture-authority-local.ts": { imports: ["node:crypto", "node:fs/promises", "node:path"], process: "none" },
   "scripts/edit-render-local.ts": { imports: ["node:child_process", "node:crypto", "node:fs/promises", "node:path", "node:perf_hooks", "node:url"], process: "strict_spawn" },
   "scripts/edit-media-qc-local.ts": { imports: ["node:child_process", "node:crypto", "node:fs/promises", "node:path", "node:url"], process: "strict_spawn" },
+  "scripts/edit-observation-local.ts": { imports: ["node:child_process", "node:crypto", "node:fs/promises", "node:path", "node:url"], process: "strict_spawn" },
 };
 // Test harness files that start processes (fixture generation with the pinned tool, or running this audit in a fixture).
 const testProcessFiles = new Set(["tests/workspace-boundary.test.ts", "tests/reference-media.integration.ts", "tests/support/footage-media.ts", "tests/support/edit-render-media.ts",

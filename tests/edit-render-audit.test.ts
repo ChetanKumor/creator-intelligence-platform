@@ -45,7 +45,7 @@ test("B2B-A1 the unmodified audited surface passes and names exactly the subproc
   const directory = await fixture();
   const result = audit(directory);
   assert.equal(result.status, 0, result.output);
-  assert.match(result.output, /14 explicit local runtime adapters with per-file capabilities \(subprocess-capable: reference-local\.ts, transnetv2-local\.ts, audio-beat-worker\.ts, audio-energy-worker\.ts, audio-structure-worker\.ts, audio-speech-worker\.ts, edit-render-local\.ts, edit-media-qc-local\.ts\)/);
+  assert.match(result.output, /15 explicit local runtime adapters with per-file capabilities \(subprocess-capable: reference-local\.ts, transnetv2-local\.ts, audio-beat-worker\.ts, audio-energy-worker\.ts, audio-structure-worker\.ts, audio-speech-worker\.ts, edit-render-local\.ts, edit-media-qc-local\.ts, edit-observation-local\.ts\)/);
   // A direct, verified spawn with a literal shell: false and a property named exec (a RegExp method) are not over-flagged.
   const path = join(directory, "scripts", "edit-render-local.ts");
   await writeFile(path, `${SPAWN}spawn(binary.path, ["-version"], { shell: false, windowsHide: true });\nexport const digits = /\\d+/.exec("7");\n`);

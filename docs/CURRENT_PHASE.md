@@ -1,4 +1,4 @@
-# Current Phase - Phase 5 Gate 7 Batch 2B First Truthful Actual Media Execution (synthetic media)
+# Current Phase - Phase 5 Gate 7 Batch 3A Editorial Evidence Surfaces and Semantic Critic Foundation (synthetic media)
 
 Last updated: 2026-09-27
 
@@ -18,6 +18,78 @@ Last updated: 2026-09-27
 - Phase 5 Gate 7 execution runtime: owner-authorized from HEAD `5ff5750af00e91bd6a226daf5841ec4dc3873819`. Batch 1 implementation verification, independent owner-review repair, and final hardening verification are **PASS**. Gate 7 Batch 1 is **OWNER-ACCEPTED** at `d55f0e1` after final independent source review. Gate 7 overall remains **NOT YET COMPLETE**. Batch 2 actual media rendering is **NOT AUTHORIZED at this closure checkpoint**. All Batch-1 evidence is synthetic/offline; no actual media rendering, FFmpeg execution, media QC, critic or repair execution has occurred.
 - Phase 5 Gate 7 Batch 2A (runtime-safety foundation only): owner-authorized from HEAD `ae432248cd30e8465cd652f49b1e35f441af2e58`. Batch 2A implementation verification: **PASS**. Owner-review repair verification: **PASS**. Batch 2A owner acceptance: **OWNER-ACCEPTED** at `291a04e`. Actual FFmpeg execution: **NOT AUTHORIZED**. Gate 7 overall: **NOT YET COMPLETE**. Batch 2B is not authorized or started. All Batch-2A evidence is synthetic providers over opaque test bytes; no media, FFmpeg, Python, model or real-footage operation ran. One pre-work `git fetch` contacted the Git remote solely to verify the frozen baseline; Batch-2A runtime code and tests performed no network I/O and ran under `scripts/no-network.mjs`.
 - Phase 5 Gate 7 Batch 2B (first truthful actual media execution through the EditGraph execution architecture; synthetic media only): owner-authorized from HEAD `d3c8302b40a5064ae0eb4408195dc35346ecc648`. Batch 2B implementation verification: **PASS** after the owner's accounting ruling (historically **FAIL**, deliberately fail-closed on one unmet frozen closure contract, Batch-2B requirement 10, measured runtime resource, cost and time accounting, while accounting was **PARTIAL**). Actual pinned-FFmpeg synthetic media execution: **PASS**. Independent technical media QC: **PASS**. Reservation-consumption accounting: **PASS** under the owner's local-execution ruling, scoped to the one pinned local executor: FFmpeg-reported CPU time and peak commit are accepted as attributed evidence, and total monetary cost is not applicable to local non-metered execution, which is not a zero cost (historically **PARTIAL**). Production user-media lifecycle authority: **NOT VERIFIED**. Real user footage: **NOT RUN**. Semantic editing quality: **NOT VERIFIED**. OWNER ACCEPTANCE: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**. Batch 2B closure is committed at `74bbe1e7c05a59ac24c4d9113287ce3a32b61a6c`. Independent owner-review repair (three findings, test-first): trust-handle repair **PASS**, QC-liveness repair **PASS**, terminal-evidence repair **PASS**; implementation verification then remained **FAIL** while accounting was **PARTIAL**. Owner-review repair #2 (three further findings, test-first): policy-snapshot repair **PASS**, probe-completion repair **PASS**, exact-artifact-QC repair **PASS**; implementation verification then remained **FAIL** while accounting was **PARTIAL**. Owner-review repair #3 (three code findings, test-first, and one documentation finding): private-runtime-context repair **PASS**, QC-clock-binding repair **PASS**, process-termination-truth repair **PASS**, final-evidence-doc repair **PASS**; implementation verification then remained **FAIL** while accounting was **PARTIAL**. Owner accounting closure (2026-09-27, test-first, under the owner's ruling): accounting **PASS**, implementation verification **PASS**.
+- Phase 5 Gate 7 Batch 3A (editorial evidence surfaces and semantic-critic foundation; synthetic media only): owner-authorized from HEAD `c74d5fe649ebe470ee0ea9bcb21cdfc4969641cb`, including two owner-authorized protected changes raised before modification (one workspace-audit adapter registration and the pinned Batch-2B audit count). Batch 3A implementation verification: **PASS**. Actual synthetic rendered-media verification: **PASS**. Semantic critic: port plus synthetic fixture critic only (no model). Real user footage: **NOT RUN**. Professional editing quality: **NOT VERIFIED**. ARCHITECTURE_V2_TIMEBASE_GAP: **YES** (recorded, not modified). Gate 7 Batch 3A owner acceptance: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**.
+
+## Phase 5 Gate 7 Batch 3A - Editorial evidence surfaces and semantic critic foundation (synthetic media only)
+
+Authority: [Gate-7 Batch-3A implementation and verification record](phases/phase-5-gate-7-batch-3a-editorial-evidence-critic.md). It is
+governed by the accepted Batch-1, Batch-2A and Batch-2B records, which are frozen and unchanged, and by the owner's explicit Batch-3A-only
+authorization.
+
+Current status (2026-09-27): Batch 3A implementation verification is **PASS**. Owner acceptance is **PENDING**.
+
+The batch adds a new pure package, `packages/edit-review/`, and one audited strict-spawn adapter, `scripts/edit-observation-local.ts`:
+
+- **Transcript evidence and pack.** Provider-neutral `TranscriptEvidence`: words and audio events on the accepted integer tick clock,
+  bound to exact source content. A deterministic `TranscriptPack` keeps exact lineage and has a non-authoritative text projection.
+- **Routing seam.** A pure `EvidenceRequest` → `EvidenceSelection` seam; a transcript is never mandatory.
+- **`ReviewPlan`.**
+  - Derived from exactly what was executed, under an owner `ReviewPolicy` budget.
+  - Every executed cut appears once, at its exact output frame, tick and sample. Continuous joins are accounted for but never reviewed.
+  - Adds a constant global set.
+- **`EditorialObservation`.** Bounded evidence of one exact media identity: a rendered output bound to its receipt and passing QC, or a
+  staged source. Its computation identity binds content, request, decoder, semantics, observer and transcript join, and excludes lineage.
+- **Critic foundation.**
+  - Technical QC stays a separate, exactly linked authority.
+  - Deterministic checks report only measured `info` signals: near-black frames, and a settled audio level step at a cut.
+  - Model-assessed findings enter only through a provider-neutral port. Here that is a synthetic fixture critic, with no model.
+
+The adapter decodes only the published output or a staged source:
+
+- located by content identity and verified through held handles;
+- decoded with the pinned FFmpeg over `fd`-only input, integer-only argv and exact bounded stdout;
+- re-verified after decoding.
+
+Two owner-authorized protected changes were raised before modification and applied exactly: one workspace-audit adapter registration, and
+the pinned Batch-2B audit count 14 → 15.
+
+Preserved under `.local-runs/phase5-gate7/` (`batch3a-*`):
+
+- the first red;
+- eight test-only corrections;
+- ten hostile self-review defects (D1–D10), each with red, repair and green receipts;
+- one attempted red that could not be made red (A1);
+- three disclosed process deviations.
+
+Final verification, run 2 on the final bytes:
+
+- typecheck and build PASS;
+- 46/46 pure Batch-3A, 8/8 Batch-3A actual-media, 43/43 pure Batch-2B, 10/10 audit-policy, 34/34 Batch-2B actual-media, 130/130
+  Batch-2A, 81/81 Batch-1, 79/79 Gate-6, 97/97 Gate-5, 33/33 routing, 377/377 compatibility, 39/39 legacy-seam and 932/932 full safe
+  tests PASS;
+- workspace audit PASS and `git diff --check` PASS;
+- of the 297 tracked files, only the two owner-authorized files and this narrow status update changed; the 17 owner files (metadata only)
+  and the 496 earlier Gate-7 receipts are unchanged; manifests and lockfile are unchanged; nothing is staged.
+
+ARCHITECTURE_V2_TIMEBASE_GAP: **YES**. Source-side time persists as floating seconds in accepted Gate-5/6 records
+(`packages/contracts/common.ts:8,17-19`, `packages/edit-graph/graph.ts:3,37`). It is recorded, not modified, and must be resolved before
+repair or localized invalidation becomes authoritative.
+
+No test performed network access, and there was no dependency change, real footage, model or paid-provider operation. The session's only
+network operations were read-only: the baseline `git ls-remote`, plus the upstream `browser-use/video-use` licensing review (a clone and an
+issue listing, in the session scratch directory). Work remains uncommitted and unstaged.
+
+Phase 5 Gate 7 Batch 3A implementation verification: **PASS**
+
+Actual synthetic rendered-media verification: **PASS**
+
+Real user footage: **NOT RUN**
+
+Professional editing quality: **NOT VERIFIED**
+
+Gate 7 Batch 3A owner acceptance: **OWNER-ACCEPTED**
+
+Gate 7 overall: **NOT YET COMPLETE**
 
 ## Phase 5 Gate 7 Batch 2B - First truthful actual media execution (synthetic media only)
 
@@ -639,3 +711,5 @@ This Batch-2B closure does not claim production user-media lifecycle authority, 
 Gate 7 overall remains **NOT YET COMPLETE**.
 
 The next authorized implementation work has not started. Gate 7 Batch 3A — editorial evidence surfaces and critic foundation, including the bounded adaptations researched from `browser-use/video-use` — must begin only after the Batch-2B closure commit.
+
+Update (2026-09-27, Gate 7 Batch 3A): Batch 3A was implemented from HEAD `c74d5fe` (after the Batch-2B closure commit) under the owner's Batch-3A-only authorization. Its implementation verification is **PASS** on synthetic media, and owner acceptance is **OWNER-ACCEPTED**. It claims no real-footage review, model critic, calibrated critique or professional editing quality. Nothing later is authorized or started: no RepairPlan/GraphDiff execution, automatic repair, localized rerender, EditorialState, RevisionLedger, motion/composition/AudioGraph expansion, HyperFrames, CapabilityRegistry, preview runtime, manual NLE or OTIO/OCIO work.
