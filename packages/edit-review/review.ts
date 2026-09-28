@@ -15,7 +15,7 @@ import { FrameRateBoundsSchema, HashSchema, Nat, ScopeSchema } from "../edit-gra
 import { LookSchema } from "../edit-graph/resolution.js";
 import { PositiveSafeInt, RenderIntentSchema } from "../edit-execution/common.js";
 import type { ExecutionDagNode } from "../edit-execution/index.js";
-import { RenderExecutionReceiptSchema, TechnicalMediaQcReceiptSchema, compileRenderProgram, requireProgram, type RenderExecutionReceipt, type RenderProgram,
+import { AnyRenderExecutionReceiptSchema, TechnicalMediaQcReceiptSchema, compileRenderProgram, requireProgram, type AnyRenderExecutionReceipt, type RenderProgram,
   type TechnicalMediaQcReceipt } from "../edit-render/index.js";
 import { requireValidated, type ValidatedExecutionDag } from "../edit-runtime/validated.js";
 import { REVIEW_HARD_LIMITS, check, envelope, guard, header, isSortedUnique, parse, parseCanonical, sortedUnique } from "./common.js";
@@ -95,7 +95,7 @@ const ItemSchema = z.strictObject({ itemIndex: Nat, purpose: z.enum(REVIEW_PURPO
 export type ReviewItem = z.infer<typeof ItemSchema>;
 const PlanBodySchema = z.strictObject({ ...envelope("ReviewPlan"), scope: ScopeSchema, policy: z.strictObject({ policyId: IdSchema }),
   render: z.strictObject({ receiptId: IdSchema, dagId: IdSchema, programId: IdSchema, renderComputationId: IdSchema, editGraph: z.strictObject({ editGraphId: IdSchema,
-    revision: z.literal(0) }), editGraphArtifact: ArtifactRefSchema, renderIntent: RenderIntentSchema }),
+    revision: Nat }), editGraphArtifact: ArtifactRefSchema, renderIntent: RenderIntentSchema }),
   output: z.strictObject({ outputArtifactId: IdSchema, contentHash: HashSchema, sizeBytes: PositiveSafeInt, container: z.literal("mp4") }),
   technicalQc: z.strictObject({ qcReceiptId: IdSchema, verdict: z.literal("pass"), qcScope: z.literal("technical_media_qc_only_not_semantic_or_editing_quality") }),
   facts: MediaFactsSchema, inputs: z.array(InputSchema).min(1).max(16), segments: z.array(SegmentSchema).min(1).max(16), joins: z.array(JoinSchema).max(15),
@@ -108,7 +108,7 @@ export const ReviewPlanSchema = PlanBodySchema.extend({ planId: IdSchema }).supe
 export type ReviewPlan = z.infer<typeof ReviewPlanSchema>;
 export function requirePlan(value: unknown): ReviewPlan { return parseCanonical(ReviewPlanSchema, value, "review_plan_invalid"); }
 
-export interface ReviewPlanInput { dag: ValidatedExecutionDag; artifacts: readonly SuppliedArtifact[]; receipt: RenderExecutionReceipt;
+export interface ReviewPlanInput { dag: ValidatedExecutionDag; artifacts: readonly SuppliedArtifact[]; receipt: AnyRenderExecutionReceipt;
   qc: TechnicalMediaQcReceipt | undefined; policy: ReviewPolicy }
 type CutSequence = Extract<ExecutionDagNode, { kind: "cut_sequence" }>;
 /**
@@ -119,7 +119,7 @@ export function planReview(input: ReviewPlanInput): ReviewPlan {
   const v = guard("input_invalid", () => requireValidated(input.dag)), dag = v.dag;
   const policy = parseCanonical(ReviewPolicySchema, input.policy, "review_policy_invalid");
   check(equal(policy.scope, dag.scope), "scope_mismatch", "The review policy belongs to another scope.");
-  const receipt = parse(RenderExecutionReceiptSchema, input.receipt, "render_receipt_invalid");
+  const receipt = parse(AnyRenderExecutionReceiptSchema, input.receipt, "render_receipt_invalid");
   check(receipt.dag.dagId === dag.dagId && receipt.renderComputationId === dag.renderIdentity.renderComputationId && equal(receipt.scope, dag.scope)
     && receipt.editGraph.editGraphId === dag.graph.editGraphId, "render_receipt_mismatch", "The execution receipt is not of this DAG.");
   const program = guard("input_invalid", () => compileRenderProgram(v, input.artifacts));
@@ -188,7 +188,7 @@ export function planReview(input: ReviewPlanInput): ReviewPlan {
     "review_budget_exceeded", "The planned review exceeds the owner's review budget.");
   const body = { ...header("ReviewPlan"), scope: dag.scope, policy: { policyId: policy.policyId },
     render: { receiptId: receipt.receiptId, dagId: dag.dagId, programId: program.programId, renderComputationId: receipt.renderComputationId,
-      editGraph: { editGraphId: dag.graph.editGraphId, revision: 0 as const }, editGraphArtifact: dag.editGraph, renderIntent: receipt.renderIntent },
+      editGraph: { editGraphId: dag.graph.editGraphId, revision: dag.graph.revision }, editGraphArtifact: dag.editGraph, renderIntent: receipt.renderIntent },
     output: { outputArtifactId: out.outputArtifactId, contentHash: out.contentHash, sizeBytes: out.sizeBytes, container: "mp4" as const },
     technicalQc: { qcReceiptId: qc.qcReceiptId, verdict: "pass" as const, qcScope: qc.qcScope }, facts, inputs, segments, joins, items, projection,
     semantics: "review_plan_v0" as const };

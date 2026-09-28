@@ -50,6 +50,9 @@ export const EDIT_RENDER_ERROR_CODES = [
   "output_missing", "output_empty", "output_oversized", "output_verification_failed", "output_publication_corrupt", "render_store_invalid", "render_storage_unavailable",
   "reservation_consumption_exceeded",
   "qc_receipt_invalid", "qc_output_missing", "qc_tool_unavailable",
+  // Gate 7 Batch 3B localized execution: trusted segment reuse and its failure truth.
+  "segment_reuse_authority_invalid", "segment_artifact_mismatch", "segment_artifact_corrupt", "segment_artifact_conflict", "segment_store_invalid",
+  "segment_store_bound_exceeded", "segment_stage_output_invalid", "segment_input_mutated_during_execution",
 ] as const;
 export type EditRenderErrorCode = (typeof EDIT_RENDER_ERROR_CODES)[number];
 export const EditRenderErrorCodeSchema = z.enum(EDIT_RENDER_ERROR_CODES);

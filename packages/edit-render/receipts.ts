@@ -22,6 +22,8 @@ import { ExecutablePermitBindingSchema, type ExecutablePermitBinding } from "./a
 import { requireProgram, type RenderProgram } from "./program.js";
 import { RealRuntimeProbeSchema, type RealRuntimeProbe, type RealExecutionPolicy } from "./records.js";
 import { RENDER_SEMANTICS } from "./semantics.js";
+import type { LocalizedExecutionPlan } from "./localized.js";
+import type { Benchmark } from "./probe.js";
 
 // ---------------------------------------------------------------- output identity, bounds and timeout
 /** Output content identity: the exact bytes only. It is never the render computation identity and never access authorization. */
@@ -206,7 +208,7 @@ const lineageShape = {
   scope: ScopeSchema, logicalOperation: z.strictObject({ operationId: IdSchema, attempt: PositiveSafeInt }),
   attemptRegistration: z.strictObject({ registrationId: IdSchema, attemptSlotId: IdSchema }),
   claim: z.strictObject({ claimId: IdSchema, claimTargetId: IdSchema, claimedAt: TimestampSchema }), claimTarget: ClaimTargetSchema,
-  dag: z.strictObject({ dagId: IdSchema, artifact: ArtifactRefSchema }), editGraph: z.strictObject({ editGraphId: IdSchema, revision: z.literal(0) }),
+  dag: z.strictObject({ dagId: IdSchema, artifact: ArtifactRefSchema }), editGraph: z.strictObject({ editGraphId: IdSchema, revision: z.number().int().nonnegative().safe() }),
   admission: z.strictObject({ admissionId: IdSchema, artifact: ArtifactRefSchema }), executionGrant: z.strictObject({ grantId: IdSchema, artifact: ArtifactRefSchema }),
   renderComputationId: IdSchema, renderIntent: RenderIntentSchema, renderProfile: ArtifactRefSchema,
   executor: ExecutionExecutorIdentitySchema, environment: IdSchema, runtime: RuntimeIdentitySchema,
@@ -220,14 +222,15 @@ const lineageShape = {
   recorder: RenderImplementationSchema,
 };
 const InputEvidenceSchema = z.strictObject({ assetId: IdSchema, stagedObjectId: IdSchema, contentHash: HashSchema, sizeBytes: PositiveSafeInt });
+const OutputSchema = z.strictObject({ outputArtifactId: IdSchema, contentHash: HashSchema, sizeBytes: PositiveSafeInt, container: z.literal("mp4"),
+  publication: z.enum(["published_by_this_execution", "existing_output_reverified"]), verification: z.literal("reopened_final_object_full_sha256_and_size") });
 const ReceiptBodySchema = z.strictObject({
   ...envelope("RenderExecutionReceipt"), ...lineageShape, outcome: z.literal("succeeded"),
   executionStart: z.strictObject({ startId: IdSchema, startedAt: TimestampSchema }),
   inputs: z.array(InputEvidenceSchema.extend({ verification: z.literal("fresh_handle_full_sha256_immediately_before_spawn_and_after_exit"),
     handoff: z.literal("same_verified_handle_inherited_by_executor") })).min(1).max(16),
   inputReverification: z.literal("unchanged_after_exit"), process: ProcessSchema, recordedAt: TimestampSchema,
-  output: z.strictObject({ outputArtifactId: IdSchema, contentHash: HashSchema, sizeBytes: PositiveSafeInt, container: z.literal("mp4"),
-    publication: z.enum(["published_by_this_execution", "existing_output_reverified"]), verification: z.literal("reopened_final_object_full_sha256_and_size") }),
+  output: OutputSchema,
   qc: z.literal("not_performed_by_renderer_independent_technical_qc_required"),
   basis: z.literal("real_pinned_ffmpeg_execution_verified_immutable_publication_v0"),
 });
@@ -273,6 +276,129 @@ export const RenderExecutionFailureSchema = FailureBodySchema.extend({ failureId
   .refine(v => equal(v.accounting, accountingOfReceipt(v)), "Accounting must replay from the record's own measurements.")
   .refine(v => checkIdentity(v, "failureId", "render_execution_failure_v0"), "Render execution failure identity mismatch.");
 export type RenderExecutionFailure = z.infer<typeof RenderExecutionFailureSchema>;
+
+// ---------------------------------------------------------------- Gate 7 Batch 3B: segmented (localized) execution evidence, record version 0.2.0
+/**
+ * A segmented execution runs the same RenderProgram as per-segment stage processes and one assembly process. Version 0.1.0 keeps its exact
+ * meaning (one process over the staged inputs); version 0.2.0 records every process, each segment's computed or reused intermediate and how
+ * it was verified, which staged sources were consumed, and the per-process measurements whose aggregate the accepted accounting rule
+ * replays. Reuse is measured, never zero-cost: verification bytes and time are counted, and the final assembly and encode always run.
+ */
+export const SEGMENTED_EXECUTION_VERSION = "0.2.0" as const;
+export const SEGMENT_EXECUTION_SEMANTICS_VERSION = "segmented_render_execution_v0" as const;
+const Count = z.number().int().nonnegative().safe();
+const ArtifactIdentitySchema = z.strictObject({ contentHash: HashSchema, sizeBytes: PositiveSafeInt });
+/** One segment's intermediate: its durable record, exact raw frames and (when linked) exact raw samples. */
+export const SegmentArtifactRefSchema = z.strictObject({ recordId: IdSchema, video: ArtifactIdentitySchema, audio: ArtifactIdentitySchema.nullable() });
+export type SegmentArtifactRef = z.infer<typeof SegmentArtifactRefSchema>;
+const PriorSchema = z.strictObject({ receiptId: IdSchema, qcReceiptId: IdSchema, outputContentHash: HashSchema });
+const StrategySchema = z.strictObject({ kind: z.literal("segmented_reuse_v0"), semantics: z.strictObject({ version: z.literal(SEGMENT_EXECUTION_SEMANTICS_VERSION), digest: HashSchema }),
+  plan: z.strictObject({ planId: IdSchema, prior: PriorSchema.nullable() }) });
+const SegmentEvidenceSchema = z.strictObject({ position: Count, segmentComputationId: IdSchema, planned: z.enum(["reuse_certified_artifact", "compute"]),
+  disposition: z.enum(["computed_by_this_execution", "reused_verified_prior_artifact"]), artifact: SegmentArtifactRefSchema,
+  publication: z.enum(["published_by_this_execution", "existing_artifact_reverified", "not_published_reused"]),
+  verification: z.strictObject({ bytesHashed: Count, wallClockMilliseconds: Count, rule: z.literal("full_sha256_and_exact_size_through_held_handles_before_assembly_and_after_exit_v0") }) })
+  .refine(s => (s.disposition === "reused_verified_prior_artifact") === (s.publication === "not_published_reused"), "Only a reused artifact is not published by this execution.")
+  .refine(s => s.disposition === "computed_by_this_execution" || s.planned === "reuse_certified_artifact", "Only a planned reuse is reused.");
+export type SegmentEvidence = z.infer<typeof SegmentEvidenceSchema>;
+const ProcessEntrySchema = z.strictObject({ role: z.enum(["segment_stage", "assembly"]), position: Count.nullable(), process: ProcessSchema,
+  measurements: z.strictObject({ wallClockMilliseconds: Count, benchmark: BenchmarkSchema.nullable() }), diagnostics: DiagnosticsSchema })
+  .refine(p => (p.role === "assembly") === (p.position === null), "A stage renders one segment; the assembly renders the output.");
+export type SegmentedProcessEntry = z.infer<typeof ProcessEntrySchema>;
+const SEGMENTED_INPUT_USE = ["consumed_by_segment_stage", "not_consumed_every_segment_reused"] as const;
+const ReuseSummarySchema = z.strictObject({ segments: PositiveSafeInt, reused: Count, computed: Count, reuseUnavailable: Count, stageProcesses: Count,
+  assemblyProcesses: z.literal(1), reuseRatioPerMille: z.number().int().min(0).max(1000), verificationBytesHashed: Count, artifactBytesWritten: Count,
+  reuseVerificationMilliseconds: Count, basis: z.literal("counted_from_this_receipt_segments_and_processes_v0") });
+/** The one aggregation rule: wall and CPU times sum over the sequential processes, the peak is the largest single peak; any missing report is missing. */
+export function aggregateMeasurements(processes: readonly { measurements: { wallClockMilliseconds: number; benchmark: z.infer<typeof BenchmarkSchema> | null } }[],
+  outputBytes: number | null): Measurements {
+  if (processes.length === 0) return { wallClockMilliseconds: null, benchmark: null, outputBytes };
+  const sum = (pick: (b: z.infer<typeof BenchmarkSchema>) => number) => processes.reduce((n, p) => n + pick(p.measurements.benchmark!), 0);
+  const complete = processes.every(p => p.measurements.benchmark !== null);
+  return { wallClockMilliseconds: processes.reduce((n, p) => n + p.measurements.wallClockMilliseconds, 0), outputBytes,
+    benchmark: complete ? { cpuMilliseconds: sum(b => b.cpuMilliseconds), userMilliseconds: sum(b => b.userMilliseconds), systemMilliseconds: sum(b => b.systemMilliseconds),
+      realMilliseconds: sum(b => b.realMilliseconds), maxResidentKibibytes: Math.max(...processes.map(p => p.measurements.benchmark!.maxResidentKibibytes)) } : null };
+}
+/** The reuse counts a receipt states, recomputed from its own segments and processes. */
+export function reuseSummaryOf(segments: readonly SegmentEvidence[], processes: readonly SegmentedProcessEntry[]): z.infer<typeof ReuseSummarySchema> {
+  const reused = segments.filter(s => s.disposition === "reused_verified_prior_artifact"), computed = segments.filter(s => s.disposition === "computed_by_this_execution");
+  const bytes = (a: SegmentArtifactRef) => a.video.sizeBytes + (a.audio?.sizeBytes ?? 0);
+  return { segments: segments.length, reused: reused.length, computed: computed.length,
+    reuseUnavailable: computed.filter(s => s.planned === "reuse_certified_artifact").length, stageProcesses: processes.filter(p => p.role === "segment_stage").length,
+    assemblyProcesses: 1, reuseRatioPerMille: segments.length === 0 ? 0 : Math.floor((reused.length * 1000) / segments.length),
+    verificationBytesHashed: segments.reduce((n, s) => n + s.verification.bytesHashed, 0),
+    // Every computed segment's stage wrote its whole intermediate, whether its content-addressed name was new or already held identical bytes.
+    artifactBytesWritten: computed.reduce((n, s) => n + bytes(s.artifact), 0),
+    reuseVerificationMilliseconds: reused.reduce((n, s) => n + s.verification.wallClockMilliseconds, 0), basis: "counted_from_this_receipt_segments_and_processes_v0" };
+}
+const completed = (p: z.infer<typeof ProcessSchema>) => p.exitCode === 0 && p.signal === null && !p.timedOut;
+/**
+ * Stages first, one per computed segment and in timeline order, each after the last; then exactly one assembly. A complete execution has a
+ * stage for exactly its computed segments; a failed one may end with one further stage whose segment was never verified.
+ */
+function processOrderIssue(segments: readonly SegmentEvidence[], processes: readonly SegmentedProcessEntry[], startedAt: string, complete: boolean): string | undefined {
+  const stages = processes.filter(p => p.role === "segment_stage"), assembly = processes.filter(p => p.role === "assembly");
+  if (!processes.every((p, i) => i === 0 || processes[i - 1]!.process.completedAt <= p.process.spawnedAt) || (processes[0] !== undefined && processes[0].process.spawnedAt < startedAt)) {
+    return "Processes run one after another, inside the execution.";
+  }
+  const computed = segments.filter(s => s.disposition === "computed_by_this_execution").map(s => s.position), positions = stages.map(p => p.position!);
+  if (!positions.every((p, i) => i === 0 || p > positions[i - 1]!) || !computed.every((p, i) => positions[i] === p)
+    || positions.length > computed.length + (complete || assembly.length > 0 ? 0 : 1)) return "Each stage renders exactly one computed segment, in order.";
+  if (assembly.length > 1 || (assembly.length === 1 && processes.at(-1)!.role !== "assembly") || (complete && assembly.length !== 1)) return "One assembly runs last.";
+  return undefined;
+}
+const SegmentedInputSchema = InputEvidenceSchema.extend({ use: z.enum(SEGMENTED_INPUT_USE),
+  verification: z.enum(["fresh_handle_full_sha256_before_each_consuming_stage_and_after_its_exit", "not_opened_not_consumed"]) })
+  .refine(i => (i.use === "consumed_by_segment_stage") === (i.verification === "fresh_handle_full_sha256_before_each_consuming_stage_and_after_its_exit"),
+    "A staged source is opened exactly when a stage consumes it.");
+const SegmentedReceiptBodySchema = z.strictObject({
+  artifactType: z.literal("RenderExecutionReceipt"), artifactVersion: z.literal(SEGMENTED_EXECUTION_VERSION), stability: z.literal("internal_pre_stable"),
+  ...lineageShape, outcome: z.literal("succeeded"), executionStart: z.strictObject({ startId: IdSchema, startedAt: TimestampSchema }), strategy: StrategySchema,
+  inputs: z.array(SegmentedInputSchema).min(1).max(16), inputReverification: z.literal("unchanged_after_exit"),
+  segments: z.array(SegmentEvidenceSchema).min(1).max(16), processes: z.array(ProcessEntrySchema).min(1).max(17), reuse: ReuseSummarySchema, recordedAt: TimestampSchema,
+  output: OutputSchema, qc: z.literal("not_performed_by_renderer_independent_technical_qc_required"),
+  basis: z.literal("real_pinned_ffmpeg_segmented_execution_verified_immutable_publication_v0"),
+});
+export const SegmentedRenderExecutionReceiptSchema = SegmentedReceiptBodySchema.extend({ receiptId: IdSchema })
+  .refine(v => v.processes.every(p => completed(p.process)), "A success receipt needs every process completed, zero-exit and untimed-out.")
+  .refine(v => v.segments.every((s, i) => s.position === i), "Segments are listed in timeline order.")
+  .refine(v => processOrderIssue(v.segments, v.processes, v.executionStart.startedAt, true) === undefined, "Stages run one per computed segment, then one assembly.")
+  .refine(v => equal(v.reuse, reuseSummaryOf(v.segments, v.processes)), "The reuse summary is counted from this receipt.")
+  .refine(v => equal(v.measurements, aggregateMeasurements(v.processes, v.output.sizeBytes)), "Measurements aggregate exactly this receipt's processes.")
+  .refine(v => v.output.outputArtifactId === outputArtifactIdOf(v.output) && v.measurements.outputBytes === v.output.sizeBytes, "The output identity is exactly its bytes.")
+  .refine(v => equal(v.accounting, accountingOfReceipt(v)) && v.accounting.status !== "FAIL", "Accounting must replay from the receipt's own measurements and stay in reservation.")
+  .refine(v => v.permitBinding.authorizedAt <= v.executionStart.startedAt && v.executionStart.startedAt < v.permitBinding.validUntil
+    && v.processes.at(-1)!.process.completedAt <= v.recordedAt, "Execution starts inside the permit window, then the processes run, then the receipt.")
+  .refine(v => checkIdentity(v, "receiptId", "render_execution_receipt_v0"), "Render execution receipt identity mismatch.");
+export type SegmentedRenderExecutionReceipt = z.infer<typeof SegmentedRenderExecutionReceiptSchema>;
+/** Either success receipt version: 0.1.0 one-pass or 0.2.0 segmented. QC and review accept both; nothing else widens. */
+export const AnyRenderExecutionReceiptSchema = z.union([RenderExecutionReceiptSchema, SegmentedRenderExecutionReceiptSchema]);
+export type AnyRenderExecutionReceipt = RenderExecutionReceipt | SegmentedRenderExecutionReceipt;
+
+export const SEGMENTED_FAILURE_STAGES = ["permit_validation", "authority_recheck", "runtime_verification", "reuse_planning", "segment_verification", "execution_start",
+  "segment_input_verification", "segment_stage", "segment_output_verification", "segment_publication", "assembly", "input_reverification", "output_verification",
+  "publication", "accounting", "receipt_certification"] as const;
+const SegmentedFailureBodySchema = z.strictObject({
+  artifactType: z.literal("RenderExecutionFailure"), artifactVersion: z.literal(SEGMENTED_EXECUTION_VERSION), stability: z.literal("internal_pre_stable"),
+  ...lineageShape, outcome: z.literal("failed"), strategy: StrategySchema.nullable(), stage: z.enum(SEGMENTED_FAILURE_STAGES), failureCode: FailureCodeSchema,
+  failureAuthority: z.enum(["edit_render", "edit_runtime"]), executionStarted: z.boolean(), executionStart: z.strictObject({ startId: IdSchema, startedAt: TimestampSchema }).nullable(),
+  inputs: z.array(InputEvidenceSchema.extend({ verification: z.enum(["verified_before_consuming_stage", "not_reached", "verification_failed", "not_opened_not_consumed"]) }))
+    .min(1).max(16),
+  inputReverification: z.enum(["unchanged_after_exit", "changed_after_verification", "not_performed"]), segments: z.array(SegmentEvidenceSchema).max(16),
+  processes: z.array(ProcessEntrySchema).max(17), failedAt: TimestampSchema, output: FailureOutputSchema,
+  basis: z.literal("real_pinned_ffmpeg_segmented_execution_failure_evidence_v0"),
+});
+export const SegmentedRenderExecutionFailureSchema = SegmentedFailureBodySchema.extend({ failureId: IdSchema })
+  .refine(v => v.executionStarted === (v.executionStart !== null) && (v.processes.length === 0 || v.executionStarted), "A process runs only after the execution start is recorded.")
+  .refine(v => v.executionStart === null || processOrderIssue(v.segments, v.processes, v.executionStart.startedAt, false) === undefined, "Processes run in the recorded order.")
+  .refine(v => v.output === "none_published" || (v.executionStarted && v.processes.at(-1)?.role === "assembly" && v.processes.at(-1)!.process.exitCode === 0
+    && v.measurements.outputBytes === v.output.sizeBytes && v.stage === (v.output.state === "linked_by_this_execution_unverified" ? "publication" : "receipt_certification")),
+  "Only a completed assembly that linked its own output names it, at the stage where certification stopped.")
+  .refine(v => (v.failureAuthority === "edit_render") === (EDIT_RENDER_ERROR_CODES as readonly string[]).includes(v.failureCode), "The failure authority names its code's owner.")
+  .refine(v => equal(v.measurements, aggregateMeasurements(v.processes, v.measurements.outputBytes)), "Measurements aggregate exactly this record's processes.")
+  .refine(v => equal(v.accounting, accountingOfReceipt(v)), "Accounting must replay from the record's own measurements.")
+  .refine(v => checkIdentity(v, "failureId", "render_execution_failure_v0"), "Render execution failure identity mismatch.");
+export type SegmentedRenderExecutionFailure = z.infer<typeof SegmentedRenderExecutionFailureSchema>;
 
 function lineageOf(bindingInput: ExecutablePermitBinding, programInput: RenderProgram, probeInput: RealRuntimeProbe, reservation: Reservation, measurements: Measurements,
   diagnostics: Diagnostics) {
@@ -327,4 +453,92 @@ export function buildFailureReceipt(input: { binding: ExecutablePermitBinding; s
     inputReverification: input.inputReverification, process: input.process === null ? null : processOf(input.process), failedAt: input.failedAt,
     output: input.output ?? ("none_published" as const), basis: "real_pinned_ffmpeg_execution_failure_evidence_v0" as const };
   return parse(RenderExecutionFailureSchema, identify("render_execution_failure_v0", "failureId", body), "input_invalid");
+}
+
+// ---------------------------------------------------------------- Gate 7 Batch 3B: segmented execution evidence builders
+export interface SegmentedSegmentInput { position: number; disposition: SegmentEvidence["disposition"]; artifact: SegmentArtifactRef; publication: SegmentEvidence["publication"];
+  verification: { bytesHashed: number; wallClockMilliseconds: number } }
+export interface SegmentedProcessInput { role: "segment_stage" | "assembly"; position: number | null; process: ProcessEvidence; wallClockMilliseconds: number;
+  benchmark: Benchmark | null; diagnostics: Diagnostics }
+export interface SegmentedReceiptInput { binding: ExecutablePermitBinding; start: RenderExecutionStart; program: RenderProgram; runtimeProbe: RealRuntimeProbe;
+  reservation: Reservation; plan: LocalizedExecutionPlan; segments: readonly SegmentedSegmentInput[]; processes: readonly SegmentedProcessInput[]; diagnostics: Diagnostics;
+  output: { contentHash: string; sizeBytes: number; publication: "published_by_this_execution" | "existing_output_reverified" }; recordedAt: string }
+export type SegmentedInputVerification = "verified_before_consuming_stage" | "not_reached" | "verification_failed" | "not_opened_not_consumed";
+export interface SegmentedFailureInput { binding: ExecutablePermitBinding; start: RenderExecutionStart | null; program: RenderProgram; runtimeProbe: RealRuntimeProbe;
+  reservation: Reservation; plan: LocalizedExecutionPlan | null; stage: (typeof SEGMENTED_FAILURE_STAGES)[number]; failureCode: string;
+  segments: readonly SegmentedSegmentInput[]; processes: readonly SegmentedProcessInput[]; inputs: readonly { assetId: string; verification: SegmentedInputVerification }[];
+  inputReverification: "unchanged_after_exit" | "changed_after_verification" | "not_performed"; diagnostics: Diagnostics; outputBytes: number | null; failedAt: string;
+  output?: FailureOutput }
+/** The plan a segmented record names must be intact (self-identified) and of exactly this program; its schema lives with the pure planner. */
+function planOf(plan: LocalizedExecutionPlan, program: RenderProgram): LocalizedExecutionPlan {
+  check(plan !== null && typeof plan === "object" && checkIdentity(plan, "planId", "localized_execution_plan_v0") && plan.program.programId === program.programId
+    && plan.semantics.version === SEGMENT_EXECUTION_SEMANTICS_VERSION && plan.segments.length === program.segments.length
+    && plan.segments.every((s, i) => s.position === i && s.segmentComputationId === program.segments[i]!.segmentComputationId), "input_invalid",
+  "A segmented record names its own program's localized plan.");
+  return plan;
+}
+const strategyOf = (plan: LocalizedExecutionPlan) => ({ kind: "segmented_reuse_v0" as const, semantics: { version: SEGMENT_EXECUTION_SEMANTICS_VERSION, digest: plan.semantics.digest },
+  plan: { planId: plan.planId, prior: plan.prior } });
+const VERIFICATION_RULE = "full_sha256_and_exact_size_through_held_handles_before_assembly_and_after_exit_v0" as const;
+/**
+ * Segment evidence in timeline order (every segment for a success; the verified ones for a failure), each bound to its program computation
+ * and planned decision; a reuse is exactly the certified artifact.
+ */
+function segmentsOf(plan: LocalizedExecutionPlan, program: RenderProgram, inputs: readonly SegmentedSegmentInput[], complete: boolean): SegmentEvidence[] {
+  return inputs.map((s, i) => {
+    const planned = plan.segments[s.position];
+    check(planned !== undefined && (complete ? s.position === i : i === 0 || s.position > inputs[i - 1]!.position), "input_invalid",
+      "Segment evidence is listed in timeline order.");
+    check(s.disposition === "computed_by_this_execution" || equal(s.artifact, planned.certified), "segment_artifact_mismatch", "A reused segment is exactly its certified artifact.");
+    return { position: s.position, segmentComputationId: program.segments[s.position]!.segmentComputationId, planned: planned.decision, disposition: s.disposition,
+      artifact: s.artifact, publication: s.publication, verification: { bytesHashed: s.verification.bytesHashed, wallClockMilliseconds: s.verification.wallClockMilliseconds,
+        rule: VERIFICATION_RULE } };
+  });
+}
+const processesOf = (inputs: readonly SegmentedProcessInput[]): SegmentedProcessEntry[] => inputs.map(p => ({ role: p.role, position: p.position, process: processOf(p.process),
+  measurements: { wallClockMilliseconds: p.wallClockMilliseconds, benchmark: p.benchmark }, diagnostics: p.diagnostics }));
+/** A staged source is opened exactly when a stage consumes it: when every segment that uses it is reused, it is never opened. */
+function consumedAssets(program: RenderProgram, segments: readonly SegmentEvidence[]): Set<string> {
+  return new Set(segments.filter(s => s.disposition === "computed_by_this_execution").map(s => program.inputs[program.segments[s.position]!.input]!.assetId));
+}
+export function buildSegmentedSuccessReceipt(input: SegmentedReceiptInput): SegmentedRenderExecutionReceipt {
+  const program = requireProgram(input.program), plan = planOf(input.plan, program);
+  check(input.segments.length === program.segments.length, "input_invalid", "Every segment of the program has evidence.");
+  const segments = segmentsOf(plan, program, input.segments, true), processes = processesOf(input.processes);
+  const measurements = aggregateMeasurements(processes, input.output.sizeBytes);
+  const { binding, ...lineage } = lineageOf(input.binding, program, input.runtimeProbe, input.reservation, measurements, input.diagnostics);
+  const start = parse(RenderExecutionStartSchema, input.start, "execution_start_corrupt");
+  check(start.bindingId === binding.bindingId && start.claim.claimId === binding.claim.claimId, "execution_start_corrupt", "The start record belongs to another permit.");
+  const consumed = consumedAssets(program, segments);
+  const body = { artifactType: "RenderExecutionReceipt" as const, artifactVersion: SEGMENTED_EXECUTION_VERSION, stability: "internal_pre_stable" as const, ...lineage,
+    outcome: "succeeded" as const, executionStart: { startId: start.startId, startedAt: start.startedAt }, strategy: strategyOf(plan),
+    inputs: binding.sources.map(s => ({ assetId: s.assetId, stagedObjectId: s.stagedObjectId, contentHash: s.contentHash, sizeBytes: s.sizeBytes,
+      use: consumed.has(s.assetId) ? "consumed_by_segment_stage" as const : "not_consumed_every_segment_reused" as const,
+      verification: consumed.has(s.assetId) ? "fresh_handle_full_sha256_before_each_consuming_stage_and_after_its_exit" as const : "not_opened_not_consumed" as const })),
+    inputReverification: "unchanged_after_exit" as const, segments, processes, reuse: reuseSummaryOf(segments, processes), recordedAt: input.recordedAt,
+    output: { outputArtifactId: outputArtifactIdOf(input.output), contentHash: input.output.contentHash, sizeBytes: input.output.sizeBytes, container: "mp4" as const,
+      publication: input.output.publication, verification: "reopened_final_object_full_sha256_and_size" as const },
+    qc: "not_performed_by_renderer_independent_technical_qc_required" as const, basis: "real_pinned_ffmpeg_segmented_execution_verified_immutable_publication_v0" as const };
+  return parse(SegmentedRenderExecutionReceiptSchema, identify("render_execution_receipt_v0", "receiptId", body), "output_verification_failed");
+}
+export function buildSegmentedFailureReceipt(input: SegmentedFailureInput): SegmentedRenderExecutionFailure {
+  const program = requireProgram(input.program), plan = input.plan === null ? null : planOf(input.plan, program);
+  check(plan !== null || input.segments.length === 0, "input_invalid", "Segment evidence needs its plan.");
+  const segments = plan === null ? [] : segmentsOf(plan, program, input.segments, false), processes = processesOf(input.processes);
+  const measurements = aggregateMeasurements(processes, input.outputBytes);
+  const { binding, ...lineage } = lineageOf(input.binding, program, input.runtimeProbe, input.reservation, measurements, input.diagnostics);
+  const start = input.start === null ? null : parse(RenderExecutionStartSchema, input.start, "execution_start_corrupt");
+  check(start === null || (start.bindingId === binding.bindingId && start.claim.claimId === binding.claim.claimId), "execution_start_corrupt",
+    "The start record belongs to another permit.");
+  const verification = new Map(input.inputs.map(i => [i.assetId, i.verification]));
+  const renderCode = (EDIT_RENDER_ERROR_CODES as readonly string[]).includes(input.failureCode);
+  const body = { artifactType: "RenderExecutionFailure" as const, artifactVersion: SEGMENTED_EXECUTION_VERSION, stability: "internal_pre_stable" as const, ...lineage,
+    outcome: "failed" as const, strategy: plan === null ? null : strategyOf(plan), stage: input.stage, failureCode: input.failureCode,
+    failureAuthority: renderCode ? "edit_render" as const : "edit_runtime" as const, executionStarted: start !== null,
+    executionStart: start === null ? null : { startId: start.startId, startedAt: start.startedAt },
+    inputs: binding.sources.map(s => ({ assetId: s.assetId, stagedObjectId: s.stagedObjectId, contentHash: s.contentHash, sizeBytes: s.sizeBytes,
+      verification: verification.get(s.assetId) ?? "not_reached" as const })),
+    inputReverification: input.inputReverification, segments, processes, failedAt: input.failedAt, output: input.output ?? ("none_published" as const),
+    basis: "real_pinned_ffmpeg_segmented_execution_failure_evidence_v0" as const };
+  return parse(SegmentedRenderExecutionFailureSchema, identify("render_execution_failure_v0", "failureId", body), "input_invalid");
 }

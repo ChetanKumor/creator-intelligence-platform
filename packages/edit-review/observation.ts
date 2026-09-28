@@ -38,7 +38,7 @@ const PINNED_DECODE = "pinned_ffmpeg_decode_of_verified_held_object_v0", SYNTHET
 
 const ObservedMediaSchema = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("rendered_output"), outputArtifactId: IdSchema, contentHash: HashSchema, sizeBytes: PositiveSafeInt, container: z.literal("mp4"), receiptId: IdSchema,
-    qcReceiptId: IdSchema, programId: IdSchema, dagId: IdSchema, renderComputationId: IdSchema, editGraph: z.strictObject({ editGraphId: IdSchema, revision: z.literal(0) }) }),
+    qcReceiptId: IdSchema, programId: IdSchema, dagId: IdSchema, renderComputationId: IdSchema, editGraph: z.strictObject({ editGraphId: IdSchema, revision: Nat }) }),
   z.strictObject({ kind: z.literal("staged_source"), assetId: IdSchema, contentHash: HashSchema, sizeBytes: PositiveSafeInt, stagedObjectId: IdSchema, container: z.literal("mov"),
     inputSlot: Nat, receiptId: IdSchema, programId: IdSchema }),
 ]);

@@ -39,7 +39,7 @@ export function createExecutionWorkEstimate(input: unknown): ExecutionWorkEstima
 
 const GrantBodySchema = z.strictObject({
   ...envelope("ExecutionGrant"), scope: ScopeSchema,
-  editGraph: ArtifactRefSchema, graph: z.strictObject({ editGraphId: IdSchema, revision: z.literal(0) }),
+  editGraph: ArtifactRefSchema, graph: z.strictObject({ editGraphId: IdSchema, revision: Nat }),
   // Exactly one selected, execution-safe executor build and the environment its fresh capability evidence must describe.
   executor: ExecutionExecutorIdentitySchema, environment: IdSchema,
   renderIntent: RenderIntentSchema, renderProfile: ArtifactRefSchema, policy: ArtifactRefSchema, capabilitySnapshot: ArtifactRefSchema,

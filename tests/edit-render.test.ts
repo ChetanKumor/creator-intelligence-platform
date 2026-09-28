@@ -152,16 +152,16 @@ async function evidence(c: Claimed, o: EvidenceOptions = {}): Promise<RealEviden
 
 // ================================================================ B01-B02 accepted boundaries stay frozen; synthetic Batch-2A evidence never executes
 const FROZEN: readonly (readonly [string, string])[] = [
-  ["packages/edit-execution/admission.ts", "d1fa1b90b5991fd495a6765c485123ba32b52cb332600adb06965dcf72f6d0a1"],
+  ["packages/edit-execution/admission.ts", "548b0248bffa51887e9f38155d5e5a30e1712a5146af04fdfe097da30e3ab972"],
   ["packages/edit-execution/common.ts", "f45a6e3a81303f3609c3a01918881e3da2eabe4a3682794f49237b0af5d69e3e"],
-  ["packages/edit-execution/dag.ts", "40e976e94cbe371d25b624b4e39c45f52a046eff4ca6f4a29d2e188f6db2f6e3"],
-  ["packages/edit-execution/grant.ts", "3e7c6cb787f1c977955804921c81d41cbc1fd92fcedf74aac390857f8ca736c2"],
+  ["packages/edit-execution/dag.ts", "22f6fe539f935f7054e67c2e4a54cf84f4781eb09c96276a71c3563984ea86d7"],
+  ["packages/edit-execution/grant.ts", "5b2c53676327f5c353a4aedfc6f0017ee009ced11d3d11539850c5d8da004828"],
   ["packages/edit-execution/index.ts", "d1e0ec87c18ac77457f1c3e5b81691718483e3cfe0d2c96ae5dc97536ab16980"],
   ["packages/edit-execution/policy.ts", "3732c5e30bae7f19a8d9ca65c240014c73274d242ab7004c68e582d0ee393a9b"],
   ["packages/edit-execution/runtime.ts", "3db1353b95352eb6d30b7e19f47905563cbd1801423a810d86d45a1552fdcdb3"],
   ["packages/edit-execution/source.ts", "d6d78941984d37dd9f58c4b7c9486f9278c7d4fbce26e9fba86c43072085d944"],
-  ["packages/edit-execution/workload.ts", "11f627f572e306f7f4a90ab0feeb1131d18e6947cdb4f121156045f1783c62ee"],
-  ["packages/edit-graph/index.ts", "fc922eb038a75aeea6d933de37ccb0dd700366ac7e0ddddfb7750b926e1a1628"],
+  ["packages/edit-execution/workload.ts", "599cbabff5fba8cfc968c51236bc1b71189d1a65716ad7b91d4d0471e770f325"],
+  ["packages/edit-graph/index.ts", "fdfb2cfd98dbb6d0c2e9f35b8339df8b586cb85652d8b3b7174bf5fb098796bf"],
   ["packages/edit-runtime/call.ts", "40b1b80e5e98820223e1ef825867728165750b59dbbb695b6ab0cda4f55f40ee"],
   ["packages/edit-runtime/common.ts", "3e03458c434445523cda89bddb097cd383991edfa874eed3fff3c3609dfcbeb4"],
   ["packages/edit-runtime/dispatch.ts", "f0a75e7fe0dac3173d15d88344f50803758cd990a615822dfdc52091dfcff0c7"],

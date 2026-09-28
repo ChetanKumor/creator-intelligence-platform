@@ -20,7 +20,7 @@ import { lstat, mkdir, open, realpath, rm, type FileHandle } from "node:fs/promi
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { canonicalSerialize } from "../packages/domain/serialization.js";
-import { PINNED_MEDIA_RUNTIME, type RenderExecutionReceipt, type TechnicalMediaQcReceipt } from "../packages/edit-render/index.js";
+import { PINNED_MEDIA_RUNTIME, type AnyRenderExecutionReceipt, type TechnicalMediaQcReceipt } from "../packages/edit-render/index.js";
 import { ownedKey, type ValidatedExecutionDag } from "../packages/edit-runtime/index.js";
 import type { SuppliedArtifact } from "../packages/editorial/common.js";
 import { EditReviewError, buildObservation, planReview, resolveObservationTarget, reuseObservation, targetComputationId, type EditReviewErrorCode, type EditorialObservation,
@@ -103,7 +103,7 @@ export interface ObservationInstrumentation {
   afterIdentityEstablished?: () => Promise<void>;
 }
 export interface ObservationRunInput {
-  dag: ValidatedExecutionDag; artifacts: readonly SuppliedArtifact[]; receipt: RenderExecutionReceipt; qc: TechnicalMediaQcReceipt; policy: ReviewPolicy; plan: ReviewPlan;
+  dag: ValidatedExecutionDag; artifacts: readonly SuppliedArtifact[]; receipt: AnyRenderExecutionReceipt; qc: TechnicalMediaQcReceipt; policy: ReviewPolicy; plan: ReviewPlan;
   runtime: LocalEditRuntime; toolRoot: string; targets?: readonly ObservationTarget[]; transcripts?: readonly TranscriptEvidence[]; cache?: ObservationCache;
   instrumentation?: ObservationInstrumentation;
 }

@@ -25,3 +25,12 @@ export { AccountingExecutionSchema, AccountingSchema, COVERAGES, DIMENSIONS, FAI
   type FailureOutput, type Measurements, type ProcessEvidence, type RenderExecutionFailure, type RenderExecutionReceipt, type RenderExecutionStart } from "./receipts.js";
 export { QC_CHECKS, QC_IMPLEMENTATION, TechnicalMediaQcReceiptSchema, buildQcReceipt, deriveQcExpectation, evaluateTechnicalQc, type QcExpectation, type QcObservation,
   type TechnicalMediaQcReceipt } from "./qc.js";
+export { compileAssemblyArguments, compileSegmentStageArguments, segmentIntermediateBytes, type AssemblyDescriptorLayout, type StageDescriptorLayout } from "./ffmpeg.js";
+export { AnyRenderExecutionReceiptSchema, SEGMENTED_EXECUTION_VERSION, SEGMENTED_FAILURE_STAGES, SEGMENT_EXECUTION_SEMANTICS_VERSION, SegmentArtifactRefSchema,
+  SegmentedRenderExecutionFailureSchema, SegmentedRenderExecutionReceiptSchema, aggregateMeasurements, buildSegmentedFailureReceipt, buildSegmentedSuccessReceipt,
+  reuseSummaryOf, type AnyRenderExecutionReceipt, type SegmentArtifactRef, type SegmentEvidence, type SegmentedFailureInput, type SegmentedInputVerification,
+  type SegmentedProcessEntry, type SegmentedProcessInput, type SegmentedReceiptInput, type SegmentedRenderExecutionFailure, type SegmentedRenderExecutionReceipt,
+  type SegmentedSegmentInput } from "./receipts.js";
+export { LocalizedExecutionPlanSchema, SEGMENT_EXECUTION_SEMANTICS, SEGMENT_EXECUTION_SEMANTICS_DIGEST, SEGMENT_STORE_LIMITS, SegmentArtifactRecordSchema,
+  buildSegmentArtifactRecord, checkSegmentArtifactRecord, planLocalizedExecution, requireLocalizedPlan, segmentArtifactShapeOf, segmentRecordKeyOf, type LocalizedExecutionPlan,
+  type SegmentArtifactRecord, type SegmentArtifactShape, type SegmentRecordInput } from "./localized.js";

@@ -12,7 +12,7 @@
 import { z } from "zod";
 import { IdSchema, TimestampSchema } from "../contracts/common.js";
 import { ArtifactRefSchema, checkIdentity, compareText, equal, identify } from "../editorial/common.js";
-import { HashSchema, ScopeSchema } from "../edit-graph/common.js";
+import { HashSchema, Nat, ScopeSchema } from "../edit-graph/common.js";
 import { ExecutionExecutorIdentitySchema, PositiveSafeInt, RenderIntentSchema } from "../edit-execution/common.js";
 import { RuntimeIdentitySchema } from "../edit-execution/runtime.js";
 import { freshUntil, isFresh, millisecondsOf, timestampAt } from "../edit-runtime/common.js";
@@ -42,7 +42,7 @@ const BindingBodySchema = z.strictObject({
   claim: z.strictObject({ claimId: IdSchema, claimTargetId: IdSchema, claimedAt: TimestampSchema }), claimTarget: ClaimTargetSchema,
   logicalOperation: z.strictObject({ operationId: IdSchema, attempt: PositiveSafeInt }),
   dag: z.strictObject({ dagId: IdSchema, artifact: ArtifactRefSchema }), admission: z.strictObject({ admissionId: IdSchema, artifact: ArtifactRefSchema }),
-  executionGrant: z.strictObject({ grantId: IdSchema, artifact: ArtifactRefSchema }), editGraph: z.strictObject({ editGraphId: IdSchema, revision: z.literal(0), artifact: ArtifactRefSchema }),
+  executionGrant: z.strictObject({ grantId: IdSchema, artifact: ArtifactRefSchema }), editGraph: z.strictObject({ editGraphId: IdSchema, revision: Nat, artifact: ArtifactRefSchema }),
   renderComputationId: IdSchema, renderIntent: RenderIntentSchema, renderProfile: ArtifactRefSchema,
   executor: ExecutionExecutorIdentitySchema, runtime: RuntimeIdentitySchema, environment: IdSchema,
   program: z.strictObject({ programId: IdSchema, semanticsDigest: HashSchema }), policy: z.strictObject({ policyId: IdSchema }),
@@ -167,7 +167,7 @@ export async function evaluateRealExecutionEvidence(call: RuntimeCall, evidence:
     attemptRegistration: { registrationId: registration.registrationId, attemptSlotId: registration.attemptSlot.attemptSlotId },
     claim: { claimId: claim.claimId, claimTargetId: claim.claimTarget.claimTargetId, claimedAt: claim.claimedAt }, claimTarget: claim.claimTarget,
     logicalOperation: { operationId: dag.admission.operationId, attempt: dag.admission.attempt }, dag: claim.dag, admission: claim.admission, executionGrant: claim.executionGrant,
-    editGraph: { editGraphId: dag.dag.graph.editGraphId, revision: 0, artifact: dag.dag.editGraph }, renderComputationId: claim.renderBinding.renderComputationId,
+    editGraph: { editGraphId: dag.dag.graph.editGraphId, revision: dag.dag.graph.revision, artifact: dag.dag.editGraph }, renderComputationId: claim.renderBinding.renderComputationId,
     renderIntent: dag.dag.renderIntent, renderProfile: dag.dag.renderProfile, executor: dag.admission.executor, runtime: dag.admission.runtime.identity,
     environment: dag.admission.environment, program: { programId: program.programId, semanticsDigest: program.semantics.digest }, policy: { policyId: policy.policyId },
     reservation: { reservationId: reservation.reservationId, artifact: reservation.reservation },

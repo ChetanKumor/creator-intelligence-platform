@@ -3,7 +3,7 @@
  * ticksPerSecond × denominator, evaluated in arbitrary precision; nothing is rounded to fit. Quantities that cannot be
  * derived from the graph (CPU, GPU, memory, elapsed time, cost) are never computed here.
  */
-import type { EditGraph } from "../edit-graph/index.js";
+import type { AnyEditGraph } from "../edit-graph/index.js";
 import { check, refuse } from "./common.js";
 import type { ExecutionRenderProfile } from "./policy.js";
 
@@ -38,7 +38,7 @@ export function ceilingMilliseconds(ticks: number, ticksPerSecond: number): numb
  * Every declared output instant (clip boundaries, operation extents and joins, total duration) must lie on the render
  * frame grid; otherwise the refusal is explicit. Only then are frame, pixel and linked-audio work derived.
  */
-export function deriveRenderWork(graph: EditGraph, profile: ExecutionRenderProfile) {
+export function deriveRenderWork(graph: AnyEditGraph, profile: ExecutionRenderProfile) {
   const ticksPerSecond = graph.output.clock.ticksPerSecond, grid: FrameGrid = { ticksPerSecond, ...profile.frameRate };
   const instants = new Set<number>([0, graph.output.durationTicks]);
   for (const use of graph.clipUses) { instants.add(use.output.startTicks); instants.add(use.output.endTicks); }

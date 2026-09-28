@@ -11,8 +11,8 @@ import { createHash, randomBytes } from "node:crypto";
 import { lstat, mkdir, open, realpath, rm, type FileHandle } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { EditRenderError, MAX_PROBE_OUTPUT_BYTES, PINNED_MEDIA_RUNTIME, RenderExecutionReceiptSchema, buildQcReceipt, parseVersionBanner, type EditRenderErrorCode,
-  type RenderExecutionReceipt, type TechnicalMediaQcReceipt } from "../packages/edit-render/index.js";
+import { AnyRenderExecutionReceiptSchema, EditRenderError, MAX_PROBE_OUTPUT_BYTES, PINNED_MEDIA_RUNTIME, buildQcReceipt, parseVersionBanner, type AnyRenderExecutionReceipt,
+  type EditRenderErrorCode, type TechnicalMediaQcReceipt } from "../packages/edit-render/index.js";
 import type { ValidatedExecutionDag } from "../packages/edit-runtime/index.js";
 import { requireValidated } from "../packages/edit-runtime/validated.js";
 import type { LocalEditRuntime } from "./edit-runtime-local.js";
@@ -134,11 +134,11 @@ export interface QcInstrumentation {
   /** Test-only observation point: called once the output's identity is established, immediately before the first inspecting child. */
   afterIdentityEstablished?: () => Promise<void>;
 }
-export async function runTechnicalMediaQc(input: { dag: ValidatedExecutionDag; receipt: RenderExecutionReceipt; runtime: LocalEditRuntime; toolRoot: string;
+export async function runTechnicalMediaQc(input: { dag: ValidatedExecutionDag; receipt: AnyRenderExecutionReceipt; runtime: LocalEditRuntime; toolRoot: string;
   instrumentation?: QcInstrumentation }): Promise<TechnicalMediaQcReceipt> {
   const dag = requireValidated(input.dag);
-  let receipt: RenderExecutionReceipt;
-  try { receipt = RenderExecutionReceiptSchema.parse(input.receipt); } catch { fail("qc_receipt_invalid", "QC inspects only a well-formed execution receipt."); }
+  let receipt: AnyRenderExecutionReceipt;
+  try { receipt = AnyRenderExecutionReceiptSchema.parse(input.receipt); } catch { fail("qc_receipt_invalid", "QC inspects only a well-formed execution receipt."); }
   // QC is timed only by the trusted clock of the runtime it inspects; no caller-supplied clock ever dates a QC receipt.
   const clock = input.runtime.clock;
   const now = () => { const t = clock.now(); if (typeof t !== "string" || !TIMESTAMP.test(t)) fail("input_invalid", "The runtime clock must report exact UTC milliseconds."); return t; };

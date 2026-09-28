@@ -99,31 +99,31 @@ const observeAll = (p: ReviewPlan, o: Synthetic = {}) => p.items.map((_, i) => o
 
 // ================================================================ R01 accepted execution, render and graph authority stays byte-identical
 const FROZEN: readonly (readonly [string, string])[] = [
-  ["packages/edit-execution/admission.ts", "d1fa1b90b5991fd495a6765c485123ba32b52cb332600adb06965dcf72f6d0a1"],
+  ["packages/edit-execution/admission.ts", "548b0248bffa51887e9f38155d5e5a30e1712a5146af04fdfe097da30e3ab972"],
   ["packages/edit-execution/common.ts", "f45a6e3a81303f3609c3a01918881e3da2eabe4a3682794f49237b0af5d69e3e"],
-  ["packages/edit-execution/dag.ts", "40e976e94cbe371d25b624b4e39c45f52a046eff4ca6f4a29d2e188f6db2f6e3"],
-  ["packages/edit-execution/grant.ts", "3e7c6cb787f1c977955804921c81d41cbc1fd92fcedf74aac390857f8ca736c2"],
+  ["packages/edit-execution/dag.ts", "22f6fe539f935f7054e67c2e4a54cf84f4781eb09c96276a71c3563984ea86d7"],
+  ["packages/edit-execution/grant.ts", "5b2c53676327f5c353a4aedfc6f0017ee009ced11d3d11539850c5d8da004828"],
   ["packages/edit-execution/index.ts", "d1e0ec87c18ac77457f1c3e5b81691718483e3cfe0d2c96ae5dc97536ab16980"],
   ["packages/edit-execution/policy.ts", "3732c5e30bae7f19a8d9ca65c240014c73274d242ab7004c68e582d0ee393a9b"],
   ["packages/edit-execution/runtime.ts", "3db1353b95352eb6d30b7e19f47905563cbd1801423a810d86d45a1552fdcdb3"],
   ["packages/edit-execution/source.ts", "d6d78941984d37dd9f58c4b7c9486f9278c7d4fbce26e9fba86c43072085d944"],
-  ["packages/edit-execution/workload.ts", "11f627f572e306f7f4a90ab0feeb1131d18e6947cdb4f121156045f1783c62ee"],
+  ["packages/edit-execution/workload.ts", "599cbabff5fba8cfc968c51236bc1b71189d1a65716ad7b91d4d0471e770f325"],
   ["packages/edit-graph/capability.ts", "e13970d956f172bb74a55de92d1b61323a016e4b3a949154b52bb5a38425139a"],
-  ["packages/edit-graph/common.ts", "f50f916dc4bf1aaf1e28b5e0617ff99b6137957b4aa64cb3071e51774e9461f3"],
+  ["packages/edit-graph/common.ts", "dc191f3bde02fb4ef63d3b615403271f281095ad22a3630e2641988997b43968"],
   ["packages/edit-graph/compatibility.ts", "93d10fb4d1d658d5f26183e14b81a4aefbaba44a1bf9b58f93bb6eae5d22d96c"],
-  ["packages/edit-graph/graph.ts", "3948e3583edeb37b84feee9f0f0ab8de45c25edbcb4ac724c217ba758a020eea"],
-  ["packages/edit-graph/index.ts", "fc922eb038a75aeea6d933de37ccb0dd700366ac7e0ddddfb7750b926e1a1628"],
+  ["packages/edit-graph/graph.ts", "1ab3927412a52e59550e9c019032a0e02156a64fd95e3452b185d58031110da6"],
+  ["packages/edit-graph/index.ts", "fdfb2cfd98dbb6d0c2e9f35b8339df8b586cb85652d8b3b7174bf5fb098796bf"],
   ["packages/edit-graph/profile.ts", "5823f09e40027b8632fb5ee045327a376f8154ac878f8adaee4c358753893b14"],
   ["packages/edit-graph/resolution.ts", "f5419d21686c7cf69050b424ae658e941ec065ef4c7da50cf240982526aef753"],
-  ["packages/edit-render/authorize.ts", "c704c00ddedf60cf193fe34a9a58c1673ea81f9b60559490a4a1dfa38768a1f1"],
-  ["packages/edit-render/common.ts", "1a4e738c90af2f9882ca5b7ed8a70bf72f72b327c7470e568c15e57ba8f4f60e"],
-  ["packages/edit-render/ffmpeg.ts", "faf05bc9ac945f667fb1bab94e09f71da8ce0b2efd31d0795d8846227aaadee8"],
-  ["packages/edit-render/index.ts", "af2297d171c22651a772658f541e2efc39e514fdbb904ee2bbd6c05deed2821f"],
+  ["packages/edit-render/authorize.ts", "860ff1e922ca454a392687a34496bfa25f1e25f5ec61e753c08a2f842a0725a2"],
+  ["packages/edit-render/common.ts", "b449777d5bf9800ae109e8f2a3185128691d724e5eeefa1747b31316f097e549"],
+  ["packages/edit-render/ffmpeg.ts", "fc7937654bca17cf5c4005ea730aba0801559fee84eee6ca41a419ec9f24f98a"],
+  ["packages/edit-render/index.ts", "3ff1f341a0b10c005aafcf4f55c43c6716699ff4d6ff664ba59ed25b08437fb7"],
   ["packages/edit-render/probe.ts", "db2c965fa5161ef406245a764ee07ab0c8c02cb381f7e6b230390f72e9d6cc04"],
-  ["packages/edit-render/program.ts", "f9bac88ad4afe2c55b1f975d6b217af29af933af1c4fd2a5f0de41c8ae8966b3"],
-  ["packages/edit-render/qc.ts", "233ab09650e2ba6a630312c4558ec52f8f95af869a84deeb4aa1548d26a9a661"],
-  ["packages/edit-render/receipts.ts", "3dae749fa5f032e70a27401ae8e202aa983ca15c99c73050d29d14067aac32ef"],
-  ["packages/edit-render/records.ts", "7eece6e87dfc064f55028c91493953e820b0cfa6f121ba61cece970bdea5e1bc"],
+  ["packages/edit-render/program.ts", "f0f927b7c4b6b730125d6d13fb488ab7e96a611661251ba7ce9f60340ac3d7e5"],
+  ["packages/edit-render/qc.ts", "c45108b328ec989d088b91f5c7f9581bab9a6c22da3cb315b0283bc754e7d855"],
+  ["packages/edit-render/receipts.ts", "d2648db64db5375fe39ffa2c4190a10e65381311a96a8d2607f06019a80e0678"],
+  ["packages/edit-render/records.ts", "6e9f43e90b21af5fd42c3dfcc48b7f4fcc0b261f3adba5b31c40235214ab1e2b"],
   ["packages/edit-render/semantics.ts", "f1c32dc1f5b53367e6f28eca17db673ed6fcef2ee639147e8198a3fa5b9c8ca1"],
   ["packages/edit-runtime/call.ts", "40b1b80e5e98820223e1ef825867728165750b59dbbb695b6ab0cda4f55f40ee"],
   ["packages/edit-runtime/common.ts", "3e03458c434445523cda89bddb097cd383991edfa874eed3fff3c3609dfcbeb4"],
@@ -135,19 +135,20 @@ const FROZEN: readonly (readonly [string, string])[] = [
   ["packages/edit-runtime/records.ts", "ca9093398cba8bc3d7652a0dbf0189d63936fcb7f15df4fd0b3dab900380190e"],
   ["packages/edit-runtime/staging.ts", "5fcc677b643f1b9efe78087d585a071a29eda9e8884f1ab775adfeb32e7404c3"],
   ["packages/edit-runtime/validated.ts", "153bace6f31cda5950f54d92920f7cef4afbdf2eaf3107900c7a0462194b595a"],
-  ["scripts/edit-media-qc-local.ts", "0d9833dfc3f42b644544f58e0ba5c47e6d40078358049b143046f1bd031103af"],
+  ["scripts/edit-media-qc-local.ts", "b8705fe2c8b118a98ed8058c0faa4a7a6b6874adb646eb052c3a3f539c9836e0"],
   ["scripts/edit-render-fixture-authority-local.ts", "6a6719a13cdba1c7eab34ab937c42066214ac3e9aba8eb2e4b62d874076a63cd"],
-  ["scripts/edit-render-local.ts", "06adc9fff0f583f602a87407ab0ad96c9d3442946a79680cb7adfc188c469e0c"],
+  ["scripts/edit-render-local.ts", "530eb8d05584e010f1d39310129b9e3aee8acdc3d1b7945982a6128de3bf8515"],
   ["scripts/edit-runtime-local.ts", "016ae90284b4181909e2dc0ffa79d0824c596d41166af376fc65282f24bc0546"],
   ["tests/edit-render-media.integration.ts", "9d9338d4815f135d1c0b3949d1e2612290e1f3be81cdf9eac2e5a4be41ce6449"],
-  ["tests/edit-render.test.ts", "811473db6357b3a98ca20c0eb5dd8b7f8a4011bb159a0fb9263b94b3d7fc9b97"],
-  ["tests/support/edit-render-media.ts", "ba71a8491c35c852de8d8fe8bae90783594fdce279c4034ba63d0f79afa4307e"],
+  ["tests/edit-render.test.ts", "2f1af7c6ee3ccac9dffdde4f5cb964915d02dc926ceecd190140e5363b2a8439"],
+  ["tests/support/edit-render-media.ts", "dd97eb64dc5ce12f024a4a50ef925caca81fe1557dcb52f2a8df573299d43e61"],
   ["tests/support/edit-render.ts", "e0e3a8734713520ebef83eeb6b107c6ad875450d236003629a0bfea8b97e17c3"],
 ];
 test("R01 the accepted Batch-1, Batch-2A, Batch-2B and Gate-6 files are byte-identical and Batch 3A adds nothing to their packages", () => {
   for (const [path, hash] of FROZEN) assert.equal(sha256File(path), hash, path);
   assert.deepEqual({ render: readdirSync("packages/edit-render").length, runtime: readdirSync("packages/edit-runtime").length, execution: readdirSync("packages/edit-execution").length,
-    graph: readdirSync("packages/edit-graph").length }, { render: 10, runtime: 10, execution: 9, graph: 7 });
+    // Gate 7 Batch 3B adds exactly packages/edit-render/localized.ts and packages/edit-graph/revision.ts.
+    graph: readdirSync("packages/edit-graph").length }, { render: 11, runtime: 10, execution: 9, graph: 8 });
 });
 
 // ================================================================ R02-R10 transcript evidence and the phrase pack

@@ -12,7 +12,7 @@ import type { ExecutionDag, ExecutionDagNode } from "../edit-execution/index.js"
 import { LocationFreeVersionSchema, PositiveSafeInt } from "../edit-execution/common.js";
 import { CheckTimingSchema, ORDERED_CHECK, check, envelope, header, orderedCheck, parse } from "./common.js";
 import { parseProbeJson, ratioOf, type ProbeReport } from "./probe.js";
-import { RenderExecutionReceiptSchema, type RenderExecutionReceipt } from "./receipts.js";
+import { AnyRenderExecutionReceiptSchema, type AnyRenderExecutionReceipt } from "./receipts.js";
 
 export const QC_IMPLEMENTATION = { implementationId: "gate7_batch2b_technical_media_qc", version: "0.1.0" } as const;
 const CONTAINER = "mov,mp4,m4a,3gp,3g2,mj2";
@@ -126,11 +126,11 @@ export const TechnicalMediaQcReceiptSchema = QcBodySchema.extend({ qcReceiptId: 
     "The verdict summarizes the checks.")
   .refine(v => checkIdentity(v, "qcReceiptId", "technical_media_qc_receipt_v0"), "Technical media QC receipt identity mismatch.");
 export type TechnicalMediaQcReceipt = z.infer<typeof TechnicalMediaQcReceiptSchema>;
-export function buildQcReceipt(input: { dag: ExecutionDag; receipt: RenderExecutionReceipt; observedIdentity: { contentHash: string; sizeBytes: number }; observation: QcObservation;
+export function buildQcReceipt(input: { dag: ExecutionDag; receipt: AnyRenderExecutionReceipt; observedIdentity: { contentHash: string; sizeBytes: number }; observation: QcObservation;
   tools: { ffprobeSha256: string; ffprobeReportedVersion: string; ffmpegSha256: string; ffmpegReportedVersion: string };
   timing: { checkStartedAt: string; observedAt: string; checkCompletedAt: string; observedAtBasis: "check_started_lower_bound" | "provider_reported_within_check_window" } }):
   TechnicalMediaQcReceipt {
-  const receipt = parse(RenderExecutionReceiptSchema, input.receipt, "qc_receipt_invalid");
+  const receipt = parse(AnyRenderExecutionReceiptSchema, input.receipt, "qc_receipt_invalid");
   check(receipt.dag.dagId === input.dag.dagId && receipt.renderComputationId === input.dag.renderIdentity.renderComputationId && equal(receipt.scope, input.dag.scope),
     "qc_receipt_invalid", "The execution receipt is not of this DAG.");
   const expectation = deriveQcExpectation(input.dag), result = evaluateTechnicalQc(expectation, receipt.output, input.observedIdentity, input.observation);

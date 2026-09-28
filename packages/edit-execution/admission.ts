@@ -9,8 +9,8 @@
 import { z } from "zod";
 import { IdSchema, MediaAssetSchema, TimestampSchema } from "../contracts/common.js";
 import { ArtifactRefSchema, EvidenceRefSchema, checkIdentity, compareText, equal, identify, type ArtifactRef, type SuppliedArtifact } from "../editorial/common.js";
-import { EditGraphSchema, validateEditGraph, type EditGraph } from "../edit-graph/index.js";
-import { EDIT_GRAPH_RECORD_VERSION, FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema } from "../edit-graph/common.js";
+import { parseAnyEditGraph, validateAnyEditGraph, type AnyEditGraph } from "../edit-graph/index.js";
+import { EDIT_GRAPH_RECORD_VERSION, EDIT_GRAPH_REVISION_RECORD_VERSION, FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema } from "../edit-graph/common.js";
 import { CapabilityIdSchema, CapabilitySnapshotSchema, ExecutorIdentitySchema, assessRequirement, bindSnapshotAttestations, checkSnapshotLimits,
   type CapabilityAttestation, type CapabilityState } from "../edit-graph/capability.js";
 import { FootageAnalysisSchema } from "../footage-analyzer/protocol.js";
@@ -42,7 +42,7 @@ const WorkloadSchema = z.strictObject({
 const AdmissionBodySchema = z.strictObject({
   ...envelope("ExecutionAdmission"), scope: ScopeSchema, outcome: z.literal("admitted"),
   executionGrant: ArtifactRefSchema, admittedAt: TimestampSchema,
-  editGraph: ArtifactRefSchema, graph: z.strictObject({ editGraphId: IdSchema, revision: z.literal(0) }),
+  editGraph: ArtifactRefSchema, graph: z.strictObject({ editGraphId: IdSchema, revision: Nat }),
   policy: ArtifactRefSchema, renderProfile: ArtifactRefSchema, renderIntent: RenderIntentSchema, executor: ExecutionExecutorIdentitySchema, environment: IdSchema,
   capability: z.strictObject({ snapshot: ArtifactRefSchema, asOf: TimestampSchema,
     planningObservation: z.strictObject({ snapshot: ArtifactRefSchema, asOf: TimestampSchema }), requirements: z.array(AdmittedRequirementSchema).min(1).max(128) }),
@@ -65,11 +65,11 @@ export type ExecutionAdmission = z.infer<typeof ExecutionAdmissionSchema>;
 const RequestSchema = z.strictObject({ executionGrant: ArtifactRefSchema, admittedAt: TimestampSchema });
 export type ExecutionAdmissionRequest = z.input<typeof RequestSchema>;
 
-interface Context { supplied: SuppliedArtifacts; grant: ExecutionGrant; graph: EditGraph; policy: ExecutionPolicy; scope: Scope; admittedAt: string; now: number }
+interface Context { supplied: SuppliedArtifacts; grant: ExecutionGrant; graph: AnyEditGraph; policy: ExecutionPolicy; scope: Scope; admittedAt: string; now: number }
 interface GraphSource { assetId: string; contentHash: string; analysis: ArtifactRef; clipUseIds: string[] }
 
 // ---------------------------------------------------------------- render profile: never a silent reframe, resize or retime of the graph
-function checkProfile(profile: ExecutionRenderProfile, graph: EditGraph): void {
+function checkProfile(profile: ExecutionRenderProfile, graph: AnyEditGraph): void {
   const output = graph.output;
   check(equal(profile.frameRate, output.frameRate), "render_profile_incompatible", "The render frame rate must be the graph's exact declared frame rate.");
   check(profile.resolution.width * output.aspectRatio.height === profile.resolution.height * output.aspectRatio.width, "render_profile_incompatible",
@@ -80,7 +80,7 @@ function checkProfile(profile: ExecutionRenderProfile, graph: EditGraph): void {
 }
 
 // ---------------------------------------------------------------- sources: explicit media grants and fresh execution-time receipts
-function graphSources(graph: EditGraph): GraphSource[] {
+function graphSources(graph: AnyEditGraph): GraphSource[] {
   const byAsset = new Map<string, GraphSource>();
   for (const use of graph.clipUses) {
     const known = byAsset.get(use.source.assetId);
@@ -230,7 +230,7 @@ function admitRuntime(x: Context, profile: ExecutionRenderProfile, snapshotAttes
 }
 
 // ---------------------------------------------------------------- operations: every accepted operation is executable in V0, or admission refuses
-function checkOperations(graph: EditGraph): void {
+function checkOperations(graph: AnyEditGraph): void {
   const joins = new Set<string>();
   for (const operation of graph.operations) {
     if (operation.primitive === "cut_transition") {
@@ -297,10 +297,13 @@ export function admitExecution(requestInput: unknown, artifacts: readonly Suppli
   check(grant.issuedAt <= admittedAt && (grant.expiresAt === null || admittedAt < grant.expiresAt), "execution_grant_window_invalid", "Admission falls outside the execution grant window.");
 
   // The accepted graph: exact scope and identity first, then full Gate-6 semantic replay; no unresolved obligation survives.
-  const claimed = parse(EditGraphSchema, supplied.exact(grant.editGraph, "EditGraph", EDIT_GRAPH_RECORD_VERSION, "graph_replay_failed"), "graph_replay_failed");
+  // An initial graph (0.2.0) or a revision (0.3.0), read by its own exact version; any other version is refused before replay.
+  const graphVersion = grant.editGraph.artifactVersion === EDIT_GRAPH_REVISION_RECORD_VERSION ? EDIT_GRAPH_REVISION_RECORD_VERSION : EDIT_GRAPH_RECORD_VERSION;
+  const claimed = guard("graph_replay_failed", () => parseAnyEditGraph(supplied.exact(grant.editGraph, "EditGraph", graphVersion, "graph_replay_failed")));
   check(sameScope(claimed.scope, scope), "scope_mismatch", "The graph and the execution grant are in different scopes.");
   check(claimed.editGraphId === grant.graph.editGraphId && claimed.revision === grant.graph.revision, "graph_binding_mismatch", "The grant names another graph identity or revision.");
-  const graph = guard("graph_replay_failed", () => validateEditGraph(claimed, artifacts));
+  // Gate-5 replay for an initial graph; exact parent + GraphDiff replay (down to its Gate-5 root) for a revision.
+  const graph = guard("graph_replay_failed", () => validateAnyEditGraph(claimed, artifacts));
   check(graph.unresolved.length === 0, "graph_obligation_unresolved", "Unresolved Gate-6 obligations, deferred hard checks or framing block execution.");
   checkOperations(graph);
 

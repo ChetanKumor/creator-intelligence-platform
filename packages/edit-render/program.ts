@@ -44,7 +44,7 @@ const ProgramBodySchema = z.strictObject({
   ...envelope("RenderProgram"),
   semantics: z.strictObject({ version: z.literal(RENDER_SEMANTICS.semanticsVersion), digest: HashSchema }),
   executor: ExecutionExecutorIdentitySchema, runtime: RuntimeIdentitySchema, environment: IdSchema,
-  binding: z.strictObject({ dagId: IdSchema, renderComputationId: IdSchema, editGraphId: IdSchema, revision: z.literal(0), renderIntent: RenderIntentSchema }),
+  binding: z.strictObject({ dagId: IdSchema, renderComputationId: IdSchema, editGraphId: IdSchema, revision: Nat, renderIntent: RenderIntentSchema }),
   output: z.strictObject({ resolution: ResolutionBoundsSchema, frameRate: FrameRateBoundsSchema, ticksPerSecond: PositiveSafeInt, frames: PositiveSafeInt, durationTicks: PositiveSafeInt,
     video: VideoEncodingSchema, audio: OutputAudioSchema, container: z.literal("mp4") }),
   inputs: z.array(InputSchema).min(1).max(MAX_RENDER_SOURCES),
@@ -191,7 +191,7 @@ export function compileRenderProgramFromDag(input: { dag: ExecutionDag; admissio
       segmentComputationId: identify("render_segment_computation_v0", "segmentComputationId", { computation }).segmentComputationId };
   });
   const body = { ...header("RenderProgram"), semantics: { version: RENDER_SEMANTICS.semanticsVersion, digest: RENDER_SEMANTICS_DIGEST }, executor: dag.executor, runtime: s.runtime,
-    environment: s.environment, binding: { dagId: dag.dagId, renderComputationId: dag.renderIdentity.renderComputationId, editGraphId: dag.graph.editGraphId, revision: 0 as const,
+    environment: s.environment, binding: { dagId: dag.dagId, renderComputationId: dag.renderIdentity.renderComputationId, editGraphId: dag.graph.editGraphId, revision: dag.graph.revision,
       renderIntent: dag.renderIntent },
     output: { resolution: out.resolution, frameRate: out.frameRate, ticksPerSecond: s.ticksPerSecond, frames: out.frames, durationTicks: out.durationTicks, video: s.video,
       audio: linkedCount === 0 ? { state: "none" as const } : { state: "encoded" as const, codecFamily: "aac" as const, sampleRateHz: sr, channelLayout: s.audio.channelLayout },

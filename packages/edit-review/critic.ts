@@ -87,7 +87,7 @@ const outputOf = (plan: ReviewPlan): FindingOutput => ({ outputArtifactId: plan.
 
 const BASES = ["pinned_ffmpeg_decode_of_verified_held_object_v0", "synthetic_test_bytes_not_media_decode_v0"] as const;
 const ReportBodySchema = z.strictObject({ ...envelope("CriticReport"), scope: ScopeSchema, plan: z.strictObject({ planId: IdSchema, policyId: IdSchema }),
-  editGraph: z.strictObject({ editGraphId: IdSchema, revision: z.literal(0), artifact: ArtifactRefSchema }),
+  editGraph: z.strictObject({ editGraphId: IdSchema, revision: Nat, artifact: ArtifactRefSchema }),
   render: z.strictObject({ receiptId: IdSchema, dagId: IdSchema, programId: IdSchema, renderComputationId: IdSchema, outputArtifactId: IdSchema, contentHash: z.string().regex(/^[a-f0-9]{64}$/),
     sizeBytes: PositiveSafeInt }),
   technicalQc: z.strictObject({ qcReceiptId: IdSchema, verdict: z.literal("pass"), qcScope: z.literal("technical_media_qc_only_not_semantic_or_editing_quality") }),
@@ -121,7 +121,7 @@ export interface SemanticCriticIdentity { readonly criticId: string; readonly ve
 export interface SemanticCriticInput {
   readonly output: { readonly outputArtifactId: string; readonly contentHash: string; readonly sizeBytes: number; readonly frames: number;
     readonly frameRate: { readonly numerator: number; readonly denominator: number }; readonly width: number; readonly height: number };
-  readonly editGraph: { readonly editGraphId: string; readonly revision: 0 };
+  readonly editGraph: { readonly editGraphId: string; readonly revision: number };
   readonly joins: readonly { readonly joinIndex: number; readonly atFrame: number; readonly classification: string; readonly review: string }[];
   readonly observations: readonly { readonly artifact: ArtifactRef; readonly observation: EditorialObservation }[];
   readonly transcripts: readonly { readonly transcriptEvidenceId: string; readonly packId: string; readonly text: string }[];

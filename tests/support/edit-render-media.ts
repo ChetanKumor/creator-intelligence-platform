@@ -40,6 +40,8 @@ export interface SourceSpec {
   timing?: "cfr" | "vfr";
   width?: number;
   height?: number;
+  /** Gate 7 Batch 3B: the picture above the index band is black from this source instant on (a deliberately bad tail). Absent, nothing changes. */
+  blackFromSeconds?: number;
 }
 /** Rows of the frame-index band at the bottom of every generated frame (of 160): 8 binary cells, least significant bit on the left. */
 export const INDEX_BAND_ROWS = 16;
@@ -51,7 +53,9 @@ export async function generateSource(directory: string, name: string, spec: Sour
   const width = spec.width ?? 90, height = spec.height ?? 160, path = join(directory, name);
   const base = spec.video.pattern === "testsrc2" ? `testsrc2=s=${width}x${height}:r=30` : `color=c=${spec.video.color}:s=${width}x${height}:r=30`;
   const band = `color=c=black:s=${width}x${INDEX_BAND_ROWS}:r=30,format=yuv420p,geq=lum='16+219*mod(floor(N/pow(2\\,floor(X*8/W)))\\,2)':cb=128:cr=128`;
-  const video = `${base}[base];${band}[band];[base][band]overlay=x=0:y=${height - INDEX_BAND_ROWS}[out0]`;
+  const picture = spec.blackFromSeconds === undefined ? `${base}[base]`
+    : `${base}[pic];color=c=black:s=${width}x${height}:r=30[blk];[pic][blk]overlay=enable='gte(t\\,${spec.blackFromSeconds})'[base]`;
+  const video = `${picture};${band}[band];[base][band]overlay=x=0:y=${height - INDEX_BAND_ROWS}[out0]`;
   const timing = spec.timing === "vfr" ? ["-vf", "setpts='if(lt(N\\,60)\\,N/(30*TB)\\,(2+(N-60)/10)/TB)'", "-fps_mode", "vfr", "-frames:v", "80"] : ["-frames:v", "120"];
   const changes = spec.toneChanges ?? [];
   // The piecewise frequency: if(lt(t,c1), f0, if(lt(t,c2), f1, f2)), with commas escaped for the filter-option level.

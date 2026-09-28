@@ -1,6 +1,6 @@
-# Current Phase - Phase 5 Gate 7 Batch 3A-F Exact Timebase Foundation (synthetic media)
+# Current Phase - Phase 5 Gate 7 Batch 3B RepairPlan, GraphDiff, EditGraph Revisions and Localized Rerender (synthetic media)
 
-Last updated: 2026-09-28
+Last updated: 2026-09-29
 
 ## Current ruling
 
@@ -20,6 +20,175 @@ Last updated: 2026-09-28
 - Phase 5 Gate 7 Batch 2B (first truthful actual media execution through the EditGraph execution architecture; synthetic media only): owner-authorized from HEAD `d3c8302b40a5064ae0eb4408195dc35346ecc648`. Batch 2B implementation verification: **PASS** after the owner's accounting ruling (historically **FAIL**, deliberately fail-closed on one unmet frozen closure contract, Batch-2B requirement 10, measured runtime resource, cost and time accounting, while accounting was **PARTIAL**). Actual pinned-FFmpeg synthetic media execution: **PASS**. Independent technical media QC: **PASS**. Reservation-consumption accounting: **PASS** under the owner's local-execution ruling, scoped to the one pinned local executor: FFmpeg-reported CPU time and peak commit are accepted as attributed evidence, and total monetary cost is not applicable to local non-metered execution, which is not a zero cost (historically **PARTIAL**). Production user-media lifecycle authority: **NOT VERIFIED**. Real user footage: **NOT RUN**. Semantic editing quality: **NOT VERIFIED**. OWNER ACCEPTANCE: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**. Batch 2B closure is committed at `74bbe1e7c05a59ac24c4d9113287ce3a32b61a6c`. Independent owner-review repair (three findings, test-first): trust-handle repair **PASS**, QC-liveness repair **PASS**, terminal-evidence repair **PASS**; implementation verification then remained **FAIL** while accounting was **PARTIAL**. Owner-review repair #2 (three further findings, test-first): policy-snapshot repair **PASS**, probe-completion repair **PASS**, exact-artifact-QC repair **PASS**; implementation verification then remained **FAIL** while accounting was **PARTIAL**. Owner-review repair #3 (three code findings, test-first, and one documentation finding): private-runtime-context repair **PASS**, QC-clock-binding repair **PASS**, process-termination-truth repair **PASS**, final-evidence-doc repair **PASS**; implementation verification then remained **FAIL** while accounting was **PARTIAL**. Owner accounting closure (2026-09-27, test-first, under the owner's ruling): accounting **PASS**, implementation verification **PASS**.
 - Phase 5 Gate 7 Batch 3A (editorial evidence surfaces and semantic-critic foundation; synthetic media only): owner-authorized from HEAD `c74d5fe649ebe470ee0ea9bcb21cdfc4969641cb`, including two owner-authorized protected changes raised before modification (one workspace-audit adapter registration and the pinned Batch-2B audit count). Batch 3A implementation verification: **PASS**. Actual synthetic rendered-media verification: **PASS**. Semantic critic: port plus synthetic fixture critic only (no model). Real user footage: **NOT RUN**. Professional editing quality: **NOT VERIFIED**. ARCHITECTURE_V2_TIMEBASE_GAP: **YES** (recorded, not modified). Gate 7 Batch 3A owner acceptance: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**.
 - Phase 5 Gate 7 Batch 3A-F (exact timebase foundation; synthetic media only): owner-authorized from HEAD `f0edbb3b05724ad41c062a82585846eba9e0a4d6` to close ARCHITECTURE_V2_TIMEBASE_GAP only, with two owner decisions raised before any protected byte changed (approve hash-pin updates for changed files and float-literal translations in accepted tests; defer Gate-5 planning floats, decoded exactly at the EditGraph seam). Batch 3A-F implementation verification: **PASS**. ARCHITECTURE_V2_TIMEBASE_GAP: **RESOLVED** (the Batch-3A **YES** above was true when recorded). Real user footage: **NOT RUN**. Gate 7 Batch 3A-F owner acceptance: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**. Batch 3B: **NOT STARTED**.
+- Phase 5 Gate 7 Batch 3B (RepairPlan, typed GraphDiff, immutable EditGraph revisions, dependency-aware localized recomputation and truthful localized rerender/reuse; synthetic media only): owner-authorized from HEAD `db04f2ed97844bb149fc8f642b423c3adf56776e`; Architecture V2 **FROZEN**; no protected change outside the 3B authorization was needed. Independent owner source review (2026-09-29): one real blocker, OR1, was reproduced test-first and repaired at the execution boundary with `validateRepairLineage`. Before the repair, a revision whose GraphDiff was not backed by a validated RepairPlan lineage reached executable rendering. The owner accepted the repair. On the final repaired bytes: full safe suite **PASS** 1016/1016 (owner-run), workspace audit **PASS**, `git diff --check` **PASS**. The owner accepted the bounded revision-field widening of the internal pre-stable records, with no version-bump cascade; the known NB1-NB4 limitations remain documented. Batch 3B implementation verification: **PASS**. History: **PASS** on the implementation's bytes, then **INCOMPLETE** at the owner-review checkpoint while the full safe suite lacked a valid run. Real user footage: **NOT RUN**. Professional editing quality: **NOT VERIFIED**. Gate 7 Batch 3B owner acceptance: **OWNER-ACCEPTED** (2026-09-29; **PENDING** at the earlier checkpoints). Gate 7 overall: **NOT YET COMPLETE**. Batch 3C: **NOT STARTED**.
+
+## Phase 5 Gate 7 Batch 3B - RepairPlan, typed GraphDiff, immutable EditGraph revisions and localized rerender (synthetic media only)
+
+Authority: [Gate-7 Batch-3B implementation and verification record](phases/phase-5-gate-7-batch-3b-repair-graphdiff-localized-render.md). It is
+governed by the accepted Batch-1, Batch-2A, Batch-2B, Batch-3A and Batch-3A-F records and by the owner's explicit Batch-3B-only authorization.
+That authorization permits the smallest 3B-required changes to EditGraph, ExecutionDag, RenderProgram, runtime, review, tests and pin tables;
+no protected change outside it was needed.
+
+Current status (2026-09-29): Batch 3B implementation verification is **PASS**; owner acceptance is **OWNER-ACCEPTED**. See the owner acceptance
+closure at the end of this section. Historical: at the 2026-09-28 checkpoint verification was **PASS**, acceptance was **PENDING**, and the work
+was uncommitted and unstaged for independent owner review.
+
+The batch establishes, on synthetic media only, one bounded repair cycle:
+
+- **RepairPlan** (new pure package `packages/edit-repair/`): editorial intent bound to the exact parent graph and revision, the rendered output and
+  receipt, passing Technical QC, the CriticReport and one exact finding with its evidence, the owner's RepairPolicy, the planner and a derived
+  attempt. It holds typed trims only and never mutates. Proposals come through a model-neutral RepairPlannerPort whose output is untrusted data;
+  the acceptance planner is a deterministic synthetic fixture rule, not a model.
+- **Typed GraphDiff 0.1.0 and EditGraph revision 0.3.0** (`packages/edit-graph/revision.ts`): one registered operation (exact trim of a video
+  clip use; linked audio follows), bound to one exact parent with compare-and-swap. Unregistered operations are refused. Application is pure,
+  and every dependent field is re-derived by the accepted construction. EditGraph 0.2.0 keeps its exact root meaning, and a revision validates
+  only by replaying its exact parent and GraphDiff.
+- **Derived dependency impact**: the exact changed region, the DAG nodes preserved or invalidated, and the segments reusable or to recompute.
+- **Localized execution with trusted reuse**: the SAME RenderProgram and executor semantics run as per-segment stage processes into lossless raw
+  intermediates plus one assembly and encode, byte-identical to one-pass execution. A segment is reused only when a prior segmented receipt
+  (RenderExecutionReceipt 0.2.0; 0.1.0 unchanged) with passing, exactly linked QC certifies it, its durable record agrees and its bytes re-verify.
+  Absent means recompute; corrupt, substituted, forged or redirected state is refused.
+
+Actual synthetic scenario (M01): source A has a black tail near the cut. The deterministic critic measured output frames [45, 60) as near-black;
+the RepairPlan trimmed A to its first 1.5 s; the child revision was rendered with A's segment recomputed and B's reused. The result is a new
+output (`ae334bf9…`, 127,628 bytes, different from the parent's `69452983…`), Technical QC PASS, a fresh observation and 0 near-black findings.
+
+Evidence under `.local-runs/phase5-gate7/` (`batch3b-*`):
+- the baseline and invariant receipts, and the first red on skeleton contracts;
+- the first green;
+- 14 hostile attacks, which found two self-found defects: D1, caller artifacts read after the planner's await, and D2, unverified planner
+  uncertainty evidence;
+- one regression found by triage, D3, where a 3B export confused the accepted Batch-2A import scanner;
+- each defect with its red, one-file repair and green;
+- the pins, updated last: 33 replacements plus one package-count literal, 0 stale;
+- the final run.
+
+Final verification (historical: the implementation's bytes, before the owner-review repair below; typecheck and build PASS; `batch3b-final-*`):
+
+| Suite | Result |
+|---|---|
+| Batch-3B pure | 48/48 |
+| Batch-3B actual media | 3/3 |
+| 3A-F | 35/35 |
+| Batch-3A pure | 46/46 |
+| Batch-3A actual media | 8/8 |
+| Batch-2B pure | 43/43 |
+| Audit policy | 10/10 |
+| Batch-2B actual media | 34/34 |
+| Batch-2A | 130/130 |
+| Batch-1 | 81/81 |
+| Gate-6 | 79/79 |
+| Gate-5 | 97/97 |
+| Routing | 33/33 |
+| Compatibility | 377/377 |
+| Legacy seams | 39/39 |
+| Full safe suite | 1015/1015 (967 accepted + 48 Batch-3B) |
+
+- Workspace audit PASS (122 application files) and `git diff --check` PASS.
+- Source bytes were unchanged during the run.
+- The accepted Batch-2B and Batch-3A actual-media outputs are identical to the pre-3B run: canonical, determinism pair, six looks and 30
+  observation computation identities.
+
+No dependency, lockfile, public contract (`packages/contracts/`), owner file or earlier receipt changed; nothing is staged or committed. Real
+user footage was not run; professional editing quality is not verified.
+
+Status at the implementation checkpoint (2026-09-28; historical, superseded by the owner acceptance closure below):
+
+Architecture V2: **FROZEN**
+
+Gate 7 Batch 3A: **OWNER-ACCEPTED**
+
+Gate 7 Batch 3A-F: **OWNER-ACCEPTED**
+
+Gate 7 Batch 3B implementation verification: **PASS**
+
+Gate 7 Batch 3B owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Batch 3C: **NOT STARTED**
+
+Independent owner-review repair (2026-09-29), recorded as §26 of the 3B record. The owner's independent source review found one blocker, OR1. No
+execution-path check established RepairPlan provenance: a GraphDiff whose origin names no validated RepairPlan (an arbitrary diff, or a
+fabricated, self-identified plan) produced a child that was admitted, permitted and rendered by the pinned FFmpeg.
+
+- **RED.** The new media test M04 rendered every attack on the unchanged production bytes.
+- **Repair.** `validateRepairLineage` in `packages/edit-repair/revision.ts` checks every revision down to the initial graph (plan -> diff compilation,
+  plus the plan's replay from the exact parent render, finding, evidence, passing QC and owner policy). `issueExecutablePermit` in
+  `scripts/edit-render-local.ts` now requires it for any revision.
+- **GREEN.** 3B media 4/4 and 3B pure 49/49 (with R-LINEAGE). No schema, version or rendered byte changed. One accepted pin was updated last.
+- **Residuals stated.** Admission still establishes graph authority only (a layering decision for the owner). Records are not signatures. The store
+  bound is not atomic across concurrent executions. Segmented byte identity is proven for untagged synthetic sources only.
+- **Final verification on the final bytes.** Every gate passed:
+  - typecheck and build;
+  - 49/49 3B pure, 4/4 3B media, 35/35 3A-F, 46/46 and 8/8 3A;
+  - 43/43 and 34/34 2B, with the accepted media outputs identical;
+  - 10/10 audit policy, 130/130 2A, 81/81 Batch 1, 79/79 Gate 6, 97/97 Gate 5;
+  - 33/33 routing, 377/377 compatibility and 39/39 legacy;
+  - workspace audit and `git diff --check`.
+
+  The exception is the full safe suite. Its run was cut short by a Claude Code stop under critical memory pressure, and its orphaned remainder ended
+  at 819 tests, 802 pass and 17 whole-file start-up failures. It is not a valid pass and has not been rerun without the owner's request.
+
+Status at the owner-review checkpoint (2026-09-29; historical, superseded by the owner acceptance closure below):
+
+Gate 7 Batch 3B post-owner-review verification: **INCOMPLETE** (full safe suite pending)
+
+Gate 7 Batch 3B owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Batch 3C: **NOT STARTED**
+
+### Owner acceptance closure - 2026-09-29
+
+The owner ran the missing full safe suite on the final repaired Batch-3B bytes: `npm test` **PASS** with exit code 0, 1016 tests, 1016 pass, and 0
+fail, cancelled, skipped or todo. That is the implementation's 1015 plus the owner-review R-LINEAGE test. `npm run audit:workspace` passed and
+`git diff --check` gave no output. This evidence is owner-run and reported by the owner; this session holds no receipt for it.
+
+At the closure, typecheck and build passed again on the unchanged production and test bytes (`batch3b-closure-typecheck.log`,
+`batch3b-closure-build.log`). Every production and test byte was identical to the final reviewed state; the closure changed documentation only.
+
+Owner decision: Batch 3B implementation verification **PASS**; owner acceptance **OWNER-ACCEPTED**.
+
+- **OR1 was a real blocker.** Before the repair, an arbitrary or fabricated repair lineage reached executable rendering: an arbitrary GraphDiff,
+  or a self-identified plan addressing no finding, was admitted, permitted and rendered by the pinned FFmpeg. OR1 repaired the execution boundary:
+  `issueExecutablePermit` requires `validateRepairLineage` for every revision, down to the initial graph. The owner accepted the repair.
+- **Repair-authority ruling (accepted).** A revision may be structurally validated, admitted and staged without RepairPlan authorization at the
+  lower layer, provided no executable media permit is issued until its complete repair lineage validates. Required execution chain:
+  CriticFinding -> RepairPlan -> GraphDiff -> parent EditGraph -> child EditGraph -> admission/preparation -> `validateRepairLineage` -> executable
+  permit -> media execution. Structural admission does not by itself mean an editorial repair is authorized.
+- **Internal record-versioning ruling (accepted).** The bounded widening of the revision fields in the reviewed internal pre-stable records is
+  accepted, with no nine-record version-bump cascade. It permits no silent change to a future stable or public interchange contract.
+- **Known non-blocking limitations (accepted, preserved).**
+  - NB1: segment-store capacity is fail-closed but not atomically reserved across concurrent executions.
+  - NB2: segmented-render byte equivalence is verified only for the authorized synthetic V0 cases; it does not establish preservation of arbitrary
+    professional color metadata.
+  - NB3: process wall time excludes adapter and orchestration overhead, so it is not the full user-visible repair latency.
+  - NB4: a legacy one-ULP temporal mismatch fails closed.
+
+Historical PASS, INCOMPLETE, FAIL, PENDING and NOT READY statements earlier in this section and in the 3B record are kept as chronology and are
+superseded by this closure. The 3B record's §27 records the same closure.
+
+Architecture V2: **FROZEN**
+
+Gate 7 Batch 3A: **OWNER-ACCEPTED**
+
+Gate 7 Batch 3A-F: **OWNER-ACCEPTED**
+
+Gate 7 Batch 3B implementation verification: **PASS**
+
+Gate 7 Batch 3B owner acceptance: **OWNER-ACCEPTED**
+
+Full safe suite: **PASS** (1016/1016)
+
+Workspace audit: **PASS**
+
+Git diff check: **PASS**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Batch 3C: **NOT STARTED**
 
 ## Phase 5 Gate 7 Batch 3A-F - Exact timebase foundation (synthetic media only)
 

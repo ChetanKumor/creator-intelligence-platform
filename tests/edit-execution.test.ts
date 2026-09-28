@@ -673,10 +673,10 @@ const FROZEN_LEGACY_SURFACES = [
 const ACCEPTED_GATE_SURFACES = [
   ["packages/routing/index.ts", "11a6bb3472cb7ad026924b4e4ec555400bf1575e224a5e4fec11d2de8d85ac09"],
   ["packages/edit-graph/capability.ts", "e13970d956f172bb74a55de92d1b61323a016e4b3a949154b52bb5a38425139a"],
-  ["packages/edit-graph/common.ts", "f50f916dc4bf1aaf1e28b5e0617ff99b6137957b4aa64cb3071e51774e9461f3"],
+  ["packages/edit-graph/common.ts", "dc191f3bde02fb4ef63d3b615403271f281095ad22a3630e2641988997b43968"],
   ["packages/edit-graph/compatibility.ts", "93d10fb4d1d658d5f26183e14b81a4aefbaba44a1bf9b58f93bb6eae5d22d96c"],
-  ["packages/edit-graph/graph.ts", "3948e3583edeb37b84feee9f0f0ab8de45c25edbcb4ac724c217ba758a020eea"],
-  ["packages/edit-graph/index.ts", "fc922eb038a75aeea6d933de37ccb0dd700366ac7e0ddddfb7750b926e1a1628"],
+  ["packages/edit-graph/graph.ts", "1ab3927412a52e59550e9c019032a0e02156a64fd95e3452b185d58031110da6"],
+  ["packages/edit-graph/index.ts", "fdfb2cfd98dbb6d0c2e9f35b8339df8b586cb85652d8b3b7174bf5fb098796bf"],
   ["packages/edit-graph/profile.ts", "5823f09e40027b8632fb5ee045327a376f8154ac878f8adaee4c358753893b14"],
   ["packages/edit-graph/resolution.ts", "f5419d21686c7cf69050b424ae658e941ec065ef4c7da50cf240982526aef753"],
   ["tests/edit-graph.test.ts", "bef2690b7cf54108ed97b17a01f835ec67bfd07db907eb3f277f483b13f91183"],

@@ -6,8 +6,8 @@ import type { TestContext } from "node:test";
 import { acquireExecutionClaim, openValidatedDag, registerDagAttempt, stageClaimedSource, timestampAt, type RuntimeCall, type StagedSourceReceipt,
   type ValidatedExecutionDag } from "../../packages/edit-runtime/index.js";
 import { PINNED_MEDIA_RUNTIME, RENDER_ENVIRONMENT, buildExecutionStart, buildFixtureLifecycleObservation, buildQcReceipt, buildRealCapabilityProbe, buildRealRuntimeProbe,
-  buildStagedInputConformance, buildSuccessReceipt, compileRenderProgram, evaluateRealExecutionEvidence, type RenderExecutionReceipt, type RenderProgram,
-  type RuntimeObservation, type TechnicalMediaQcReceipt } from "../../packages/edit-render/index.js";
+  buildStagedInputConformance, buildSuccessReceipt, compileRenderProgram, evaluateRealExecutionEvidence, type AnyRenderExecutionReceipt, type RenderExecutionReceipt,
+  type RenderProgram, type RuntimeObservation, type TechnicalMediaQcReceipt } from "../../packages/edit-render/index.js";
 import type { SuppliedArtifact } from "../../packages/editorial/common.js";
 import type { SemanticCriticInput, SemanticCriticPort } from "../../packages/edit-review/index.js";
 import { mergeArtifacts, type DagFixture } from "./edit-execution.js";
@@ -76,7 +76,7 @@ const bytesOf = new Map(SOURCE_KEYS.map((key, i) => [key, deterministicBytes(`ga
 export interface SourceSpec { key: (typeof SOURCE_KEYS)[number]; range?: { startSeconds: number; endSeconds: number }; audio?: boolean; seconds?: number }
 export const hashOf = (key: SourceSpec["key"]) => sha256Hex(bytesOf.get(key)!);
 export const assetOf = (key: SourceSpec["key"]) => `asset_${hashOf(key)}`;
-const chainSource = (s: SourceSpec) => ({ key: s.key, hash: hashOf(s.key), sizeBytes: bytesOf.get(s.key)!.length,
+export const chainSource = (s: SourceSpec) => ({ key: s.key, hash: hashOf(s.key), sizeBytes: bytesOf.get(s.key)!.length,
   metadata: cfrMetadata({ hasAudio: s.audio ?? true, seconds: s.seconds ?? 4 }), ...(s.range === undefined ? {} : { range: s.range }) });
 
 export interface RenderedChain { env: RuntimeEnv; x: DagFixture; v: ValidatedExecutionDag; artifacts: readonly SuppliedArtifact[]; call: RuntimeCall; program: RenderProgram;
@@ -87,7 +87,23 @@ export interface ChainOptions { graph?: Omit<RenderGraphOptions, "sources">; out
  * receipt names the given synthetic output bytes; QC is built from synthetic probe JSON (passing unless `qc: "fail"`). No media exists.
  */
 export async function renderedChain(t: TestContext, sources: readonly SourceSpec[], o: ChainOptions = {}): Promise<RenderedChain> {
-  const x = renderDag(renderGraph({ sources: sources.map(chainSource), ...(o.graph ?? {}) }));
+  return renderedChainOf(t, renderDag(renderGraph({ sources: sources.map(chainSource), ...(o.graph ?? {}) })), sources, o);
+}
+/** The same on-paper render of a given accepted DAG (Gate 7 Batch 3B uses it for a revision's DAG). */
+export async function renderedChainOf(t: TestContext, x: DagFixture, sources: readonly SourceSpec[], o: ChainOptions = {}): Promise<RenderedChain> {
+  const e = await chainEvidence(t, x, sources);
+  const output = o.output ?? { contentHash: sha256Hex(`batch3a-synthetic-output-${e.program.programId}`), sizeBytes: 147_717 };
+  const receipt = buildSuccessReceipt({ binding: e.binding, start: e.start, program: e.program, runtimeProbe: e.runtimeProbe, reservation: x.chain.reservation,
+    process: { spawnedAt: e.start.startedAt, completedAt: at(e.start.startedAt, 400), exitCode: 0, signal: null, timeoutMilliseconds: 120_000, outputByteBound: 23_320_576,
+      argvDigest: "a".repeat(64), argvCount: 90 },
+    measurements: { wallClockMilliseconds: 400, benchmark: { cpuMilliseconds: 234, userMilliseconds: 200, systemMilliseconds: 34, realMilliseconds: 400, maxResidentKibibytes: 52_808 },
+      outputBytes: output.sizeBytes },
+    output: { ...output, publication: "published_by_this_execution" }, diagnostics: { capturedBytes: 0, sha256: sha256Hex(""), truncated: false, excerpt: [] },
+    inputReverification: "unchanged_after_exit", recordedAt: at(e.start.startedAt, 500) });
+  return { env: e.env, x, v: e.v, artifacts: e.call.artifacts, call: e.call, program: e.program, staged: e.staged, receipt, qc: qcOnPaper(e.v, receipt, e.program, o.qc) };
+}
+/** Everything an on-paper render needs up to its receipt: claim, staging, real-shaped probes, the permit binding and the execution start. */
+export async function chainEvidence(t: TestContext, x: DagFixture, sources: readonly SourceSpec[]) {
   const v = openValidatedDag({ dag: x.dagArtifact.ref }, x.artifacts);
   const env = await runtimeEnv({ sources: sources.map((s, i) => ({ assetId: assetOf(s.key), bytes: bytesOf.get(s.key)!, name: `take_${i}.bin` })) });
   t.after(env.cleanup);
@@ -107,21 +123,16 @@ export async function renderedChain(t: TestContext, sources: readonly SourceSpec
       probeJson: sourceProbeJson(program.inputs.find(i => i.assetId === s.source.assetId)!.audio.required,
         sources.find(spec => assetOf(spec.key) === s.source.assetId)?.seconds ?? 4), timing, session: SESSION })) });
   const start = buildExecutionStart({ binding, startedAt: env.runtime.clock.now() });
-  const output = o.output ?? { contentHash: sha256Hex(`batch3a-synthetic-output-${program.programId}`), sizeBytes: 147_717 };
-  const receipt = buildSuccessReceipt({ binding, start, program, runtimeProbe, reservation: x.chain.reservation,
-    process: { spawnedAt: start.startedAt, completedAt: at(start.startedAt, 400), exitCode: 0, signal: null, timeoutMilliseconds: 120_000, outputByteBound: 23_320_576,
-      argvDigest: "a".repeat(64), argvCount: 90 },
-    measurements: { wallClockMilliseconds: 400, benchmark: { cpuMilliseconds: 234, userMilliseconds: 200, systemMilliseconds: 34, realMilliseconds: 400, maxResidentKibibytes: 52_808 },
-      outputBytes: output.sizeBytes },
-    output: { ...output, publication: "published_by_this_execution" }, diagnostics: { capturedBytes: 0, sha256: sha256Hex(""), truncated: false, excerpt: [] },
-    inputReverification: "unchanged_after_exit", recordedAt: at(start.startedAt, 500) });
+  return { env, v, call, program, staged, claim, binding, start, runtimeProbe };
+}
+/** Technical QC of an on-paper receipt from synthetic probe JSON shaped exactly as QC expects (one frame short when `qc: "fail"`). */
+export function qcOnPaper(v: ValidatedExecutionDag, receipt: AnyRenderExecutionReceipt, program: RenderProgram, qc: "pass" | "fail" = "pass"): TechnicalMediaQcReceipt {
   const qcAt = at(receipt.recordedAt, 100);
-  const qc = buildQcReceipt({ dag: v.dag, receipt, observedIdentity: { contentHash: receipt.output.contentHash, sizeBytes: receipt.output.sizeBytes },
-    observation: { ...outputProbeJson(program, o.qc === "fail"), decode: { exitCode: 0, errorLines: [] } },
+  return buildQcReceipt({ dag: v.dag, receipt, observedIdentity: { contentHash: receipt.output.contentHash, sizeBytes: receipt.output.sizeBytes },
+    observation: { ...outputProbeJson(program, qc === "fail"), decode: { exitCode: 0, errorLines: [] } },
     tools: { ffprobeSha256: PINNED_MEDIA_RUNTIME.ffprobe.sha256, ffprobeReportedVersion: PINNED_MEDIA_RUNTIME.ffprobe.reportedVersion,
       ffmpegSha256: PINNED_MEDIA_RUNTIME.ffmpeg.sha256, ffmpegReportedVersion: PINNED_MEDIA_RUNTIME.ffmpeg.reportedVersion },
     timing: { checkStartedAt: qcAt, observedAt: qcAt, checkCompletedAt: qcAt, observedAtBasis: "check_started_lower_bound" } });
-  return { env, x, v, artifacts: call.artifacts, call, program, staged, receipt, qc };
 }
 
 // ---------------------------------------------------------------- synthetic decoded media (byte arrays shaped exactly like the adapter's decode)

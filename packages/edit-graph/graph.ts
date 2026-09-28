@@ -17,9 +17,9 @@ import { PlanningAlternativesSchema, PlanningContextSchema, PlanningDecisionSche
 import { BoundaryAuthoritySchema } from "../planning/common.js";
 import { CapabilityAssessmentSchema, CapabilityRequirementSchema, CapabilitySnapshotSchema, ExecutorIdentitySchema, assessRequirement, bindSnapshotAttestations,
   checkSnapshotLimits, createRequirement, type CapabilityAssessment, type Predicate } from "./capability.js";
-import { AspectSchema, ClockSchema, EDIT_GRAPH_RECORD_VERSION, EDIT_GRAPH_VERSION, FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema, ScopeSchema, SourceRangeSchema, at,
-  canonicalTime, ceilDivide, check, decodeLegacySeconds, exactArtifact, guard, parse, parseCanonical, rateOf, refSet, refuse, sameInstant, sameScope, tickTime,
-  type Scope } from "./common.js";
+import { AspectSchema, ClockSchema, EDIT_GRAPH_RECORD_VERSION, EDIT_GRAPH_REVISION_RECORD_VERSION, EDIT_GRAPH_VERSION, FrameRateBoundsSchema, HashSchema, Nat,
+  ResolutionBoundsSchema, ScopeSchema, SourceRangeSchema, at, canonicalTime, ceilDivide, check, compareTimes, convertTime, decodeLegacySeconds, exactArtifact, guard, parse,
+  parseCanonical, rateOf, refSet, refuse, sameInstant, sameScope, tickTime, type ExactTime, type Scope, type SourceRange } from "./common.js";
 import { EditGraphPolicySchema, EditOutputProfileSchema } from "./profile.js";
 import { LookSchema, TechniqueResolutionSchema, type TechniqueResolution } from "./resolution.js";
 
@@ -30,6 +30,7 @@ const OPERATION_INTENTIONS = ["color_intention", "graphics_intention", "music_re
 type DirectionNode = CreativeDirectionGraph["nodes"][number];
 type DeferredRecord = PlanningAlternatives["deferredObligations"][number];
 type GateFiveCheck = PlanningSequence["hardConstraints"][number];
+type BoundaryAuthority = z.infer<typeof BoundaryAuthoritySchema>;
 
 // ---------------------------------------------------------------- clip uses: exact source authority on an exact output clock
 const TicksRangeSchema = z.strictObject({ startTicks: Nat, endTicks: Nat }).refine(v => v.endTicks > v.startTicks, "Output ranges must be positive.");
@@ -163,6 +164,8 @@ const EditGraphBodySchema = z.strictObject({
   executability: ExecutabilitySchema,
 });
 type EditGraphBody = z.infer<typeof EditGraphBodySchema>;
+/** The composition body every EditGraph record version shares (a separate statement: accepted source scanners read declarations literally). */
+export { EditGraphBodySchema };
 export const EditGraphSchema = EditGraphBodySchema.extend({ editGraphId: IdSchema }).superRefine((graph, ctx) => {
   for (const message of graphIssues(graph)) ctx.addIssue({ code: "custom", message });
 });
@@ -196,8 +199,10 @@ export function deriveExecutability(assessments: readonly CapabilityAssessment[]
     permission: "not_granted", recheck: "required_immediately_before_execution" };
 }
 
+/** What the structural invariants read: every EditGraph version shares these fields (a revision differs only in its version, revision, parent and change set). */
+export type EditGraphIssueInput = Omit<EditGraphBody, "artifactVersion" | "version" | "revision" | "parent" | "changeSet"> & { editGraphId: string };
 /** Structural invariants checked on every parse; semantic truth is established only by replay in validateEditGraph. */
-function graphIssues(graph: EditGraphBody & { editGraphId: string }): string[] {
+export function graphIssues(graph: EditGraphIssueInput): string[] {
   const issues: string[] = [], fail = (message: string) => { issues.push(message); };
   const unique = (values: readonly string[]) => new Set(values).size === values.length;
   if (!checkIdentity(graph, "editGraphId", "edit_graph_v0")) fail("EditGraph identity mismatch.");
@@ -283,7 +288,17 @@ export type EditGraphRequest = z.input<typeof RequestSchema>;
 const member = (name: Predicate["name"], value: string): Predicate => ({ name, kind: "member", value });
 const atMost = (name: Predicate["name"], value: number): Predicate => ({ name, kind: "at_most", value });
 
+/**
+ * An exact source selection for one use of the chosen sequence, replacing the Gate-5 decoding of its boundary. Only a validated GraphDiff
+ * application supplies selections (Gate 7 Batch 3B), one for every use; each must stay inside its use's Gate-5 boundary and be exact on the
+ * graph clock. Everything else is derived by the same construction as an initial graph.
+ */
+export interface SourceSelection { range: SourceRange; startAuthority: BoundaryAuthority; endAuthority: BoundaryAuthority; precision: "frame_pts_exact" | "source_seconds" }
 export function buildEditGraph(requestInput: unknown, artifacts: readonly SuppliedArtifact[]): EditGraph {
+  return parse(EditGraphSchema, identify("edit_graph_v0", "editGraphId", constructEditGraphBody(requestInput, artifacts)));
+}
+/** The accepted construction: the Gate-5 decision replayed, then every composition field derived. Returns the unidentified 0.2.0 body. */
+export function constructEditGraphBody(requestInput: unknown, artifacts: readonly SuppliedArtifact[], selections?: ReadonlyMap<string, SourceSelection>) {
   const rawResolutions = requestInput !== null && typeof requestInput === "object" ? (requestInput as Record<string, unknown>).techniqueResolutions : undefined;
   check(!Array.isArray(rawResolutions) || rawResolutions.length <= MAX_RESOLUTIONS, "limit_exceeded", `At most ${MAX_RESOLUTIONS} technique resolutions per graph.`);
   const request = parse(RequestSchema, requestInput);
@@ -326,6 +341,8 @@ export function buildEditGraph(requestInput: unknown, artifacts: readonly Suppli
   // Clip uses: the Gate-5 boundary seconds (legacy floats) are decoded exactly at the declared clock and kept as canonical source instants;
   // output ticks exist only where the clock encodes each source instant exactly.
   const tps = profile.clock.ticksPerSecond, clock = rateOf(tps);
+  check(selections === undefined || (selections.size === option.uses.length && option.uses.every(u => selections.has(u.useId))), "input_invalid",
+    "A source selection names exactly every use of the chosen sequence.");
   let durationTicks = 0;
   const video: VideoClipUse[] = option.uses.map((use, position) => {
     const boundary = use.boundary;
@@ -333,7 +350,15 @@ export function buildEditGraph(requestInput: unknown, artifacts: readonly Suppli
     if (start === undefined || end === undefined || end.value <= start.value) {
       refuse("time_not_representable", `Use ${use.useId} source instants are not exactly representable at ${tps} ticks per second.`);
     }
-    const sourceStartTicks = start.value, sourceEndTicks = end.value;
+    // A revision's selection stays inside the Gate-5 boundary the use was authorized for, and must be exact on the graph clock.
+    const selection = selections?.get(use.useId);
+    const exactTick = (t: ExactTime) => guard("time_not_representable", () => convertTime(t, clock, "exact").value);
+    if (selection !== undefined) {
+      check(compareTimes(start, selection.range.start) <= 0 && compareTimes(selection.range.end, end) <= 0, "graph_diff_outside_authorized_range",
+        "A revision never selects source time outside its use's Gate-5 boundary.");
+    }
+    const range = selection?.range ?? { start: canonicalTime(start), end: canonicalTime(end) };
+    const sourceStartTicks = selection === undefined ? start.value : exactTick(range.start), sourceEndTicks = selection === undefined ? end.value : exactTick(range.end);
     const output = { startTicks: durationTicks, endTicks: durationTicks + sourceEndTicks - sourceStartTicks };
     check(Number.isSafeInteger(output.endTicks), "limit_exceeded", "The output clock exceeds safe integer ticks.");
     durationTicks = output.endTicks;
@@ -350,8 +375,8 @@ export function buildEditGraph(requestInput: unknown, artifacts: readonly Suppli
       medium: "video", trackId: VIDEO_TRACK, planningUse: { decision: request.planningDecision, optionId: option.optionId, useId: use.useId, position },
       candidateId: use.candidateId, token: use.token, directionNodeId: use.directionNodeId,
       source: { assetId: boundary.assetId, sourceHash: boundary.sourceHash, analysis: boundary.analysis, shotId: boundary.support.shotId, boundaryId: boundary.boundaryId,
-        range: { start: canonicalTime(start), end: canonicalTime(end) }, precision: boundary.precision, startAuthority: boundary.startAuthority, endAuthority: boundary.endAuthority,
-        timebase: boundary.timebase, support: boundary.supportEvidence },
+        range, precision: selection?.precision ?? boundary.precision, startAuthority: selection?.startAuthority ?? boundary.startAuthority,
+        endAuthority: selection?.endAuthority ?? boundary.endAuthority, timebase: boundary.timebase, support: boundary.supportEvidence },
       output, mapping: { kind: "constant_speed_identity", rate: { numerator: 1, denominator: 1 }, sourceStartTicks, sourceEndTicks, exactness: "source_endpoints_exact_on_output_clock" },
       framing, sourceAudio }));
   });
@@ -507,7 +532,7 @@ export function buildEditGraph(requestInput: unknown, artifacts: readonly Suppli
     capabilityRequirements: requirements, capability: { snapshot: request.capabilitySnapshot, environment: snapshot.environment, asOf: snapshot.asOf, assessments },
     unresolved, executability: deriveExecutability(assessments, unresolved, request.capabilitySnapshot, context.computeBudget),
   };
-  return parse(EditGraphSchema, identify("edit_graph_v0", "editGraphId", body));
+  return body;
 }
 
 /**
@@ -516,6 +541,9 @@ export function buildEditGraph(requestInput: unknown, artifacts: readonly Suppli
  */
 function refuseOtherVersion(input: unknown): void {
   const record = input !== null && typeof input === "object" ? input as { artifactType?: unknown; artifactVersion?: unknown } : undefined;
+  if (record?.artifactType === "EditGraph" && record.artifactVersion === EDIT_GRAPH_REVISION_RECORD_VERSION) {
+    refuse("graph_version_unsupported", "An EditGraph 0.3.0 revision is validated only from its exact parent and GraphDiff, never as an initial Gate-5 graph.");
+  }
   if (record?.artifactType === "EditGraph" && record.artifactVersion !== EDIT_GRAPH_RECORD_VERSION) {
     refuse("graph_version_unsupported", `EditGraph ${String(record.artifactVersion)} is not the exact-time schema ${EDIT_GRAPH_RECORD_VERSION}; a legacy float-second graph is never `
       + "reinterpreted. Rebuild it from its Gate-5 decision.");

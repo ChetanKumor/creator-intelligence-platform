@@ -9,8 +9,8 @@ import { z } from "zod";
 import { IdSchema } from "../contracts/common.js";
 import { ArtifactRefSchema, EvidenceRefSchema, availability, checkIdentity, compareText, equal, identify, missing, present, type ArtifactRef,
   type SuppliedArtifact } from "../editorial/common.js";
-import { EditGraphSchema, type AudioClipUse, type EditGraph, type Operation, type VideoClipUse } from "../edit-graph/index.js";
-import { EDIT_GRAPH_RECORD_VERSION, FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema, SourceRangeSchema } from "../edit-graph/common.js";
+import { parseAnyEditGraph, type AnyEditGraph, type AudioClipUse, type Operation, type VideoClipUse } from "../edit-graph/index.js";
+import { EDIT_GRAPH_RECORD_VERSION, EDIT_GRAPH_REVISION_RECORD_VERSION, FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema, SourceRangeSchema } from "../edit-graph/common.js";
 import { LookSchema } from "../edit-graph/resolution.js";
 import { FootageAnalysisSchema } from "../footage-analyzer/protocol.js";
 import { BoundaryAuthoritySchema } from "../planning/common.js";
@@ -192,7 +192,7 @@ const ClaimTargetSchema = z.strictObject({ claimTargetId: IdSchema, reservationI
 const DagDispatchSchema = z.strictObject({ ...DispatchSchema.shape, claimTarget: ClaimTargetSchema, renderBinding: z.strictObject({ renderComputationId: IdSchema }) });
 const DagBodySchema = z.strictObject({
   artifactType: z.literal("ExecutionDag"), artifactVersion: z.literal(EXECUTION_DAG_VERSION), stability: z.literal("internal_pre_stable"), scope: ScopeSchema, admission: ArtifactRefSchema, executionGrant: ArtifactRefSchema, editGraph: ArtifactRefSchema,
-  graph: z.strictObject({ editGraphId: IdSchema, revision: z.literal(0) }), renderIntent: RenderIntentSchema, renderProfile: ArtifactRefSchema, policy: ArtifactRefSchema,
+  graph: z.strictObject({ editGraphId: IdSchema, revision: Nat }), renderIntent: RenderIntentSchema, renderProfile: ArtifactRefSchema, policy: ArtifactRefSchema,
   executor: ExecutionExecutorIdentitySchema, settings: ExecutionDagSettingsSchema, nodes: z.array(ExecutionDagNodeSchema).min(3).max(MAX_DAG_NODES), root: IdSchema,
   renderIdentity: RenderIdentitySchema, execution: z.literal("not_started_no_media_process_in_batch1"), dispatch: DagDispatchSchema,
 });
@@ -241,7 +241,7 @@ export type ExecutionDag = z.infer<typeof ExecutionDagSchema>;
 
 type ColorLook = Extract<Operation, { primitive: "color_look" }>;
 /** One entry per operation target: a cut on its join, a look on each clip it names or on the whole output. */
-const expectedOperations = (graph: EditGraph): string[] => graph.operations.flatMap(o => o.primitive === "cut_transition"
+const expectedOperations = (graph: AnyEditGraph): string[] => graph.operations.flatMap(o => o.primitive === "cut_transition"
   ? [`cut|${o.operationId}|${o.target.fromClipUseId}|${o.target.toClipUseId}`]
   : o.target.kind === "whole_output" ? [`look|${o.operationId}|whole_output`] : o.target.clipUseIds.map(id => `look|${o.operationId}|${id}`)).sort(compareText);
 const representedOperations = (drafts: readonly ExecutionDagNodeDraft[]): string[] => drafts.flatMap(d => {
@@ -249,7 +249,7 @@ const representedOperations = (drafts: readonly ExecutionDagNodeDraft[]): string
   if (d.kind === "cut_sequence") return d.joins.flatMap(j => j.operation.state === "present" ? [`cut|${j.operation.value}|${j.fromClipUseId}|${j.toClipUseId}`] : []);
   return [];
 }).sort(compareText);
-function compile(admissionRef: ArtifactRef, admission: ExecutionAdmission, graph: EditGraph, profile: ExecutionRenderProfile,
+function compile(admissionRef: ArtifactRef, admission: ExecutionAdmission, graph: AnyEditGraph, profile: ExecutionRenderProfile,
   frameTables: ReadonlyMap<string, z.infer<typeof FrameTimesSchema>>): ExecutionDag {
   const settings: ExecutionDagSettings = { renderIntent: admission.renderIntent, executor: admission.executor, runtime: admission.runtime.identity,
     environment: admission.environment, ticksPerSecond: graph.output.clock.ticksPerSecond, frameRate: profile.frameRate, resolution: profile.resolution,
@@ -347,7 +347,8 @@ export function buildExecutionDag(requestInput: unknown, artifacts: readonly Sup
   const supplied = new SuppliedArtifacts(artifacts);
   const claimed = parse(ExecutionAdmissionSchema, supplied.exact(request.admission, "ExecutionAdmission", EDIT_EXECUTION_VERSION));
   const admission = validateExecutionAdmission(claimed, artifacts);
-  const graph = parse(EditGraphSchema, supplied.exact(admission.editGraph, "EditGraph", EDIT_GRAPH_RECORD_VERSION));
+  const graphVersion = admission.editGraph.artifactVersion === EDIT_GRAPH_REVISION_RECORD_VERSION ? EDIT_GRAPH_REVISION_RECORD_VERSION : EDIT_GRAPH_RECORD_VERSION;
+  const graph = guard("input_invalid", () => parseAnyEditGraph(supplied.exact(admission.editGraph, "EditGraph", graphVersion)));
   const profile = parse(ExecutionRenderProfileSchema, supplied.exact(admission.renderProfile, "ExecutionRenderProfile", EDIT_EXECUTION_VERSION));
   const frameTables = new Map(admission.sources.map(s => [s.assetId,
     frameTimesOf(parse(FootageAnalysisSchema, supplied.exact(s.analysis, "FootageAnalysis", "1.0.0", "graph_replay_failed"), "graph_replay_failed").metadata.frameTimes)]));

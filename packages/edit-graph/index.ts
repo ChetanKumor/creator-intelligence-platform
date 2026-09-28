@@ -9,3 +9,6 @@ export { AUDIO_TRACK, VIDEO_TRACK, EXECUTION_BUDGET_SUBJECT, EditGraphSchema, Cl
   type EditGraph, type EditGraphRequest, type ClipUse, type VideoClipUse, type AudioClipUse, type Operation, type Obligation } from "./graph.js";
 export { UEP_V1, UEP_DIMENSIONS, UEP_FINDING_CODES, UepProjectionPolicySchema, UepCompatibilityReportSchema, createUepProjectionPolicy, assessUepCompatibility,
   validateUepCompatibilityReport, type UepProjectionPolicy, type UepCompatibilityReport, type UepProjectionRequest } from "./compatibility.js";
+export { GRAPH_DIFF_OPERATIONS, GRAPH_DIFF_VERSION, MAX_GRAPH_DIFF_OPERATIONS, MAX_GRAPH_REVISION, EditGraphRevisionSchema, GraphDiffSchema, applyGraphDiff, createGraphDiff,
+  parseAnyEditGraph, trimSelectionOf, validateAnyEditGraph, validateEditGraphRevision, type AnyEditGraph, type EditGraphRevision, type GraphDiff,
+  type GraphDiffOperation } from "./revision.js";

@@ -10,6 +10,12 @@ export const EDIT_GRAPH_VERSION = "0.1.0" as const;
  * and is refused, never reinterpreted. Every other Gate-6 artifact keeps EDIT_GRAPH_VERSION.
  */
 export const EDIT_GRAPH_RECORD_VERSION = "0.2.0" as const;
+/**
+ * The record version of an EditGraph revision (Gate 7 Batch 3B): the same body as 0.2.0, but revision >= 1, the exact parent graph and the
+ * exact GraphDiff that derived it. 0.2.0 keeps its meaning, an initial graph replayed from its Gate-5 decision; a revision is replayed from
+ * its parent and GraphDiff. Neither version ever parses as the other.
+ */
+export const EDIT_GRAPH_REVISION_RECORD_VERSION = "0.3.0" as const;
 export const envelope = <const T extends string>(artifactType: T) => ({ artifactType: z.literal(artifactType), artifactVersion: z.literal(EDIT_GRAPH_VERSION), stability: z.literal("internal_pre_stable") });
 export const header = <const T extends string>(artifactType: T) => ({ artifactType, artifactVersion: EDIT_GRAPH_VERSION, stability: "internal_pre_stable" as const });
 export const ScopeSchema = z.strictObject({ projectId: IdSchema, creatorId: IdSchema, purpose: IdSchema });
@@ -32,7 +38,9 @@ export const refSet = (maximum: number) => z.array(ArtifactRefSchema).max(maximu
   .transform(values => [...values].sort((a, b) => compareText(a.objectId, b.objectId)));
 
 export const EDIT_GRAPH_ERROR_CODES = ["input_invalid", "scope_mismatch", "planning_outcome_not_chosen", "planning_lineage_invalid", "technique_resolution_invalid",
-  "capability_snapshot_invalid", "time_not_representable", "limit_exceeded", "graph_replay_mismatch", "report_replay_mismatch", "graph_version_unsupported"] as const;
+  "capability_snapshot_invalid", "time_not_representable", "limit_exceeded", "graph_replay_mismatch", "report_replay_mismatch", "graph_version_unsupported",
+  "graph_diff_invalid", "graph_diff_operation_unsupported", "graph_diff_parent_mismatch", "graph_diff_target_invalid", "graph_diff_expected_mismatch", "graph_diff_noop",
+  "graph_diff_outside_authorized_range", "graph_diff_endpoint_not_a_frame"] as const;
 export type EditGraphErrorCode = (typeof EDIT_GRAPH_ERROR_CODES)[number];
 /** Every Gate-6 rejection carries an owned code; integrity failures and legitimate refusals stay distinguishable. */
 export class EditGraphError extends Error {
