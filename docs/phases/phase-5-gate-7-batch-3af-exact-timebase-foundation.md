@@ -1,7 +1,8 @@
 # Phase 5 Gate 7 Batch 3A-F — Exact timebase foundation
 
-Implementation and verification record. Status date 2026-09-28. Branch `phase/5-edit-planner-v0`; starting and current HEAD
-`f0edbb3b05724ad41c062a82585846eba9e0a4d6` (Gate 7 Batch 3A, owner-accepted). All work is uncommitted and unstaged, for independent owner review.
+Implementation and verification record. Status date 2026-09-28. Branch `phase/5-edit-planner-v0`; implementation started from
+`f0edbb3b05724ad41c062a82585846eba9e0a4d6` (Gate 7 Batch 3A, owner-accepted) and was independently reviewed while uncommitted and unstaged.
+Gate 7 Batch 3A-F was subsequently OWNER-ACCEPTED and committed as `e0adc7e4f72cc5bfdb0965fb20094a5d74c4bf3a`.
 
 | Status | Value |
 |---|---|

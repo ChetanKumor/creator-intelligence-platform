@@ -27,7 +27,7 @@ Authority: [Gate-7 Batch-3A-F implementation and verification record](phases/pha
 accepted Batch-1, Batch-2A, Batch-2B and Batch-3A records and by the owner's explicit 3A-F-only authorization, which is limited to closing
 ARCHITECTURE_V2_TIMEBASE_GAP.
 
-Current status (2026-09-28): implementation verification is **PASS**; owner acceptance is **PENDING**.
+Current status (2026-09-28): implementation verification is **PASS**; owner acceptance is **OWNER-ACCEPTED** at `e0adc7e4f72cc5bfdb0965fb20094a5d74c4bf3a`.
 
 The batch replaces float-second authority with one exact temporal vocabulary, an integer count of an explicit reduced rational rate, which is the
 accepted convention (Gate-6 ticks, Batch-1/2B frames, Batch-2B samples and stream PTS, Batch-3A transcript ticks) named once in
@@ -75,7 +75,7 @@ Authority: [Gate-7 Batch-3A implementation and verification record](phases/phase
 governed by the accepted Batch-1, Batch-2A and Batch-2B records, which are frozen and unchanged, and by the owner's explicit Batch-3A-only
 authorization.
 
-Current status (2026-09-27): Batch 3A implementation verification is **PASS**. Owner acceptance is **PENDING**.
+Current status (2026-09-27): Batch 3A implementation verification is **PASS**. Owner acceptance is **OWNER-ACCEPTED** at `f0edbb3b05724ad41c062a82585846eba9e0a4d6`.
 
 The batch adds a new pure package, `packages/edit-review/`, and one audited strict-spawn adapter, `scripts/edit-observation-local.ts`:
 
