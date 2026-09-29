@@ -6,7 +6,7 @@
  * rendered output, QC, critic report and evidence are proven by validateRepairPlan, which needs those records.)
  */
 import { EditorialArtifactMap, equal, type SuppliedArtifact } from "../editorial/common.js";
-import { GRAPH_DIFF_VERSION, GraphDiffSchema, applyGraphDiff, createGraphDiff, supplied, validateAnyEditGraph, validateEditGraphRevision, type AnyEditGraph,
+import { GRAPH_DIFF_VERSION, EDITORIAL_GRAPH_DIFF_VERSION, EDITORIAL_GRAPH_REVISION_VERSION, AnyGraphDiffSchema, applyGraphDiff, createGraphDiff, supplied, validateAnyEditGraph, validateEditGraphRevision, type AnyEditGraph,
   type EditGraphRevision, type GraphDiff } from "../edit-graph/index.js";
 import { check, guard, parseCanonical } from "./common.js";
 import { requireRepairPlan, validateRepairPlan, type RepairPlan, type RepairPlanningInput } from "./plan.js";
@@ -20,7 +20,8 @@ function diffOf(plan: RepairPlan, parent: AnyEditGraph): GraphDiff {
     check(clip !== undefined && clip.medium === "video", "repair_action_invalid", "The action names no video clip use of the exact parent.");
     return { op: action.action, clipUseId: action.clipUseId, expected: { range: clip.source.range }, replacement: { range: action.keep } };
   });
-  return guard("graph_diff_mismatch", () => createGraphDiff({ artifactType: "GraphDiff", artifactVersion: GRAPH_DIFF_VERSION, stability: "internal_pre_stable",
+  return guard("graph_diff_mismatch", () => createGraphDiff({ artifactType: "GraphDiff",
+    artifactVersion: parent.artifactVersion === EDITORIAL_GRAPH_REVISION_VERSION ? EDITORIAL_GRAPH_DIFF_VERSION : GRAPH_DIFF_VERSION, stability: "internal_pre_stable",
     scope: parent.scope, parent: { editGraph: supplied(parent, parent.editGraphId).ref, editGraphId: parent.editGraphId, revision: parent.revision }, operations,
     origin: { kind: "repair_plan", repairPlan: supplied(plan, plan.planId).ref, repairPlanId: plan.planId }, semantics: "typed_graph_diff_v0" }));
 }
@@ -43,9 +44,10 @@ export function validateRepairRevision(childInput: unknown, artifacts: readonly 
   const child = validateEditGraphRevision(childInput, artifacts);
   const map = guard("repair_lineage_invalid", () => new EditorialArtifactMap(artifacts));
   const parent = guard("repair_lineage_invalid", () => validateAnyEditGraph(map.get(child.parent.editGraph), artifacts));
-  const diff = parseCanonical(GraphDiffSchema, guard("repair_lineage_invalid", () => map.get(child.changeSet.graphDiff)), "repair_lineage_invalid");
+  const diff = parseCanonical(AnyGraphDiffSchema, guard("repair_lineage_invalid", () => map.get(child.changeSet.graphDiff)), "repair_lineage_invalid");
   check(diff.graphDiffId === child.changeSet.graphDiffId, "repair_lineage_invalid", "The change set names another GraphDiff.");
   const origin = diff.origin;
+  check(origin.kind === "repair_plan", "repair_lineage_invalid", "A critic repair requires its own RepairPlan origin.");
   const plan = guard("repair_lineage_invalid", () => requireRepairPlan(map.get(origin.repairPlan)));
   check(plan.planId === origin.repairPlanId, "repair_lineage_invalid", "The GraphDiff's origin names another RepairPlan.");
   check(equal(diffOf(plan, parent), diff), "graph_diff_mismatch", "The GraphDiff is not exactly the compilation of its RepairPlan against its exact parent.");

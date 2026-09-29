@@ -212,9 +212,9 @@ test("02 a mutated or re-identified DAG gains no runtime authority, and an unval
 });
 
 const ACCEPTED_SURFACES = [
-  ["packages/edit-execution/admission.ts", "548b0248bffa51887e9f38155d5e5a30e1712a5146af04fdfe097da30e3ab972"],
+  ["packages/edit-execution/admission.ts", "5dda4c3d4ebae6438e9a50e6d5545b28d5c8f626b6d947634c638cec8608047e"],
   ["packages/edit-execution/common.ts", "f45a6e3a81303f3609c3a01918881e3da2eabe4a3682794f49237b0af5d69e3e"],
-  ["packages/edit-execution/dag.ts", "22f6fe539f935f7054e67c2e4a54cf84f4781eb09c96276a71c3563984ea86d7"],
+  ["packages/edit-execution/dag.ts", "37d89580f9d3dc4ebc633b768c2e4d1776cf956e8883d7c8749cc3afeecebf33"],
   ["packages/edit-execution/grant.ts", "5b2c53676327f5c353a4aedfc6f0017ee009ced11d3d11539850c5d8da004828"],
   ["packages/edit-execution/index.ts", "d1e0ec87c18ac77457f1c3e5b81691718483e3cfe0d2c96ae5dc97536ab16980"],
   ["packages/edit-execution/policy.ts", "3732c5e30bae7f19a8d9ca65c240014c73274d242ab7004c68e582d0ee393a9b"],
@@ -222,10 +222,10 @@ const ACCEPTED_SURFACES = [
   ["packages/edit-execution/source.ts", "d6d78941984d37dd9f58c4b7c9486f9278c7d4fbce26e9fba86c43072085d944"],
   ["packages/edit-execution/workload.ts", "599cbabff5fba8cfc968c51236bc1b71189d1a65716ad7b91d4d0471e770f325"],
   ["packages/routing/index.ts", "11a6bb3472cb7ad026924b4e4ec555400bf1575e224a5e4fec11d2de8d85ac09"],
-  ["packages/edit-graph/index.ts", "fdfb2cfd98dbb6d0c2e9f35b8339df8b586cb85652d8b3b7174bf5fb098796bf"],
+  ["packages/edit-graph/index.ts", "8315b66518cf42234d57a1e79f3d145e94cbdbb90887328f605a0abac2be87df"],
   ["packages/editorial/common.ts", "6cd4e80f921061aaabe0d26e17b2f4beb481ff3ba617090eb0202d9db2019ca6"],
   ["packages/domain/serialization.ts", "3d4d162e873a63274e5359bde42c50c15cbdeed103342fb0900ce15f9812175d"],
-  ["tests/edit-execution.test.ts", "648d494a27d757a2b5fb10505aaf8d138b3e58da3b6d5104fadcc13fdff1cbe1"],
+  ["tests/edit-execution.test.ts", "34bb91f4402112e293e404c3bf4051c0081102b650629f218b74b5633e268ab9"],
   ["tests/support/edit-execution.ts", "bf1ace12b2b26ed46694ccf0243ed3993475366279c36fc9b66bba1c857e3828"],
   ["tests/support/edit-execution-chains.ts", "dcd3aadde2cee9c18cef2f665474a067a0361a303b06fce2e2156680a649f2f6"],
   ["tests/support/edit-graph.ts", "50e57755aff2d03b5e282e8445b399edfca1dd5af000c9981e607b2875cc0468"],

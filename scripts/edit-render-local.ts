@@ -35,6 +35,8 @@ import { EditRenderError, MAX_CAPTURED_DIAGNOSTIC_BYTES, MAX_PROBE_OUTPUT_BYTES,
   type RenderProgram, type SegmentedProcessInput, type SegmentedRenderExecutionFailure, type SegmentedRenderExecutionReceipt, type SegmentedSegmentInput,
   type StagedInputConformance } from "../packages/edit-render/index.js";
 import { validateRepairLineage, type RepairLineageStep } from "../packages/edit-repair/index.js";
+import { parseAnyEditGraph } from "../packages/edit-graph/index.js";
+import { EditorialExecutionAuthorization } from "./edit-editorial-local.js";
 import { EditRuntimeError, ownedKey, type RuntimeCall, type StagedSourceReceipt } from "../packages/edit-runtime/index.js";
 import { RuntimeArtifacts } from "../packages/edit-runtime/common.js";
 import { checkMediaGrantAt, requireCall } from "../packages/edit-runtime/call.js";
@@ -416,7 +418,7 @@ export class ExecutablePermit {
 }
 export async function issueExecutablePermit(input: { call: RuntimeCall; media: TrustedMediaRuntime; staged: readonly StagedSourceReceipt[];
   lifecycle: readonly TrustedLifecycleObservation[]; conformance: readonly TrustedInputConformance[]; policy: RealExecutionPolicy;
-  repair?: readonly RepairLineageStep[] }): Promise<ExecutablePermit> {
+  repair?: readonly RepairLineageStep[]; editorial?: EditorialExecutionAuthorization }): Promise<ExecutablePermit> {
   if (input === null || typeof input !== "object") fail("input_invalid", "A permit request is required.");
   const { media, lifecycle, conformance } = input;
   if (!TrustedMediaRuntime.is(media) || !Array.isArray(lifecycle) || !lifecycle.every(l => TrustedLifecycleObservation.is(l)) || !Array.isArray(conformance)
@@ -426,11 +428,15 @@ export async function issueExecutablePermit(input: { call: RuntimeCall; media: T
   }
   // The caller's container is read once, here; the permit and every later check use only this private context.
   const context = permitContext(input.call), { dag, runtime, artifacts } = context;
-  // Owner review OR1: a revision (EditGraph 0.3.0) executes only through its complete validated repair lineage. Admission replays the graph only;
-  // here every GraphDiff down to the initial graph must be exactly the compilation of a RepairPlan that replays from the exact render, finding,
-  // evidence, passing QC and owner policy it was made from. An initial graph carries no lineage. Checked once, before any await.
+  // OR1 remains mandatory for historical repair execution. Admission proves graph replay, not revision authorization.
+  // A 3C live capability has already validated every origin, including the same complete repair evidence at repair steps;
+  // its current head is checked again here. Without that capability, the unchanged historical repair-lineage check runs before any await.
   const repair: unknown = input.repair;
-  if (dag.dag.graph.revision === 0) {
+  if (input.editorial !== undefined) {
+    if (repair !== undefined) fail("input_invalid", "Current-head authorization carries its own validated revision lineage.");
+    await EditorialExecutionAuthorization.assertCurrent(input.editorial,
+      parseAnyEditGraph(new RuntimeArtifacts(artifacts).exact(dag.dag.editGraph, "EditGraph", dag.dag.editGraph.artifactVersion, "execution_dag_invalid")));
+  } else if (dag.dag.graph.revision === 0) {
     if (repair !== undefined && !(Array.isArray(repair) && repair.length === 0)) fail("input_invalid", "An initial graph executes from its Gate-5 authority; it carries no repair lineage.");
   } else {
     validateRepairLineage(new RuntimeArtifacts(artifacts).exact(dag.dag.editGraph, "EditGraph", dag.dag.editGraph.artifactVersion, "execution_dag_invalid"), artifacts,

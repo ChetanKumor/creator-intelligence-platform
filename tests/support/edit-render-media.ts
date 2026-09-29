@@ -3,6 +3,8 @@
 // test-owned directory. Every generated source must then enter the normal chain (fixture registration, analysis evidence, graph,
 // admission, claim, staging) before the Batch-2B renderer may consume its staged bytes. No real footage is read.
 import { spawn } from "node:child_process";
+import childProcess from "node:child_process";
+import { syncBuiltinESMExports } from "node:module";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -11,6 +13,18 @@ import { fileURLToPath } from "node:url";
 export const PROJECT_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 export const PINNED_TOOL_ROOT = resolve(PROJECT_ROOT, ".tools/ffmpeg/ffmpeg-9.0.1-essentials_build");
 const FFMPEG = join(PINNED_TOOL_ROOT, "bin", "ffmpeg.exe"), FFPROBE = join(PINNED_TOOL_ROOT, "bin", "ffprobe.exe");
+
+/** Test-only independent spawn accounting, installed after fixture generation; observes the accepted adapters' actual native spawn entry. */
+export function observeMediaSpawns() {
+  const original = childProcess.spawn, calls: { tool: "ffmpeg" | "ffprobe" | "other"; arguments: string[] }[] = [];
+  childProcess.spawn = ((...args: Parameters<typeof childProcess.spawn>) => {
+    calls.push({ tool: /ffmpeg\.exe$/i.test(args[0]) ? "ffmpeg" : /ffprobe\.exe$/i.test(args[0]) ? "ffprobe" : "other",
+      arguments: Array.isArray(args[1]) ? [...args[1]] : [] });
+    return original(...args);
+  }) as typeof childProcess.spawn;
+  syncBuiltinESMExports();
+  return { calls, restore() { childProcess.spawn = original; syncBuiltinESMExports(); } };
+}
 
 interface Run { code: number | null; stdout: Buffer; stderr: string }
 function run(executable: string, args: readonly string[], timeoutMilliseconds = 120_000): Promise<Run> {

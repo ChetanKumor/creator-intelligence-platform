@@ -4,8 +4,9 @@
  * is pure: the parent is validated by replay, every operation is checked against it, and the accepted construction is re-run with the exact
  * per-use source selection the operations imply, so every dependent field (placement, linked audio, joins, operation extents and identities,
  * requirements, assessments, readiness, duration, identity) is derived, never supplied. The result is a new immutable EditGraph revision
- * (record 0.3.0) that names its exact parent and GraphDiff and validates only by re-applying that GraphDiff to that parent. Unregistered
- * operations fail closed. The origin names the RepairPlan that proposed the change: provenance for the repair layer, never authority here.
+ * that names its exact parent and GraphDiff and validates only by re-applying that GraphDiff to that parent. Unregistered operations fail
+ * closed. Batch 3B records 0.1.0/0.3.0 retain repair-only semantics. Batch 3C records 0.2.0/0.4.0 explicitly add editorial-plan origin.
+ * Origins provide provenance for their authorization layer; neither origin grants current-project authority here.
  */
 import { z } from "zod";
 import { IdSchema } from "../contracts/common.js";
@@ -18,6 +19,8 @@ import { EditGraphBodySchema, EditGraphSchema, constructEditGraphBody, graphIssu
   type VideoClipUse } from "./graph.js";
 
 export const GRAPH_DIFF_VERSION = "0.1.0" as const;
+export const EDITORIAL_GRAPH_DIFF_VERSION = "0.2.0" as const;
+export const EDITORIAL_GRAPH_REVISION_VERSION = "0.4.0" as const;
 /** The registered V0 operations. Anything else is refused, never ignored: the union is extended only with its own validated semantics. */
 export const GRAPH_DIFF_OPERATIONS = ["trim_clip_source_range"] as const;
 export const MAX_GRAPH_DIFF_OPERATIONS = 16;
@@ -44,7 +47,20 @@ const GraphDiffBodySchema = z.strictObject({
   origin: OriginSchema, semantics: z.literal("typed_graph_diff_v0"),
 });
 export const GraphDiffSchema = GraphDiffBodySchema.extend({ graphDiffId: IdSchema }).refine(v => checkIdentity(v, "graphDiffId", "graph_diff_v0"), "GraphDiff identity mismatch.");
-export type GraphDiff = z.infer<typeof GraphDiffSchema>;
+const currentParentNamed = (p: { editGraph: z.infer<typeof ArtifactRefSchema>; editGraphId: string; revision: number }) =>
+  parentNamed(p) || (p.revision > 0 && p.editGraph.artifactType === "EditGraph" && p.editGraph.objectId === p.editGraphId
+    && p.editGraph.artifactVersion === EDITORIAL_GRAPH_REVISION_VERSION);
+const CurrentGraphDiffBodySchema = GraphDiffBodySchema.extend({ artifactVersion: z.literal(EDITORIAL_GRAPH_DIFF_VERSION),
+  parent: z.strictObject({ editGraph: ArtifactRefSchema, editGraphId: IdSchema, revision: RevisionNumber.max(MAX_GRAPH_REVISION - 1) })
+    .refine(currentParentNamed, "Exact supported parent required."),
+  origin: z.union([OriginSchema, z.strictObject({ kind: z.literal("editorial_revision_plan"), editorialRevisionPlan: ArtifactRefSchema,
+    editorialRevisionPlanId: IdSchema }).refine(o => o.editorialRevisionPlan.artifactType === "EditorialRevisionPlan"
+      && o.editorialRevisionPlan.artifactVersion === "0.1.0" && o.editorialRevisionPlan.objectId === o.editorialRevisionPlanId, "Exact editorial plan required.")]),
+});
+export const CurrentGraphDiffSchema = CurrentGraphDiffBodySchema.extend({ graphDiffId: IdSchema })
+  .refine(v => checkIdentity(v, "graphDiffId", "graph_diff_v0"), "GraphDiff identity mismatch.");
+export const AnyGraphDiffSchema = z.union([GraphDiffSchema, CurrentGraphDiffSchema]);
+export type GraphDiff = z.infer<typeof AnyGraphDiffSchema>;
 
 // ---------------------------------------------------------------- EditGraph 0.3.0: a revision of an exact parent by an exact GraphDiff
 const RevisionParentSchema = z.strictObject({ state: z.literal("present"), editGraph: ArtifactRefSchema, editGraphId: IdSchema, revision: RevisionNumber.max(MAX_GRAPH_REVISION - 1) });
@@ -67,27 +83,39 @@ function revisionIssues(graph: EditGraphRevisionBody): string[] {
 export const EditGraphRevisionSchema = EditGraphRevisionBodySchema.extend({ editGraphId: IdSchema }).superRefine((graph, ctx) => {
   for (const message of [...graphIssues(graph), ...revisionIssues(graph)]) ctx.addIssue({ code: "custom", message });
 });
-export type EditGraphRevision = z.infer<typeof EditGraphRevisionSchema>;
-/** Any authoritative EditGraph record: an initial graph (0.2.0) or a revision (0.3.0). They share every composition field. */
+const CurrentRevisionBodySchema = EditGraphRevisionBodySchema.extend({ artifactVersion: z.literal(EDITORIAL_GRAPH_REVISION_VERSION),
+  version: z.literal(EDITORIAL_GRAPH_REVISION_VERSION) });
+export const CurrentEditGraphRevisionSchema = CurrentRevisionBodySchema.extend({ editGraphId: IdSchema }).superRefine((g, ctx) => {
+  const issues = graphIssues(g);
+  if (g.revision !== g.parent.revision + 1 || !currentParentNamed(g.parent)) issues.push("Exact next parent revision required.");
+  if (g.changeSet.graphDiff.artifactType !== "GraphDiff" || g.changeSet.graphDiff.artifactVersion !== EDITORIAL_GRAPH_DIFF_VERSION
+    || g.changeSet.graphDiff.objectId !== g.changeSet.graphDiffId) issues.push("EditGraph 0.4.0 requires GraphDiff 0.2.0.");
+  for (const message of issues) ctx.addIssue({ code: "custom", message });
+});
+export const AnyEditGraphRevisionSchema = z.union([EditGraphRevisionSchema, CurrentEditGraphRevisionSchema]);
+export type EditGraphRevision = z.infer<typeof AnyEditGraphRevisionSchema>;
+/** Initial graph 0.2.0 or explicitly versioned revision 0.3.0/0.4.0. Every version shares the same composition fields. */
 export type AnyEditGraph = EditGraph | EditGraphRevision;
 
 type BoundaryAuthority = z.infer<typeof BoundaryAuthoritySchema>;
 
 // ---------------------------------------------------------------- reading any EditGraph record version
 const versionOf = (input: unknown) => input !== null && typeof input === "object" ? (input as Record<string, unknown>).artifactVersion : undefined;
-/** Parses either record version by its own schema; any other EditGraph version is refused, never reinterpreted. */
+/** Parses each supported record version by its own schema; other versions are refused, never reinterpreted. */
 export function parseAnyEditGraph(input: unknown): AnyEditGraph {
+  if (versionOf(input) === EDITORIAL_GRAPH_REVISION_VERSION) return parse(CurrentEditGraphRevisionSchema, input);
   if (versionOf(input) === EDIT_GRAPH_REVISION_RECORD_VERSION) return parse(EditGraphRevisionSchema, input);
   const record = input !== null && typeof input === "object" ? input as { artifactType?: unknown } : undefined;
   if (record?.artifactType === "EditGraph" && versionOf(input) !== EDIT_GRAPH_RECORD_VERSION) {
     refuse("graph_version_unsupported", `EditGraph ${String(versionOf(input))} is neither the exact-time initial schema ${EDIT_GRAPH_RECORD_VERSION} nor a revision `
-      + `${EDIT_GRAPH_REVISION_RECORD_VERSION}; a legacy float-second graph is never reinterpreted. Rebuild it from its Gate-5 decision.`);
+      + `${EDIT_GRAPH_REVISION_RECORD_VERSION}/${EDITORIAL_GRAPH_REVISION_VERSION}; a legacy float-second graph is never reinterpreted. Rebuild it from its Gate-5 decision.`);
   }
   return parse(EditGraphSchema, input);
 }
 /** The two validation paths: an initial graph replays from its Gate-5 decision; a revision replays from its exact parent and GraphDiff. */
 export function validateAnyEditGraph(input: unknown, artifacts: readonly SuppliedArtifact[]): AnyEditGraph {
-  return versionOf(input) === EDIT_GRAPH_REVISION_RECORD_VERSION ? validateEditGraphRevision(input, artifacts) : validateEditGraph(input, artifacts);
+  return versionOf(input) === EDIT_GRAPH_REVISION_RECORD_VERSION || versionOf(input) === EDITORIAL_GRAPH_REVISION_VERSION
+    ? validateEditGraphRevision(input, artifacts) : validateEditGraph(input, artifacts);
 }
 
 // ---------------------------------------------------------------- GraphDiff creation: typed operations only
@@ -103,11 +131,13 @@ function refuseUnsupported(input: unknown): void {
 }
 export function createGraphDiff(input: unknown): GraphDiff {
   refuseUnsupported(input);
+  if (versionOf(input) === EDITORIAL_GRAPH_DIFF_VERSION) return parse(CurrentGraphDiffSchema,
+    identify("graph_diff_v0", "graphDiffId", parse(CurrentGraphDiffBodySchema, input, "graph_diff_invalid")), "graph_diff_invalid");
   return parse(GraphDiffSchema, identify("graph_diff_v0", "graphDiffId", parse(GraphDiffBodySchema, input, "graph_diff_invalid")), "graph_diff_invalid");
 }
 function requireGraphDiff(input: unknown): GraphDiff {
   refuseUnsupported(input);
-  return parseCanonical(GraphDiffSchema, input, "graph_diff_invalid");
+  return parseCanonical(AnyGraphDiffSchema, input, "graph_diff_invalid");
 }
 
 // ---------------------------------------------------------------- application: compare-and-swap, then the accepted construction derives everything
@@ -174,17 +204,18 @@ export function applyGraphDiff(parentInput: unknown, diffInput: unknown, artifac
     "The GraphDiff is bound to another graph, revision or parent bytes; a stale diff is refused, never merged.");
   check(parent.revision < MAX_GRAPH_REVISION, "limit_exceeded", `At most ${MAX_GRAPH_REVISION} revisions.`);
   const body = constructEditGraphBody(requestOf(parent), artifacts, selectionsAfter(parent, diff, artifacts));
-  const child = { ...body, artifactVersion: EDIT_GRAPH_REVISION_RECORD_VERSION, version: EDIT_GRAPH_REVISION_RECORD_VERSION, revision: parent.revision + 1,
+  const version = diff.artifactVersion === GRAPH_DIFF_VERSION ? EDIT_GRAPH_REVISION_RECORD_VERSION : EDITORIAL_GRAPH_REVISION_VERSION;
+  const child = { ...body, artifactVersion: version, version, revision: parent.revision + 1,
     parent: { state: "present", editGraph: parentRef, editGraphId: parent.editGraphId, revision: parent.revision },
     changeSet: { kind: "graph_diff", graphDiff: supplied(diff, diff.graphDiffId).ref, graphDiffId: diff.graphDiffId } };
-  return parse(EditGraphRevisionSchema, identify("edit_graph_v0", "editGraphId", child));
+  return parse(AnyEditGraphRevisionSchema, identify("edit_graph_v0", "editGraphId", child));
 }
 /** Semantic replay of a revision: its exact parent (itself validated, down to the Gate-5 root) and its exact GraphDiff must reproduce it. */
 export function validateEditGraphRevision(input: unknown, artifacts: readonly SuppliedArtifact[]): EditGraphRevision {
-  const child = parse(EditGraphRevisionSchema, input);
+  const child = parse(AnyEditGraphRevisionSchema, input);
   const map = guard("input_invalid", () => new EditorialArtifactMap(artifacts));
   const parent = exactArtifact(map, child.parent.editGraph, "EditGraph", child.parent.editGraph.artifactVersion, "graph_replay_mismatch");
-  const diff = exactArtifact(map, child.changeSet.graphDiff, "GraphDiff", GRAPH_DIFF_VERSION, "graph_replay_mismatch");
+  const diff = exactArtifact(map, child.changeSet.graphDiff, "GraphDiff", child.changeSet.graphDiff.artifactVersion, "graph_replay_mismatch");
   check(equal(applyGraphDiff(parent, diff, artifacts), child), "graph_replay_mismatch",
     "The revision contradicts deterministic re-application of its exact GraphDiff to its exact parent.");
   return structuredClone(child);

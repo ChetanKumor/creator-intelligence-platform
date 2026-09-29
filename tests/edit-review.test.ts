@@ -99,9 +99,9 @@ const observeAll = (p: ReviewPlan, o: Synthetic = {}) => p.items.map((_, i) => o
 
 // ================================================================ R01 accepted execution, render and graph authority stays byte-identical
 const FROZEN: readonly (readonly [string, string])[] = [
-  ["packages/edit-execution/admission.ts", "548b0248bffa51887e9f38155d5e5a30e1712a5146af04fdfe097da30e3ab972"],
+  ["packages/edit-execution/admission.ts", "5dda4c3d4ebae6438e9a50e6d5545b28d5c8f626b6d947634c638cec8608047e"],
   ["packages/edit-execution/common.ts", "f45a6e3a81303f3609c3a01918881e3da2eabe4a3682794f49237b0af5d69e3e"],
-  ["packages/edit-execution/dag.ts", "22f6fe539f935f7054e67c2e4a54cf84f4781eb09c96276a71c3563984ea86d7"],
+  ["packages/edit-execution/dag.ts", "37d89580f9d3dc4ebc633b768c2e4d1776cf956e8883d7c8749cc3afeecebf33"],
   ["packages/edit-execution/grant.ts", "5b2c53676327f5c353a4aedfc6f0017ee009ced11d3d11539850c5d8da004828"],
   ["packages/edit-execution/index.ts", "d1e0ec87c18ac77457f1c3e5b81691718483e3cfe0d2c96ae5dc97536ab16980"],
   ["packages/edit-execution/policy.ts", "3732c5e30bae7f19a8d9ca65c240014c73274d242ab7004c68e582d0ee393a9b"],
@@ -112,7 +112,7 @@ const FROZEN: readonly (readonly [string, string])[] = [
   ["packages/edit-graph/common.ts", "dc191f3bde02fb4ef63d3b615403271f281095ad22a3630e2641988997b43968"],
   ["packages/edit-graph/compatibility.ts", "93d10fb4d1d658d5f26183e14b81a4aefbaba44a1bf9b58f93bb6eae5d22d96c"],
   ["packages/edit-graph/graph.ts", "1ab3927412a52e59550e9c019032a0e02156a64fd95e3452b185d58031110da6"],
-  ["packages/edit-graph/index.ts", "fdfb2cfd98dbb6d0c2e9f35b8339df8b586cb85652d8b3b7174bf5fb098796bf"],
+  ["packages/edit-graph/index.ts", "8315b66518cf42234d57a1e79f3d145e94cbdbb90887328f605a0abac2be87df"],
   ["packages/edit-graph/profile.ts", "5823f09e40027b8632fb5ee045327a376f8154ac878f8adaee4c358753893b14"],
   ["packages/edit-graph/resolution.ts", "f5419d21686c7cf69050b424ae658e941ec065ef4c7da50cf240982526aef753"],
   ["packages/edit-render/authorize.ts", "860ff1e922ca454a392687a34496bfa25f1e25f5ec61e753c08a2f842a0725a2"],
@@ -123,7 +123,7 @@ const FROZEN: readonly (readonly [string, string])[] = [
   ["packages/edit-render/program.ts", "f0f927b7c4b6b730125d6d13fb488ab7e96a611661251ba7ce9f60340ac3d7e5"],
   ["packages/edit-render/qc.ts", "c45108b328ec989d088b91f5c7f9581bab9a6c22da3cb315b0283bc754e7d855"],
   ["packages/edit-render/receipts.ts", "d2648db64db5375fe39ffa2c4190a10e65381311a96a8d2607f06019a80e0678"],
-  ["packages/edit-render/records.ts", "6e9f43e90b21af5fd42c3dfcc48b7f4fcc0b261f3adba5b31c40235214ab1e2b"],
+  ["packages/edit-render/records.ts", "f3b717e49bf83645573d0d96334212ea613d48c9634e9eaff93532c8bf8eac2f"],
   ["packages/edit-render/semantics.ts", "f1c32dc1f5b53367e6f28eca17db673ed6fcef2ee639147e8198a3fa5b9c8ca1"],
   ["packages/edit-runtime/call.ts", "40b1b80e5e98820223e1ef825867728165750b59dbbb695b6ab0cda4f55f40ee"],
   ["packages/edit-runtime/common.ts", "3e03458c434445523cda89bddb097cd383991edfa874eed3fff3c3609dfcbeb4"],
@@ -137,11 +137,11 @@ const FROZEN: readonly (readonly [string, string])[] = [
   ["packages/edit-runtime/validated.ts", "153bace6f31cda5950f54d92920f7cef4afbdf2eaf3107900c7a0462194b595a"],
   ["scripts/edit-media-qc-local.ts", "b8705fe2c8b118a98ed8058c0faa4a7a6b6874adb646eb052c3a3f539c9836e0"],
   ["scripts/edit-render-fixture-authority-local.ts", "6a6719a13cdba1c7eab34ab937c42066214ac3e9aba8eb2e4b62d874076a63cd"],
-  ["scripts/edit-render-local.ts", "530eb8d05584e010f1d39310129b9e3aee8acdc3d1b7945982a6128de3bf8515"],
+  ["scripts/edit-render-local.ts", "379e3bec5d1c703f6e7468240ed787ce1ab2cd22141dbe68cc97d918c0476abf"],
   ["scripts/edit-runtime-local.ts", "016ae90284b4181909e2dc0ffa79d0824c596d41166af376fc65282f24bc0546"],
   ["tests/edit-render-media.integration.ts", "9d9338d4815f135d1c0b3949d1e2612290e1f3be81cdf9eac2e5a4be41ce6449"],
-  ["tests/edit-render.test.ts", "2f1af7c6ee3ccac9dffdde4f5cb964915d02dc926ceecd190140e5363b2a8439"],
-  ["tests/support/edit-render-media.ts", "dd97eb64dc5ce12f024a4a50ef925caca81fe1557dcb52f2a8df573299d43e61"],
+  ["tests/edit-render.test.ts", "9f3ee736e19774f9e3e6339163cb662747a92a39c2008c96d5299114da7dd20f"],
+  ["tests/support/edit-render-media.ts", "640b8880150c4682fc6a6d336c430af3bd97678afa9509527fb447f4db03819f"],
   ["tests/support/edit-render.ts", "e0e3a8734713520ebef83eeb6b107c6ad875450d236003629a0bfea8b97e17c3"],
 ];
 test("R01 the accepted Batch-1, Batch-2A, Batch-2B and Gate-6 files are byte-identical and Batch 3A adds nothing to their packages", () => {

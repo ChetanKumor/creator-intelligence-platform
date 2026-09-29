@@ -1,8 +1,16 @@
-# Current Phase - Phase 5 Gate 7 Batch 3B RepairPlan, GraphDiff, EditGraph Revisions and Localized Rerender (synthetic media)
+# Current Phase - Phase 5 Gate 7 Batch 3C EditorialState and Conversational Revision (synthetic media)
 
 Last updated: 2026-09-29
 
 ## Current ruling
+
+- Architecture V2: **FROZEN**. Gate 7 Batch 3A, Batch 3A-F and Batch 3B: **OWNER-ACCEPTED**.
+- Phase 5 Gate 7 Batch 3C implementation verification: **PASS** (2026-09-29), from exact local and independently verified origin baseline
+  `2686367e5566fea6accb965686c81e975e825eec`. Owner acceptance: **OWNER-ACCEPTED** (2026-09-29). Full safe suite: **1054/1054 PASS**; 3C pure: **38/38 PASS**;
+  actual synthetic-media: **4/4 PASS**. Required regressions, workspace audit and protected-byte audit pass. Changes were unstaged and uncommitted at the implementation-verification checkpoint.
+- Gate 7 overall: **NOT YET COMPLETE**. Batch 3D: **NOT STARTED**. Real-footage Gate 7 closure: **NOT YET RUN**. Vibe Editing: **NOT YET COMPLETE**.
+- Earlier closure checkpoints below retain their historical authorization/status statements; the current Batch-3C ruling above supersedes their
+  earlier "Batch 3C not started" statements.
 
 - Phase 2: CLOSED (historical real-model and real-footage closure, 2026-09-15).
 - Phase 2.6A Session 1 architecture: COMPLETE; frozen revision `editorial-architecture-0.1.0`.
@@ -21,6 +29,53 @@ Last updated: 2026-09-29
 - Phase 5 Gate 7 Batch 3A (editorial evidence surfaces and semantic-critic foundation; synthetic media only): owner-authorized from HEAD `c74d5fe649ebe470ee0ea9bcb21cdfc4969641cb`, including two owner-authorized protected changes raised before modification (one workspace-audit adapter registration and the pinned Batch-2B audit count). Batch 3A implementation verification: **PASS**. Actual synthetic rendered-media verification: **PASS**. Semantic critic: port plus synthetic fixture critic only (no model). Real user footage: **NOT RUN**. Professional editing quality: **NOT VERIFIED**. ARCHITECTURE_V2_TIMEBASE_GAP: **YES** (recorded, not modified). Gate 7 Batch 3A owner acceptance: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**.
 - Phase 5 Gate 7 Batch 3A-F (exact timebase foundation; synthetic media only): owner-authorized from HEAD `f0edbb3b05724ad41c062a82585846eba9e0a4d6` to close ARCHITECTURE_V2_TIMEBASE_GAP only, with two owner decisions raised before any protected byte changed (approve hash-pin updates for changed files and float-literal translations in accepted tests; defer Gate-5 planning floats, decoded exactly at the EditGraph seam). Batch 3A-F implementation verification: **PASS**. ARCHITECTURE_V2_TIMEBASE_GAP: **RESOLVED** (the Batch-3A **YES** above was true when recorded). Real user footage: **NOT RUN**. Gate 7 Batch 3A-F owner acceptance: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**. Batch 3B: **NOT STARTED**.
 - Phase 5 Gate 7 Batch 3B (RepairPlan, typed GraphDiff, immutable EditGraph revisions, dependency-aware localized recomputation and truthful localized rerender/reuse; synthetic media only): owner-authorized from HEAD `db04f2ed97844bb149fc8f642b423c3adf56776e`; Architecture V2 **FROZEN**; no protected change outside the 3B authorization was needed. Independent owner source review (2026-09-29): one real blocker, OR1, was reproduced test-first and repaired at the execution boundary with `validateRepairLineage`. Before the repair, a revision whose GraphDiff was not backed by a validated RepairPlan lineage reached executable rendering. The owner accepted the repair. On the final repaired bytes: full safe suite **PASS** 1016/1016 (owner-run), workspace audit **PASS**, `git diff --check` **PASS**. The owner accepted the bounded revision-field widening of the internal pre-stable records, with no version-bump cascade; the known NB1-NB4 limitations remain documented. Batch 3B implementation verification: **PASS**. History: **PASS** on the implementation's bytes, then **INCOMPLETE** at the owner-review checkpoint while the full safe suite lacked a valid run. Real user footage: **NOT RUN**. Professional editing quality: **NOT VERIFIED**. Gate 7 Batch 3B owner acceptance: **OWNER-ACCEPTED** (2026-09-29; **PENDING** at the earlier checkpoints). Gate 7 overall: **NOT YET COMPLETE**. Batch 3C: **NOT STARTED**.
+
+## Phase 5 Gate 7 Batch 3C - EditorialState and conversational revision (synthetic media only)
+
+Authority: [Batch-3C implementation and verification record](phases/phase-5-gate-7-batch-3c-editorial-state-conversational-revision.md) and the owner's
+explicit bounded Batch-3C authorization. Architecture V2 remains frozen. EditGraph is the sole composition authority; EditorialState stores durable
+intent and constraints, with no duplicate timeline or render program.
+
+The batch adds strict immutable EditorialState and typed state diffs; HARD_EXACT locks; soft liked/rejected preferences including exact ancestor
+targets; one authoritative local EditingHead per configured scope; version-bound requests; a provider-neutral interpreter port with deterministic
+fixtures; and a separate EditorialRevisionPlan origin. GraphDiff 0.2.0 and EditGraph revision 0.4.0 are explicit additions. Historical 3B readers and
+the accepted OR1 repair lineage remain valid. The only physical edit primitive is the accepted exact source-range trim.
+
+State-only actions advance state/head with the same graph and no rendering. Graph changes validate both revision origins against current state,
+locks and dependency-derived scope, render and pass independent QC, then publish graph plus rebased state in one exclusive CAS. Alternate unlocked
+states/heads, stale graph/state/head requests, scope spill, lock conflicts and a second concurrent CAS refuse. Failed render/QC never advances the head.
+
+The five-turn no-speech synthetic scenario locks A, trims final clip B by exact 1/2 second, refuses a trim of A, records a grounded preference for G0,
+then refuses a stale request. A's actual segment bytes are reused; B is actually recomputed; parent and child QC pass. No frontier language model,
+real footage, taste learning or professional editing-quality claim is involved.
+
+Verification: 38/38 pure 3C, 4/4 actual 3C media, full safe suite 1054/1054; all required 3B (including OR1), 3A-F, 3A, 2B, 2A, Batch 1, Gate 6, Gate 5,
+routing, compatibility and legacy suites pass with zero failures, cancellations, skips or TODOs. Three real hostile-review defects have retained RED
+and GREEN evidence. The linked record contains the C1-C40 attack matrix, exact artifact identities, four-slot current-head evidence, work accounting,
+full gate receipts and owner-review manifest. No dependencies or lockfiles changed, no owner file was read/hashed/touched. At the implementation-verification
+checkpoint, nothing was staged, committed or pushed.
+
+Architecture V2: **FROZEN**
+
+Gate 7 Batch 3A: **OWNER-ACCEPTED**
+
+Gate 7 Batch 3A-F: **OWNER-ACCEPTED**
+
+Gate 7 Batch 3B: **OWNER-ACCEPTED**
+
+Gate 7 Batch 3C implementation verification: **PASS**
+
+Gate 7 Batch 3C owner acceptance: **OWNER-ACCEPTED**
+
+Full safe suite: **1054/1054 PASS**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Batch 3D: **NOT STARTED**
+
+Real-footage Gate 7 closure: **NOT YET RUN**
+
+Independent owner source review: **PASS**. Owner acceptance: **OWNER-ACCEPTED** (2026-09-29). No later batch is started.
 
 ## Phase 5 Gate 7 Batch 3B - RepairPlan, typed GraphDiff, immutable EditGraph revisions and localized rerender (synthetic media only)
 

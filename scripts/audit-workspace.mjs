@@ -70,6 +70,7 @@ const adapterPolicy = {
   // Already spawned its worker before Batch 2B but was not enumerated; it is now registered and audited like its siblings.
   "scripts/audio-speech-worker.ts": { imports: acceptedCeiling, process: "legacy" },
   "scripts/edit-runtime-local.ts": { imports: ["node:crypto", "node:fs/promises", "node:path"], process: "none" },
+  "scripts/edit-editorial-local.ts": { imports: ["node:crypto", "node:fs/promises", "node:path", "node:perf_hooks"], process: "none" },
   "scripts/edit-render-fixture-authority-local.ts": { imports: ["node:crypto", "node:fs/promises", "node:path"], process: "none" },
   "scripts/edit-render-local.ts": { imports: ["node:child_process", "node:crypto", "node:fs/promises", "node:path", "node:perf_hooks", "node:url"], process: "strict_spawn" },
   "scripts/edit-media-qc-local.ts": { imports: ["node:child_process", "node:crypto", "node:fs/promises", "node:path", "node:url"], process: "strict_spawn" },

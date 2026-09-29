@@ -10,7 +10,7 @@ import { IdSchema } from "../contracts/common.js";
 import { ArtifactRefSchema, EvidenceRefSchema, availability, checkIdentity, compareText, equal, identify, missing, present, type ArtifactRef,
   type SuppliedArtifact } from "../editorial/common.js";
 import { parseAnyEditGraph, type AnyEditGraph, type AudioClipUse, type Operation, type VideoClipUse } from "../edit-graph/index.js";
-import { EDIT_GRAPH_RECORD_VERSION, EDIT_GRAPH_REVISION_RECORD_VERSION, FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema, SourceRangeSchema } from "../edit-graph/common.js";
+import { FrameRateBoundsSchema, HashSchema, Nat, ResolutionBoundsSchema, SourceRangeSchema } from "../edit-graph/common.js";
 import { LookSchema } from "../edit-graph/resolution.js";
 import { FootageAnalysisSchema } from "../footage-analyzer/protocol.js";
 import { BoundaryAuthoritySchema } from "../planning/common.js";
@@ -347,7 +347,7 @@ export function buildExecutionDag(requestInput: unknown, artifacts: readonly Sup
   const supplied = new SuppliedArtifacts(artifacts);
   const claimed = parse(ExecutionAdmissionSchema, supplied.exact(request.admission, "ExecutionAdmission", EDIT_EXECUTION_VERSION));
   const admission = validateExecutionAdmission(claimed, artifacts);
-  const graphVersion = admission.editGraph.artifactVersion === EDIT_GRAPH_REVISION_RECORD_VERSION ? EDIT_GRAPH_REVISION_RECORD_VERSION : EDIT_GRAPH_RECORD_VERSION;
+  const graphVersion = admission.editGraph.artifactVersion;
   const graph = guard("input_invalid", () => parseAnyEditGraph(supplied.exact(admission.editGraph, "EditGraph", graphVersion)));
   const profile = parse(ExecutionRenderProfileSchema, supplied.exact(admission.renderProfile, "ExecutionRenderProfile", EDIT_EXECUTION_VERSION));
   const frameTables = new Map(admission.sources.map(s => [s.assetId,

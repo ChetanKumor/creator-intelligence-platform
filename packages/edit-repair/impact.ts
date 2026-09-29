@@ -10,7 +10,7 @@ import { z } from "zod";
 import { IdSchema } from "../contracts/common.js";
 import { checkIdentity, equal, identify } from "../editorial/common.js";
 import { Nat, ScopeSchema } from "../edit-graph/common.js";
-import { EditGraphRevisionSchema, GraphDiffSchema, parseAnyEditGraph, supplied, type AnyEditGraph, type ClipUse, type Operation } from "../edit-graph/index.js";
+import { AnyEditGraphRevisionSchema, AnyGraphDiffSchema, parseAnyEditGraph, supplied, type AnyEditGraph, type ClipUse, type Operation } from "../edit-graph/index.js";
 import { PositiveSafeInt } from "../edit-execution/common.js";
 import { DAG_NODE_KINDS, ExecutionDagSchema, frameIndexAt, type ExecutionDag, type ExecutionDagNode } from "../edit-execution/index.js";
 import { RenderProgramSchema, type RenderProgram } from "../edit-render/index.js";
@@ -79,8 +79,8 @@ export function deriveDependencyImpact(input: { parent: ImpactSide; child: Impac
   check(input !== null && typeof input === "object" && input.parent !== null && typeof input.parent === "object" && input.child !== null && typeof input.child === "object",
     "impact_input_invalid", "A parent side, a child side and a GraphDiff are required.");
   const parent = guard("impact_input_invalid", () => parseAnyEditGraph(input.parent.graph));
-  const child = parseCanonical(EditGraphRevisionSchema, input.child.graph, "impact_input_invalid");
-  const diff = parseCanonical(GraphDiffSchema, input.diff, "impact_input_invalid");
+  const child = parseCanonical(AnyEditGraphRevisionSchema, input.child.graph, "impact_input_invalid");
+  const diff = parseCanonical(AnyGraphDiffSchema, input.diff, "impact_input_invalid");
   const parentBinding = { editGraph: supplied(parent, parent.editGraphId).ref, editGraphId: parent.editGraphId, revision: parent.revision };
   check(equal(diff.parent, parentBinding) && equal(child.parent, { state: "present", ...parentBinding })
     && equal(child.changeSet, { kind: "graph_diff", graphDiff: supplied(diff, diff.graphDiffId).ref, graphDiffId: diff.graphDiffId }) && equal(child.scope, parent.scope),

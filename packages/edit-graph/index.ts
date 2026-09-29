@@ -12,3 +12,5 @@ export { UEP_V1, UEP_DIMENSIONS, UEP_FINDING_CODES, UepProjectionPolicySchema, U
 export { GRAPH_DIFF_OPERATIONS, GRAPH_DIFF_VERSION, MAX_GRAPH_DIFF_OPERATIONS, MAX_GRAPH_REVISION, EditGraphRevisionSchema, GraphDiffSchema, applyGraphDiff, createGraphDiff,
   parseAnyEditGraph, trimSelectionOf, validateAnyEditGraph, validateEditGraphRevision, type AnyEditGraph, type EditGraphRevision, type GraphDiff,
   type GraphDiffOperation } from "./revision.js";
+export { EDITORIAL_GRAPH_DIFF_VERSION, EDITORIAL_GRAPH_REVISION_VERSION, CurrentGraphDiffSchema, AnyGraphDiffSchema, CurrentEditGraphRevisionSchema,
+  AnyEditGraphRevisionSchema } from "./revision.js";
