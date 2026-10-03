@@ -1,5 +1,9 @@
 # Phase 5 Gate 7 Batch 3D — Real-footage end-to-end acceptance
 
+**Current status (2026-10-03 closure, §33-§38).** Real footage verification: **PASS — CANDIDATE FOR OWNER ACCEPTANCE** (owner-terminal
+run 16/16, §36; final gates PASS, §37). Batch 3D owner acceptance: **PENDING INDEPENDENT OWNER REVIEW**. Gate 7: **NOT YET COMPLETE**.
+Phase 6: **NOT STARTED**. The status line below and §1-§32 are preserved history.
+
 Batch 3D: **CODE COMPLETE / HARNESS READY — PENDING THE OWNER-LOCAL REAL-FOOTAGE RUN** (2026-09-30 to 2026-10-03, cloud session).
 
 - The owner's ruling of 2026-09-30 (§9) authorized the smallest bounded protected change for the 3D-R01 gap. §10 adds an owner-local
@@ -741,3 +745,567 @@ Professional editing quality: **NOT VERIFIED**
 Batch 3D owner acceptance: **PENDING**
 
 Gate 7 overall: **NOT YET COMPLETE**
+
+## 19. Owner-local preflight (2026-10-03): NO_ADMISSIBLE_REAL_FOOTAGE_PAIR
+
+The first owner-local session ran on the exact pushed SHA `d579a0e4430d689f69e84ee35dce098d3d75b818` and changed no code.
+
+- **Environment.** Local and origin SHAs match, and the tracked worktree was clean. Windows Node is v24.15.0. The pinned `ffmpeg.exe` and
+  `ffprobe.exe` match `semantics.ts:39-45`, and the `.venv` has Python 3.12.12.
+- **Inputs.** The accepted set is `local-media/phase2-real/authorized-footage.json` (`5b339de0…3dc512`). Accepted job
+  `footage_36099c27-da31-40da-a3ec-0f5fe666f3da` has `run.json` `2fabb8ec…`. All 9 declared sources re-hashed 9/9 before and after.
+- **Result.** The committed `planOutput` refused all 81 (lock, trim) timelines; none rendered. Three independent blockers:
+  1. **B1, candidate universe.** Every source retains 64-114 candidates, against the harness bound of 32.
+  2. **B2, frame grid.** Every frame table is off the exact grid from frame 1. For 30/1 sources, 539 of 809 entries are off grid.
+     - The analyzer stores ffprobe `best_effort_timestamp_time` text, which is microsecond-rounded (`0.033333`).
+     - The accepted renderer requires the correctly rounded double of i × den / num (`packages/edit-render/program.ts:120-122`).
+  3. **B3, location.** `privateLocationRefusal` refused `local-media/`, although `.gitignore:14` ignores it.
+- **Evidence.** `.local-runs/phase5-gate7/batch3d-owner-local-preflight-20261003/` (`stop-record.json`, `SHA256SUMS.txt`).
+
+## 20. Owner ruling R02 (2026-10-03)
+
+The owner accepted the preflight as valid evidence and authorized the smallest bounded repair of B1-B3:
+
+- **R02-A.** Exact frame times at the analyzer producer seam. No renderer tolerance; VFR and non-grid timestamps still fail;
+  historical analyses stay immutable.
+- **R02-B.** `local-media/` becomes an accepted git-ignored private location.
+- **R02-C.** A new owner-authorized analysis with bounded proposal limits. `MAX_RETAINED_CANDIDATES = 32` stays unchanged.
+
+Phase 6 is not authorized.
+
+## 21. R02-A: exact frame times at the analyzer seam
+
+**Two defects, each with its own RED.**
+
+1. **Producer.** `python/reference_analyzer/media.py` built `frameTimes` from the microsecond text.
+2. **Cache identity.** `scripts/footage-local.ts:96` memoized metadata under `footage-metadata-v1`, a key that does not bind the
+   producer's timing semantics. The real cache held valid v1 memos with microsecond tables for Akshat and Deepinder
+   (`r02a-stale-metadata-cache-probe.json`), so a producer repair alone would have been bypassed for them.
+
+**Repair.**
+
+- `media.py` requests the stream `time_base` and each frame's integer `best_effort_timestamp`.
+- Each frame time is `float((ts - ts0) * Fraction(time_base))`. That is the correctly rounded double of the exact instant, as `secondsOf`
+  computes it with one IEEE division.
+- A timeline without integer timestamps or a valid time base fails closed (`MEDIA_UNREADABLE`).
+- `footage-local.ts` reads metadata memos under `footage-metadata-v2`; v1 memos are never read.
+- Unchanged: the renderer, the FootageAnalysis schema, `FOOTAGE_VERSION`, the 1 ms variable-rate flag formula and every historical
+  analysis.
+
+**Tests (RED on the unrepaired bytes `media.py` `62adcb7b…`, `footage-local.ts` `334d77d2…`).**
+
+- `python/tests/test_footage_exact_time.py`, 8 tests:
+  - Fake ffprobe answers mirror the pinned ffprobe's integer timestamps and six-decimal text.
+  - 30/1, 60/1 and 30000/1001 were RED under two time bases each; the 25/1 and 50/1 controls passed.
+  - Perturbed frame 7: RED (first off-grid frame 1, not 7). Variable rate: RED on the exact instant only.
+  - Text-only (legacy) output: RED (silently accepted).
+- `tests/footage-exact-time-media.integration.ts`:
+  - Real clips from the pinned FFmpeg pass through `LocalFootageServices` → Python worker → pinned ffprobe, judged by the renderer's
+    own predicate.
+  - RED: 30, 60 and 30000/1001 off grid at frame 1; perturbed at 1; a seeded stale v1 memo read back at 1.
+  - With the producer repaired but the key unchanged, only the stale-memo clip stayed RED. That isolates the cache defect.
+- `python/tests/test_footage.py`: its fixture gained the integer `best_effort_timestamp` and `time_base` `1/1000000`, encoding the same
+  instants as its existing text. Its assertions are unchanged.
+
+**GREEN.** Python 13/13 (`r02a-step1-python-green.log`); media 1/1 (`r02a-green-media.log`).
+
+**Cross-language check.** For every frame index below the 72,000-frame bound, at 30, 60, 30000/1001, 25, 50, 24000/1001, 60000/1001 and
+24 fps, Python's `float(Fraction)` equals the built `secondsOf`. 576,000 instants, 0 mismatches (`r02a-cross-language-exactness.log`).
+
+## 22. R02-B: `local-media/` is a private location
+
+`privateLocationRefusal` now accepts `.local-media/`, `local-media/` and `.local-runs/`. Tracked locations are still refused, and outside
+the repository the owner-path rule is unchanged.
+
+- `tests/edit-real-footage-r02.test.ts` (3D-R02B) checks the three accepted locations, both path separators, five tracked locations
+  (including look-alikes) refused, three outside paths, and that `.gitignore` lists all three locations.
+- RED: exactly the two `local-media/` cases were refused. GREEN: 1/1.
+
+## 23. Blocker 4, found before the analysis: unspecified sample aspect ratio
+
+The accepted staged-input conformance requires `sample_aspect_ratio === "1:1"` (`packages/edit-render/probe.ts:157`). For a stream with an
+unspecified SAR, ffprobe omits the field. The analyzer treats an unspecified SAR as square.
+
+The accepted pure `evaluateInputConformance`, run over the pinned ffprobe output with the exact conformance entries and the repaired
+frame tables (`conformance-preflight.json`):
+
+| Sources | Verdict |
+|---|---|
+| Akshat, Deepinder, Ritesh, Robert, Iman | `source_video_nonconforming` |
+| LukeRaw, MrBeastRaw | conforms |
+
+The only fps- and aspect-compatible distinct pair (Akshat + Deepinder) would therefore fail at render preparation. LukeRaw (30/1) and
+MrBeastRaw (30000/1001) cannot pair.
+
+**Owner decision (2026-10-03):** "LukeRaw, two clips", a same-source timeline. The SAR rule is accepted Batch-2B behavior and was not
+changed; changing it would be a protected change outside R02.
+
+## 24. R02-C: a bounded analysis of LukeRaw
+
+- **Footage set.** `local-media/phase2-real/batch3d-lukeraw-authorized-footage.json` (`36e5f35b…`) holds LukeRaw's accepted entry,
+  content-identical; only the key order differs after schema parsing.
+- **Config.** The default analyzer config with `maximumPerAsset` 16 and `maximumPerProject` 32: `footage-config-bounded.json` (`6a923910…`).
+  Configuration identity `configuration_c7f27992…`; the default is `configuration_666cb36c…`.
+- **No model compute, predicted first.** A replay of the accepted lattice functions with exact frame times predicted identical cheap (61) and
+  semantic (4) frame selections, all cached (`r02c-cache-reuse-replay.json`).
+- **Run.** Job `footage_85d87e22-56ea-423c-910a-96607cce9a78`: 4 frame-cache hits, 0 misses, 0 frames embedded, so no SigLIP inference;
+  13 s; 16 candidates.
+- **Analysis.** `footage_f2884bdb…` (file `10430a3b…`). Frozen model; `owner_supplied` / `permission_granted`; 457 frames exactly on the
+  30/1 grid; 16 retained candidates.
+- **Pre-harness admissibility** (committed pure core, `r02c-pre-harness-admissibility.json`): **PASS**.
+  - Plan: 30/1 at 999,000,000 ticks/s, 1080x1920, audio excluded.
+  - Candidates: frames 0-90 (`frame_pts_exact`) to lock and frames 74-164 (`source_seconds`) to trim. They overlap by 16 source frames:
+    deterministic verification input, not an editorial choice.
+
+## 25. Owner-local real-footage run (2026-10-03): 15/16 PASS; harness defect in scenario 14
+
+The committed runner ran over the R02 bytes:
+
+- Run manifest `run-manifest-lukeraw-2.json` (`ca44f382…`): exact owner template, `sourceAudio: "excluded"`, both timeline entries
+  LukeRaw with `candidateId: null`.
+- The first manifest file had its path mangled by shell escaping, was never used, and is kept as is.
+- Evidence: `.local-runs/phase5-gate7/b3d-20261003T051625Z-0388/`. The receipt is **valid**; 2198 s; runner exit 1.
+
+| Scenario | Result |
+|---|---|
+| Manifest and source verification; source admissibility | PASS (30/1 CFR on grid, clock 999,000,000) |
+| Baseline render; technical QC; observation; critic | PASS: output `9c1c2ade…` (3,139,669 bytes), 2 segments + assembly, QC pass, 6 observations, 0 findings |
+| EditingHead initialization; state-only HARD_EXACT lock | PASS: no media process for the lock |
+| Render failure atomicity; CAS loser | PASS: `render_failed` without head movement; `stale_editing_head` with the concurrent head current |
+| Published trim; localized reuse | PASS: 15 frames removed; child `461dab97…` (2,854,881 bytes), QC pass; locked segment `036197df…` reused, changed segment `96886f5d…` recomputed; 2 render processes |
+| Locked-target refusal; historical preference; stale request | PASS: `hard_lock_conflict`; state-only; `stale_editing_head` |
+| QC failure atomicity | **FAIL**: `EditRepairError: impact_input_invalid` |
+
+These claims were checked against the actual bytes and records (`run-evidence-verification.json`):
+
+- Both outputs exist with their recorded SHA-256 values, and the child output differs from the baseline.
+- The segment dispositions and computation identities hold.
+- The scenario-14 attempt started no media process, and the final head equals the preference head.
+
+**Root cause (HARNESS_DEFECT, not repaired).**
+
+- `LocalEditingProject.authorize` checks the parent DAG against the **current** head's graph (`scripts/edit-editorial-local.ts:161`,
+  `packages/edit-repair/impact.ts:88-91`).
+- Scenario 14 proposes a trim of revision 1, the published trim, but passes the revision-0 DAG: `parentDag: parent.v` at
+  `tests/edit-real-footage.local.ts:445`.
+- The accepted code refused fail-closed before any render. Lines 343, 355 and 377 are correct because their parents are revision 0.
+- The cloud test 3D-H07 never authorized a second revision, so the defect stayed latent.
+
+The smallest repair (not applied; it needs the owner's authorization):
+
+- Keep the published child's validated DAG from scenario 9 and pass it as `parentDag` in scenario 14.
+- Add a regression that authorizes a second revision from the published head without media.
+
+QC-failure atomicity on real footage is therefore **not exercised** by this run. The accepted 3C M02 covers it on synthetic media.
+
+## 26. Environment finding: 3D-L01 and the 8.3 temporary path
+
+On this machine `TEMP` is the 8.3 alias `C:\Users\KOUSHI~1\AppData\Local\Temp`. The accepted 3D-L01 compares the authority's real paths
+with unresolved `tmpdir()` paths (`tests/edit-real-footage-lifecycle.test.ts:125,163`).
+
+| Run | Result | Log |
+|---|---|---|
+| Pristine `d579a0e` checkout in a separate scratch worktree, default `TEMP` | **FAIL** (the same assertion) | `l01-pristine-default-temp.log` |
+| Current bytes, with `TEMP` set to the long real path | **PASS** | `l01-current-long-temp.log` |
+
+The failure predates R02 and is environmental. It is recorded, not repaired.
+
+## 27. Verification status and owner-review manifest (R02)
+
+**Gates and focused tests.**
+
+- Focused tests on the final bytes: Python suite 23/23; R02-A media 1/1; R02-B 1/1; footage core and local 18/18; audit policy and
+  workspace boundary 10/10; Phase-2 footage media 2/2. 3D harness, lifecycle and R01: 20/21, with L01 the §26 environment failure.
+- `npm run typecheck`, `npm run build`, `npm run audit:workspace` (128 files, 17 adapters) and `git diff --check`: PASS.
+- The full safe suite and `npm run verify`: **NOT RUN**. The owner allowed them only after a stable real-footage path.
+
+**Files.**
+
+| Change | Files |
+|---|---|
+| Modified | `python/reference_analyzer/media.py` (`62adcb7b…` → `93b8f3cf…`), `scripts/footage-local.ts` (`334d77d2…` → `9513ccc1…`), `tests/support/edit-real-footage.ts` (`facd8214…` → `e63472a2…`), `python/tests/test_footage.py` (`00ecba98…` → `f88766f7…`) |
+| Added | `python/tests/test_footage_exact_time.py` (`3fb18bd5…`), `tests/footage-exact-time-media.integration.ts` (`ad9254d6…`), `tests/edit-real-footage-r02.test.ts` (`1354f7da…`) |
+| Docs | this addendum and `docs/CURRENT_PHASE.md` |
+
+- Unchanged: the renderer, contracts, schemas, dependencies and lockfile, and every pinned file.
+- No media is committed. Source bytes are unchanged: all 9 sources re-hashed 9/9 after the run.
+- Evidence: `.local-runs/phase5-gate7/batch3d-r02-20261003/`.
+- Nothing is committed or pushed. The owner allowed one repair commit only if the repair **and** the real-footage run succeed.
+
+**Superseded statements** (kept above as written):
+
+- §4 "The practical V0 path is conforming CFR H.264 footage with source audio excluded". Before R02-A, 30, 60 and 30000/1001 fps could not
+  pass, and an explicit SAR 1:1 is also required (§23).
+- §14 "A manifest inside the repository must live under `.local-media/` or `.local-runs/`". `local-media/` is accepted too (§22).
+- §16 and §18 "Real footage verified: **NO — PENDING OWNER LOCAL RUN**". The run executed with 15/16 PASS (§25).
+
+R02 repairs: **IMPLEMENTED** (uncommitted, pending owner review)
+
+Real-footage run: **FAIL** (15/16 PASS; scenario 14 harness defect, not repaired)
+
+Real footage verified: **FAIL — NOT A PASS CANDIDATE**
+
+Professional editing quality: **NOT VERIFIED**
+
+Batch 3D owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+## 28. Owner final-closure ruling (2026-10-03)
+
+- **Decision 1.** The scenario-14 failure is a verification-harness defect. Repair only the harness; production authorization stays
+  unchanged. The invariant: the current parent EditingHead graph, the parent DAG's graph and the prior passing render/QC all name one
+  revision.
+- **Decision 2.** The sample-aspect-ratio rule is deferred: `probe.ts` is not modified. The proof may use two ranges of the one LukeRaw
+  source. Broad formats, distinct physical multi-source execution, non-square pixels and ingest normalization stay **NOT VERIFIED**.
+- **Decision 3.** Run 3D-L01 unchanged, with `TEMP`/`TMP`/`TMPDIR` set to an ignored long-form directory.
+- **Gating.** Any scenario failure stops the round: no full suite, no commit.
+
+## 29. R02-D: the QC-failure harness parent repair
+
+- **RED.** The preserved production refusal from the first R02 run: `impact_input_invalid`, with `qc_failure` render counts 0/0/0
+  (`batch3d-final-20261003/r02d-red-evidence.txt`).
+- **Repair** (harness only):
+  - `revisionParent` in `tests/support/edit-real-footage.ts` returns the parent execution only when all of these name one exact graph and
+    revision: the current head's graph binding, the context graph, the parent DAG, the prior render receipt (DAG and render computation)
+    and the prior passing QC (receipt, DAG and render computation). Anything else is refused as `revision_parent_mismatch`.
+  - The runner keeps the published trim's validated DAG, receipt and QC from scenario 9.
+  - Scenario 14 authorizes and executes against them, and records the parent, the child, the render receipt, the QC receipt and the head
+    before and after (`evidence.qcFailure`).
+- **Regression.** 3D-R02D, added with the repair (before it no harness check existed). The published child is accepted after publication;
+  the first R02 run's configuration (revision-0 DAG on a revision-1 head) is refused. The baseline is accepted before publication. A
+  foreign receipt, a foreign QC, a failed QC and a context that is not the head's graph are refused.
+- **Hashes.** Runner `80272f69…` → `1918bc08…`; support `e63472a2…` → `3ecbbc56…`; R02 tests `1354f7da…` → `394352af…`.
+
+## 30. Controlled long-form temporary directory; 3D-L01 unchanged
+
+| Item | Value |
+|---|---|
+| `TEMP` = `TMP` = `TMPDIR` | `C:\Users\KOUSHIK VARDHON\creator-intelligence-platform\.local-runs\test-temp`, ignored by `.gitignore:15` |
+| `os.tmpdir()` | that exact path, equal to its real path, no `~` alias |
+| 3D-L01 | **PASS** (1/1); the test file is byte-identical to `d579a0e` (`c97456b5…`) |
+
+Evidence: `temp-environment.txt` and `l01-long-temp.log`.
+
+Focused tests under that environment:
+
+| Suite | Result |
+|---|---|
+| Batch-3D files (R01, L01-L12, H01-H08, R02B, R02D) | 23/23 |
+| R02-A media | 1/1 |
+| Python | 23/23 |
+| Footage core and local, audit policy, workspace boundary | 28/28 |
+
+## 31. Second R02 real-footage run (2026-10-03): 15/16; QC-failure refused at the permit (EVIDENCE_FRESHNESS)
+
+**Inputs.** All reused byte-identical, with no new analysis and no model inference:
+
+- run manifest `ca44f382…`, footage set `36e5f35b…`, config `6a923910…`;
+- analysis `10430a3b…` from job `footage_85d87e22-…` (4/4 cache hits, 0 frames embedded);
+- the 9 sources re-hashed 9/9 before and after.
+
+**Run.** Evidence `.local-runs/phase5-gate7/b3d-20261003T062658Z-361b/`. The receipt is valid; 2440 s; runner exit 1.
+
+**Verified independently** (`final-run-verification.json`):
+
+- 15 scenarios PASS, every check identical to run 1.
+- The baseline `9c1c2ade…` and the child `461dab97…` are byte-identical to run 1.
+- The GraphDiff parent is revision 0, with one trim operation whose replacement equals the exact keep range.
+- The child is a new revision-1 EditGraph 0.4.0.
+- Reuse and recompute are truthful; the critic executed with 0 findings.
+
+**Scenario 14** (`qc_failure_atomicity`): **FAIL**, `EditRenderError: runtime_probe_stale`.
+
+- The R02-D repair worked: `project.authorize` accepted the published revision-1 DAG as parent.
+- The refusal came later, inside `LocalEditingProject.execute`. `issueExecutablePermit` → `evaluateRealExecutionEvidence` found the
+  runtime probe from `prepare` older than the 60 s window.
+- `execute` runs `assertCurrent`, and the permit runs its own checks, before the freshness evaluation (`scripts/edit-editorial-local.ts:174-178`).
+- The policy already uses the accepted maximum `Age.max(60_000)` (`packages/edit-render/records.ts:56`).
+- No render started (`ffmpegRender` 0); the head did not move (final head = preference head); no corrupt output exists.
+
+| Phase (s) | Revision 0 → 1 (scenario 9) | Revision 1 → 2 (scenario 14) |
+|---|---|---|
+| propose + child execution + authorize | 268.5 | 681.0 |
+| `prepare` | 9.6 | 14.3 |
+| `execute` | 90.8 (including render and QC) | 114.0 (stale before the permit) |
+
+On this machine, the accepted pre-permit validation of a revision-2 child takes longer than the accepted 60 s evidence window.
+
+**Category:** EVIDENCE_FRESHNESS. Not repaired: it needs a production performance change, a protected threshold change or a different
+scenario design, all outside this ruling.
+
+**Smallest harness-only option, for the owner.** Exercise QC-failure atomicity on a revision 0 → 1 attempt from the early head, as
+scenarios 7 and 8 do. Use a distinct trim amount, so its output identity never collides with the published child. That pre-permit path
+already passed three times per run.
+
+## 32. Status (2026-10-03, after the second R02 run)
+
+**Preserved history, in order:**
+
+1. The first owner-local attempt: no admissible pair (§19).
+2. The first R02 run: 15/16, QC-failure not exercised because of the harness parent-DAG defect (§25).
+3. The second R02 run: 15/16, QC-failure authorized but refused stale at the permit (§31).
+
+**Gates.**
+
+- The full safe suite and `npm run verify`: **NOT RUN**; any scenario failure stops the round.
+- Nothing is committed or pushed. Source bytes are unchanged.
+
+**Limitations.** Each is **NOT VERIFIED**, or not implemented:
+
+- the proof uses two timeline ranges of one physical LukeRaw source, so distinct physical multi-source execution is NOT VERIFIED;
+- sample-aspect-ratio and non-square-pixel normalization: NOT VERIFIED;
+- broad production ingest: NOT VERIFIED;
+- VFR normalization: NOT implemented here;
+- professional editing quality: NOT VERIFIED;
+- the autonomous Director: NOT VERIFIED.
+
+**Superseded statement.** §25's "The smallest repair (not applied; it needs the owner's authorization)". It was applied as R02-D under
+the §28 ruling (§29).
+
+R02 and R02-D repairs: **IMPLEMENTED** (uncommitted)
+
+Real-footage run: **FAIL** (15/16; QC-failure atomicity not exercised, EVIDENCE_FRESHNESS)
+
+Real footage verified: **FAIL — NOT A PASS CANDIDATE**
+
+Professional editing quality: **NOT VERIFIED**
+
+Batch 3D owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+## 33. Owner ruling R02-E (2026-10-03)
+
+The owner authorized §31's smallest harness-only option as **R02-E**: exercise QC-failure atomicity as its own revision 0 → 1 attempt,
+with an exact trim distinct from the published one. No production file changed (§37). The accepted 60 s evidence window and the permit
+checks are untouched, and §31's revision 1 → 2 observation stays a recorded limitation.
+
+## 34. R02-E: QC failure as its own revision 0 → 1 attempt
+
+**RED** (test first, on the R02-D harness bytes: support `3ecbbc56…`, runner `1918bc08…`).
+
+- 3D-R02E (`tests/edit-real-footage-harness.test.ts`, then `039dcf36…`) builds both trims from the locked revision-0 head without
+  media and compares every identity in one assertion.
+- The build reported the API that did not exist yet (TS2554 for the fifth `trimRequest` argument; TS2339 for `revisionIdentity` and
+  `distinctRevisionRefusal`) and still emitted JavaScript (`red-build.log`).
+- The test failed on exactly four properties: `qcTrimStrictlySmaller`, `distinctReplacement`, `distinctChangedSegment` and
+  `outputsCannotCollide` (`r02e-red.log`). Without `fewerThan` the QC attempt repeated the published trim. Its GraphDiff, child graph,
+  DAG and render computation identities still differed, because they bind the request key, so those identities alone cannot show a
+  distinct edit.
+- The later assertions (`revisionIdentity`, `distinctRevisionRefusal`, `revisionParent`) could not run on the RED bytes.
+
+**Repair** (harness only):
+
+- `trimKeep` and `trimRequest` take an optional `fewerThan`: the trim then removes strictly fewer frames. `selectTimeline` admits a
+  candidate only when both the published trim and that smaller trim exist.
+- The QC-failure scenario now runs right after render-failure atomicity, and only from the locked revision-0 head
+  (`qc_failure_parent_not_current` otherwise). It proposes the smaller trim (`b3d_trim_second_qc`), authorizes against the revision-0
+  parent checked by `revisionParent`, and injects the 4-byte fault after QC fixes the output identity, as before.
+- `revisionIdentity` collects one proposed revision's identities. `distinctRevisionRefusal` refuses the attempt
+  (`qc_failure_child_not_distinct`) unless every identity differs from the published trim's edit and the locked segment stays reusable
+  from the parent.
+- The former last scenario, a revision 1 → 2 trim (`b3d_trim_second_c`), is removed. No scenario executes a revision 1 → 2 child now.
+
+**GREEN.** 3D-R02E 1/1 (`r02e-green.log`). Support `3ecbbc56…` → `7c16e4a6…`; runner `1918bc08…` → `eba4254b…`; harness test
+`039dcf36…` → `e0a45d8e…` (`2f9d854d…` at `d579a0e`).
+
+**Process observation.** The harness test changed between the RED (`039dcf36…`) and the GREEN (`e0a45d8e…`). The RED bytes were not
+preserved and the change was not recorded. Every later run used the GREEN bytes.
+
+**Focused tests** (`TEMP` = `.local-runs\test-temp`): Batch-3D files 24/24 (3D-R02E added), R02-A media 1/1, Python 23/23, footage
+core and local, audit policy and workspace boundary 28/28. `npm run typecheck`, `npm run audit:workspace` and `git diff --check`: PASS.
+Evidence: `.local-runs/phase5-gate7/batch3d-r02e-20261003/`.
+
+## 35. Third R02 run (2026-10-03): stopped by the Claude Code memory-pressure reaper
+
+- The runner ran over the R02-E bytes (runner `eba4254b…`, support `7c16e4a6…`; `TEMP` = `.local-runs\test-temp`) as a Claude Code
+  background shell: run directory `b3d-20261003T092935Z-bec5`, started 09:29:34Z.
+- At about 15:12 local time, after the CAS-loser render, Claude Code's memory-pressure reaper stopped the shell while the session was
+  idle. This is not a command failure. The runner never reached `finish()`: no receipt, evidence or timings were written.
+- Afterwards no runner, FFmpeg or ffprobe process remained; free commit was 9.34 GB and free physical memory 4.26 GB.
+- Its partial outputs are diagnostic only: `9c1c2ade…` (the baseline), `0361c3f6…` (the QC-failure attempt's output; its bytes are
+  `930f06bc…` after the deliberate append) and `461dab97…`.
+- It was not restarted from the session. Evidence: `batch3d-r02e-20261003/reaped-run.txt`.
+
+## 36. Fourth R02 run (2026-10-03, owner terminal): 16/16 PASS
+
+The owner ran the committed runner over the R02-E bytes in their own terminal, outside Claude Code.
+
+- Evidence: `.local-runs/phase5-gate7/b3d-20261003T101716Z-bcfa/`. The receipt is **valid**, SHA-256
+  `b646ea76d559622fb0a366a740ec491ab30c805d8ead3b14e19755f14bf8e65c`; runner exit 0 (`harness-run-owner.log`); about 27 min.
+- Inputs, all reused byte-identical: run manifest `ca44f382…`, footage set `36e5f35b…`, analysis `footage_f2884bdb…` from job
+  `footage_85d87e22-…` (4 frame-cache hits, 0 frames embedded). No analysis and no model inference ran. Pinned FFmpeg `72a489ec…`,
+  ffprobe `19202b23…`. The 9 sources re-hashed 9/9 before and after.
+
+| Scenario | Result |
+|---|---|
+| Manifest and source verification; source admissibility | PASS: the declared source re-hashed in full; 30/1 CFR on grid, 1080x1920, audio excluded, clock 999,000,000 |
+| Baseline render; technical QC; observation; critic | PASS: output `9c1c2ade…` (3,139,669 bytes, 2 segments), QC pass, 6 observations, critic executed with 0 findings |
+| EditingHead initialization; state-only HARD_EXACT lock | PASS: no media process for the lock |
+| Render failure atomicity | PASS: `render_failed`; the head did not move |
+| QC failure atomicity (R02-E) | PASS: a distinct 14-frame revision 0 → 1 trim rendered; its bytes changed after QC fixed their identity; QC failed; the head did not move |
+| CAS loser | PASS: `stale_editing_head`; the concurrent head stayed current |
+| Published trim; localized reuse | PASS: 15 frames removed through GraphDiff, child render, QC and CAS; child `461dab97…` (2,854,881 bytes), QC pass; locked segment reused, only the changed segment and the assembly ran |
+| Locked-target refusal; historical preference; stale request | PASS: `hard_lock_conflict`; state-only; `stale_editing_head` |
+
+**Verified independently** (`batch3d-r02e-20261003/final-run-verification.json`):
+
+- The receipt is schema-valid with 16/16 PASS. Both outputs exist with their recorded SHA-256 values, differ from each other, and
+  each QC pass is of its own output.
+- The critic executed; its recorded findings equal its report (0); the semantic channel is `not_computed_no_semantic_critic_port`, so
+  there is no actionable finding and no automatic repair.
+- The GraphDiff exists; the child is a new revision-1 EditGraph 0.4.0; the published trim's prior is the baseline; reuse and
+  recomputation are truthful.
+- The lock started no process; the render failure, CAS loser, locked edit, stale request and preference behaved as the table says.
+
+**QC-failure atomicity in detail.**
+
+- Parent: the locked revision-0 head. Child: revision 1, 14 frames removed (published: 15); 166 output frames (published: 165).
+- GraphDiff, child graph, render computation and changed segment all differ from the published trim; the locked segment is shared.
+- The render started (2 FFmpeg render processes): segment 0 `reused_verified_prior_artifact`, segment 1 `computed_by_this_execution`.
+- After QC established the output identity, 4 bytes were appended to that output (a deliberate verification fault). QC read the changed
+  bytes: verdict `fail`, failed check `output_identity`; outcome `qc_failed`.
+- The head before equals the head after. The corrupt output never became authoritative: its name `0361c3f6…` no longer matches its
+  bytes `930f06bc…`.
+
+**Not shown by this run.** No scenario executes a revision 1 → 2 child any more. §31 remains the only evidence on that path: the
+accepted pre-permit validation took about 114 s against the 60 s window and was refused `runtime_probe_stale`, with no render and no
+head movement.
+
+## 37. Final repository gates (2026-10-03)
+
+**First run on the final bytes** (`.local-runs/phase5-gate7/batch3d-final-gates-20261003/`, Claude Code session; `TEMP` = `TMP` =
+`TMPDIR` = `.local-runs\test-temp`):
+
+- `npm run typecheck`, `npm run build`, `npm run audit:workspace` (128 files, 17 adapters) and `git diff --check`: PASS.
+- Full safe suite, `node --import ./scripts/no-network.mjs --test --test-concurrency=1 dist/tests/*.test.js` (49 files): 1078 tests,
+  **1077 pass, 1 fail**, 0 cancelled, 0 skipped, 0 todo; 1855 s (`full-safe-suite.log`).
+- The failure is the accepted Batch-2A test "runtime state stays inside isolated temporary roots, never tracked directories"
+  (`tests/edit-runtime.test.ts:1335`). It requires the runtime root outside the repository, and `os.tmpdir()` was inside it. Category:
+  ENVIRONMENT.
+
+**Diagnostic** (`temp-conflict-diagnostic.txt`; the two tests only, no code change):
+
+| `os.tmpdir()` | Batch-2A isolation | 3D-L01 |
+|---|---|---|
+| `C:\Users\KOUSHIK VARDHON\creator-intelligence-platform\.local-runs\test-temp` (long form, inside the repository) | FAIL | PASS |
+| `C:\Users\KOUSHIK VARDHON\AppData\Local\Temp` (long form, outside) | PASS | PASS |
+| `C:\Users\KOUSHI~1\AppData\Local\Temp` (8.3 alias, outside) | PASS | FAIL |
+
+**Owner ruling (2026-10-03).** The 1077/1078 run is not a production-code failure. One corrected full-suite rerun is authorized with
+exactly `C:\Users\KOUSHIK VARDHON\AppData\Local\Temp`, and no source change.
+
+**Corrected full safe suite** (owner terminal). The runner `run-corrected-full-safe-suite.sh` runs the same command. It refuses to start
+unless `os.tmpdir()` is exactly that path and its real path is that long form outside the repository, the 9 source hashes match, and
+`dist/` is newer than every source.
+
+- Attempt 1 (12:02:18Z, `full-safe-suite-corrected-longtemp.log`): **interrupted** after about 2.5 min, while
+  `edit-editorial-hostile.test.js` was running. node:test printed "Interrupted while running"; there is no summary and no exit line.
+  The 149 results before it are all passes. The log does not record the cause. It is not a result.
+- Attempt 2 (12:15:27Z, `full-safe-suite-corrected-longtemp-attempt2.log`; its runner differs only in the log name):
+  **1078 tests, 1078 pass**, 0 fail, 0 cancelled, 0 skipped, 0 todo; exit 0; 2321 s. Its header records `os.tmpdir()` and its real
+  path as `C:\Users\KOUSHIK VARDHON\AppData\Local\Temp`, outside the repository, with HEAD `d579a0e` and source bytes 9/9.
+
+**`npm run verify`** (owner terminal, `npm-verify-longtemp.log`). The log records `TEMP=C:\Users\KOUSHIK VARDHON\AppData\Local\Temp`; it
+does not record `TMP`, `TMPDIR` or `os.tmpdir()`. Both temp-sensitive tests passed inside it, which needs a long-form temporary
+directory outside the repository (diagnostic above).
+
+| Stage | Result |
+|---|---|
+| typecheck | PASS |
+| build (inside `npm test`) | PASS |
+| `npm test` (default concurrency) | **1078/1078 PASS**; 0 fail, 0 cancelled, 0 skipped, 0 todo; 688 s |
+| workspace audit | PASS: 128 files, 17 adapters |
+| schema check | PASS: 33 schema and synthetic fixture artifacts |
+| demo | PASS |
+| `test:media` | **57/57 PASS**, including 3D-R02A; 322 s |
+| `test:python` | **23/23 OK** |
+| final line | `npm verify exit=0` |
+
+`verify` runs neither the real-footage runner nor a footage analysis, and its SigLIP test uses generated tiny parameters, not the frozen
+model. After §36, only these gates, the two-test diagnostic and the read-only closure checks ran.
+
+**Closure checks** (read-only; `closure-checks-before-docs.txt` and `footage-rehash-closure.txt`):
+
+- The 9 authorized footage files: **9/9 unchanged** (hash and size against the AuthorizedFootageSet; hash and mtime against the
+  earlier receipt).
+- The 9 changed or added code and test files: 9/9 equal to `final-source-sha256.txt`, the bytes every final gate ran. 3D-L01's test
+  file is byte-identical to `d579a0e` (`c97456b5…`).
+- Protected production files: all 31 TypeScript files under `packages/edit-render`, `packages/edit-runtime` and
+  `packages/edit-execution`, and the three local render, QC and observation adapters, are byte-identical to `d579a0e`; no `packages/`
+  file changed. `Age.max(60_000)` (`packages/edit-render/records.ts:56`) and `MAX_RECHECK_AGE_MILLISECONDS = 60_000`
+  (`packages/edit-runtime/records.ts:204`) are unchanged.
+- No dependency or lockfile change. Nothing under `.local-runs/`, `local-media/`, `.test-artifacts/` or `dist/` is tracked.
+
+## 38. Status and owner-review manifest (2026-10-03, closure)
+
+**Preserved history, in order:**
+
+1. Cloud session: the accepted trusted execution boundary admitted only the synthetic-fixture lifecycle authority, and Batch 3D stopped
+   (§1-§8); after the owner ruling, 3D-R01 and the harness (§9-§18).
+2. Owner-local preflight: NO_ADMISSIBLE_REAL_FOOTAGE_PAIR (§19).
+3. R02: exact frame times and metadata memo v2 (R02-A), `local-media/` (R02-B), a bounded LukeRaw analysis (R02-C) (§20-§24).
+4. First R02 run: 15/16, the scenario-14 parent-DAG harness defect (§25).
+5. R02-D, then the second run: 15/16, `runtime_probe_stale` on the revision 1 → 2 attempt (§28-§31).
+6. R02-E (§33-§34); the third run, stopped by the Claude Code memory-pressure reaper (§35).
+7. The fourth run, in the owner's terminal: **16/16 PASS**, receipt `b646ea76…` (§36).
+8. First final safe suite: 1077/1078, one environmental TEMP-location failure (§37).
+9. Corrected safe suite with `C:\Users\KOUSHIK VARDHON\AppData\Local\Temp`: attempt 1 interrupted, attempt 2 **1078/1078 PASS** (§37).
+10. `npm run verify`: **PASS**, exit 0 (§37).
+
+**Files** (SHA-256 at `d579a0e` → final):
+
+| Change | File | SHA-256 |
+|---|---|---|
+| Modified | `python/reference_analyzer/media.py` | `62adcb7b…` → `93b8f3cf…` |
+| Modified | `python/tests/test_footage.py` | `00ecba98…` → `f88766f7…` |
+| Modified | `scripts/footage-local.ts` | `334d77d2…` → `9513ccc1…` |
+| Modified | `tests/support/edit-real-footage.ts` | `facd8214…` → `7c16e4a6…` |
+| Modified | `tests/edit-real-footage.local.ts` | `80272f69…` → `eba4254b…` |
+| Modified | `tests/edit-real-footage-harness.test.ts` | `2f9d854d…` → `e0a45d8e…` |
+| Added | `python/tests/test_footage_exact_time.py` | `3fb18bd5…` |
+| Added | `tests/footage-exact-time-media.integration.ts` | `ad9254d6…` |
+| Added | `tests/edit-real-footage-r02.test.ts` | `394352af…` |
+| Docs | this record and `docs/CURRENT_PHASE.md` | recorded outside them, after their last edit |
+
+- Unchanged and byte-identical to `d579a0e`: renderer exactness (`packages/edit-render/program.ts:120-122`), the `probe.ts`
+  conformance authority (including SAR `1:1`), both 60 s ceilings, executable-permit authorization (`authorize.ts`) and the trusted
+  runtime execution boundary. Contracts, schemas, dependencies, the lockfile and 3D-L01 are unchanged too.
+- No media, receipt, manifest, model file or `.local-runs/` content is committed.
+- This record and those bytes are committed once on `phase/5-gate7-3d-real-footage` as `fix(gate7): complete Batch 3D real-footage
+  verification`; `main` is not modified.
+
+**Limitations:**
+
+- MULTI-REVISION REAL EXECUTION FRESHNESS: **LIMITATION OBSERVED / NOT FULLY VERIFIED** (§31; the 16/16 run executes no revision
+  1 → 2 child).
+- DISTINCT PHYSICAL MULTI-SOURCE EXECUTION: **NOT VERIFIED** (both timeline entries are ranges of one LukeRaw source).
+- BROAD MEDIA INGEST: **NOT VERIFIED**.
+- VFR NORMALIZATION: **NOT IMPLEMENTED** (variable and off-grid timelines still fail closed).
+- NON-SQUARE-PIXEL / SAR NORMALIZATION: **NOT VERIFIED** (§23).
+- PROFESSIONAL EDITING QUALITY: **NOT VERIFIED**.
+- AUTONOMOUS DIRECTOR: **NOT VERIFIED** (the edits are deterministic verification input).
+
+**Superseded statements** (kept above as written):
+
+- The status line at the top of this record ("PENDING THE OWNER-LOCAL REAL-FOOTAGE RUN").
+- §27 and §32 "Real footage verified: **FAIL — NOT A PASS CANDIDATE**", and §32 "Real-footage run: **FAIL** (15/16; …)". The fourth
+  run passed 16/16 (§36).
+- §27 and §32 "The full safe suite and `npm run verify`: **NOT RUN**". Both ran (§37).
+- §27 and §32 "Nothing is committed or pushed". This closure commits once, as above.
+- §31 "Smallest harness-only option, for the owner". It was applied as R02-E (§33-§34).
+
+R02, R02-D and R02-E repairs: **IMPLEMENTED**
+
+Real-footage run: **PASS** (16/16, owner terminal)
+
+Real footage verification: **PASS — CANDIDATE FOR OWNER ACCEPTANCE**
+
+Professional editing quality: **NOT VERIFIED**
+
+Batch 3D owner acceptance: **PENDING INDEPENDENT OWNER REVIEW**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Phase 6: **NOT STARTED**

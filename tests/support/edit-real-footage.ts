@@ -102,14 +102,15 @@ export function manifestArgument(args: readonly string[]): string {
   return absoluteLocalPath(args[1], "The run manifest");
 }
 /**
- * A private manifest inside the repository must live in a git-ignored directory (.local-media/ or .local-runs/); outside the repository
- * the owner's own location is used as given. `inside` is the path relative to the repository root.
+ * A private manifest inside the repository must live in a git-ignored directory (.local-media/, local-media/ or .local-runs/; the accepted
+ * Phase-2 AuthorizedFootageSet lives under local-media/); outside the repository the owner's own location is used as given. `inside` is the
+ * path relative to the repository root.
  */
 export function privateLocationRefusal(inside: string, label: string): HarnessRefusal | null {
   if (inside.startsWith("..") || /^(?:[A-Za-z]:|[\\/])/.test(inside)) return null;
   const top = inside.split(/[\\/]/)[0];
-  return top === ".local-media" || top === ".local-runs" ? null
-    : new HarnessRefusal("private_manifest_not_git_ignored", [`${label} inside the repository must live under .local-media/ or .local-runs/.`]);
+  return top === ".local-media" || top === "local-media" || top === ".local-runs" ? null
+    : new HarnessRefusal("private_manifest_not_git_ignored", [`${label} inside the repository must live under .local-media/, local-media/ or .local-runs/.`]);
 }
 
 // ================================================================ source admissibility (inspected, never repaired)
@@ -209,15 +210,17 @@ export function candidateFacts(analysis: FootageAnalysis, candidateId: string, p
  * The exact keep range of a trim that removes about half a second from the end of a clip: whole admitted source frames, every changed
  * endpoint an admitted frame, at most a third of the clip, and (with linked audio) whole samples. A start with only candidate-endpoint
  * authority is replaced by the first frame the parent already renders, so the kept picture starts where it did. Nothing is snapped
- * to a non-frame instant; if no such trim exists this refuses.
+ * to a non-frame instant; if no such trim exists this refuses. With `fewerThan`, the trim removes strictly fewer than that many frames: the
+ * distinct exact edit of the QC-failure attempt (R02-E).
  */
 export function trimKeep(clip: { source: { range: { start: ExactTime; end: ExactTime }; startAuthority: { kind: string; frameIndex?: number };
-  endAuthority: { kind: string; frameIndex?: number }; precision: string } }, frameCount: number, plan: OutputPlan) {
+  endAuthority: { kind: string; frameIndex?: number }; precision: string } }, frameCount: number, plan: OutputPlan, fewerThan?: number) {
   const grid = gridOf(plan), s = clip.source;
   const first = (t: ExactTime) => Math.min(convertTime(t, grid, "ceil").value, frameCount);
   const startFrame = s.precision === "frame_pts_exact" ? s.startAuthority.frameIndex! : first(s.range.start);
   const endFrame = s.precision === "frame_pts_exact" ? s.endAuthority.frameIndex! : first(s.range.end);
-  const half = Math.round(plan.frameRate.numerator / (2 * plan.frameRate.denominator)), bound = Math.min(half, Math.floor((endFrame - startFrame) / 3));
+  const half = Math.round(plan.frameRate.numerator / (2 * plan.frameRate.denominator));
+  const bound = Math.min(half, Math.floor((endFrame - startFrame) / 3), fewerThan === undefined ? half : fewerThan - 1);
   for (let removed = bound; removed >= 1; removed -= 1) {
     const kept = endFrame - removed;
     if (plan.linkedAudio && !sampleExact(kept, plan)) continue;
@@ -246,11 +249,10 @@ export function selectTimeline(sources: readonly [TimelineSource, TimelineSource
           end: canonicalTime(decodeLegacySeconds(c.endSeconds, rateOf(plan.ticksPerSecond))!) },
           startAuthority: facts.precision === "frame_pts_exact" ? { kind: "frame_pts", frameIndex: facts.startFrame } : { kind: "candidate_endpoint" },
           endAuthority: facts.precision === "frame_pts_exact" ? { kind: "frame_pts", frameIndex: facts.endFrame } : { kind: "candidate_endpoint" }, precision: facts.precision } };
-        // Two successive exact trims: the published revision, then a later one the QC-failure scenario executes.
+        // Two distinct exact trims of this clip: the published revision's, and the strictly smaller one of the QC-failure attempt (R02-E).
         try {
           const first = trimKeep(probe, analysis.metadata.frameTimes.length, plan);
-          trimKeep({ source: { range: first.keep, startAuthority: { kind: "frame_pts", frameIndex: first.startFrame }, endAuthority: { kind: "frame_pts", frameIndex: first.endFrame },
-            precision: "frame_pts_exact" } }, analysis.metadata.frameTimes.length, plan);
+          trimKeep(probe, analysis.metadata.frameTimes.length, plan, first.removedFrames);
         } catch (error) {
           if (!(error instanceof HarnessRefusal)) throw error;
           rejected.push({ entryId, candidateId: id, reasons: [...error.reasons] }); continue;
@@ -681,14 +683,70 @@ export function videoClip(c: E.CurrentEditingContext, i: number) {
  * A request to trim about half a second from the end of the clip at `position`, scoped to exactly that clip, with its exact keep range.
  * Position 1 is the unlocked clip the harness revises; position 0 is the locked clip, whose trim must be refused.
  */
-export function trimRequest(c: E.CurrentEditingContext, requestKey: string, plan: OutputPlan, position: 0 | 1 = 1) {
+export function trimRequest(c: E.CurrentEditingContext, requestKey: string, plan: OutputPlan, position: 0 | 1 = 1, fewerThan?: number) {
   const clip = videoClip(c, position), target = E.targetOf(c.graph, clip.clipUseId);
   const analysis = FootageAnalysisSchema.parse(c.artifacts.find(a => a.ref.objectId === clip.source.analysis.objectId && a.ref.sha256 === clip.source.analysis.sha256)?.value);
-  const trim = trimKeep(clip, analysis.metadata.frameTimes.length, plan);
+  const trim = trimKeep(clip, analysis.metadata.frameTimes.length, plan, fewerThan);
   const allowedScope = { graph: c.head.currentGraph, clipUseIds: [clip.clipUseId], interval: target.interval, ticksPerSecond: c.graph.output.clock.ticksPerSecond };
-  const request = verificationRequest(c, requestKey, `Trim about half a second from the end of the ${position === 0 ? "first" : "second"} shot.`, target, allowedScope);
+  const amount = fewerThan === undefined ? "about half a second" : "a little less than half a second";
+  const request = verificationRequest(c, requestKey, `Trim ${amount} from the end of the ${position === 0 ? "first" : "second"} shot.`, target, allowedScope);
   const action: E.IntentAction = { kind: "request_edit", target, operation: "trim_clip_source_range", keep: trim.keep };
   return { request, action, trim, clipUseId: clip.clipUseId };
+}
+/** The identity fields of one rendered revision as the runner holds it: its validated DAG, its render receipt and its technical QC. */
+interface RevisionDag { dag: { dagId: string; graph: { editGraphId: string; revision: number }; renderIdentity: { renderComputationId: string } } }
+interface RevisionReceipt { receiptId: string; renderComputationId: string; dag: { dagId: string }; editGraph: { editGraphId: string; revision: number } }
+interface RevisionQc { verdict: string; execution: { receiptId: string; renderComputationId: string; dagId: string } }
+/**
+ * The parent execution for authorizing the next revision (R02-D). The current EditingHead's graph, the parent DAG's graph, the prior render
+ * receipt and the prior passing QC must all name one exact graph and revision. After a publication that is the published child, never the
+ * revision-0 baseline (the first R02 run passed the baseline DAG, and production refused it as impact_input_invalid). Anything else refuses
+ * before authorization.
+ */
+export function revisionParent<V extends RevisionDag, Rc extends RevisionReceipt, Q extends RevisionQc>(
+  current: { graph: { editGraphId: string; revision: number }; head: { currentGraph: { artifact: { objectId: string }; revision: number } } },
+  parent: { v: V; receipt: Rc; qc: Q }): { parentDag: V; prior: { receipt: Rc; qc: Q } } {
+  const g = current.graph, h = current.head.currentGraph, d = parent.v.dag, r = parent.receipt, q = parent.qc, reasons: string[] = [];
+  if (h.artifact.objectId !== g.editGraphId || h.revision !== g.revision) reasons.push("the current context is not the current head's graph");
+  if (d.graph.editGraphId !== g.editGraphId || d.graph.revision !== g.revision) {
+    reasons.push(`the parent DAG is of revision ${d.graph.revision} (${d.graph.editGraphId}); the current head is on revision ${g.revision} (${g.editGraphId})`);
+  }
+  if (r.dag.dagId !== d.dagId || r.renderComputationId !== d.renderIdentity.renderComputationId || r.editGraph.editGraphId !== d.graph.editGraphId
+    || r.editGraph.revision !== d.graph.revision) reasons.push("the prior render receipt is not of the parent DAG");
+  if (q.verdict !== "pass" || q.execution.receiptId !== r.receiptId || q.execution.dagId !== d.dagId || q.execution.renderComputationId !== r.renderComputationId) {
+    reasons.push("the prior QC is not a pass of the prior render receipt");
+  }
+  if (reasons.length > 0) refuse("revision_parent_mismatch", reasons);
+  return { parentDag: parent.v, prior: { receipt: parent.receipt, qc: parent.qc } };
+}
+/**
+ * The identities of one proposed revision (R02-E). The GraphDiff, child graph, DAG and render computation identities change with the request
+ * and the attempt (the render computation binds the graph, admission and grant). The exact replacement, the changed segment's computation
+ * and the output frame count identify the edit itself.
+ */
+export function revisionIdentity(proposed: { diff: { graphDiffId: string; operations: readonly unknown[] }; child: { editGraphId: string; revision: number } },
+  dag: { dagId: string; renderIdentity: { renderComputationId: string } }, program: { segments: readonly { segmentComputationId: string; video: { frames: number } }[] }) {
+  return { graphDiffId: proposed.diff.graphDiffId, replacement: JSON.stringify(proposed.diff.operations), childEditGraphId: proposed.child.editGraphId,
+    childRevision: proposed.child.revision, dagId: dag.dagId, renderComputationId: dag.renderIdentity.renderComputationId,
+    segmentComputationIds: program.segments.map(s => s.segmentComputationId), outputFrames: program.segments.reduce((n, s) => n + s.video.frames, 0) };
+}
+export type RevisionIdentity = ReturnType<typeof revisionIdentity>;
+/**
+ * Why the QC-failure child is not a distinct edit from the published trim, or nothing when it is (R02-E). Every identity must differ, and
+ * the locked first segment must stay reusable from the parent for both. Different output frame counts mean the output bytes, and so their
+ * content identities, can never collide.
+ */
+export function distinctRevisionRefusal(attempt: RevisionIdentity, trim: RevisionIdentity, parent: { segments: readonly { segmentComputationId: string }[] }): string[] {
+  const reasons: string[] = [], locked = parent.segments[0]?.segmentComputationId;
+  if (attempt.graphDiffId === trim.graphDiffId) reasons.push("same GraphDiff");
+  if (attempt.replacement === trim.replacement) reasons.push("same exact replacement");
+  if (attempt.childEditGraphId === trim.childEditGraphId) reasons.push("same child EditGraph");
+  if (attempt.dagId === trim.dagId) reasons.push("same child DAG");
+  if (attempt.renderComputationId === trim.renderComputationId) reasons.push("same render computation");
+  if (attempt.segmentComputationIds[1] === trim.segmentComputationIds[1]) reasons.push("same changed segment computation");
+  if (attempt.outputFrames === trim.outputFrames) reasons.push("same output frame count");
+  if (attempt.segmentComputationIds[0] !== locked || trim.segmentComputationIds[0] !== locked) reasons.push("locked segment not reusable");
+  return reasons;
 }
 /** Evidence records of this harness, content-addressed like every accepted fixture record. */
 export const artifactOf = artifact;

@@ -331,16 +331,20 @@ async function main(): Promise<number> {
       return { x, v: openValidatedDag({ dag: x.dagArtifact.ref }, x.artifacts) };
     };
     const headId = async () => (await project.current()).head.headId;
-    let firstProposal: Awaited<ReturnType<LocalEditingProject["propose"]>> | null = null;
+    let firstProposal: Awaited<ReturnType<LocalEditingProject["propose"]>> | null = null, firstTrim: ReturnType<typeof R.trimRequest> | null = null;
+    // The identities of the published trim's edit, from its first attempt: what the QC-failure attempt must differ from (R02-E).
+    let trimA: R.RevisionIdentity | null = null;
     try {
-      const first = R.trimRequest(h1, "b3d_trim_second_a", plan);
-      firstProposal = await project.propose(first.request, await interpret(project, first.request, first.action));
+      firstTrim = R.trimRequest(h1, "b3d_trim_second_a", plan);
+      firstProposal = await project.propose(firstTrim.request, await interpret(project, firstTrim.request, firstTrim.action));
     } catch (error) {
-      set("render_failure_atomicity", "FAIL", `trim proposal: ${describe(error)}`); set("cas_loser_refused", "NOT_EXERCISED", "The trim proposal failed."); console.error(error);
+      set("render_failure_atomicity", "FAIL", `trim proposal: ${describe(error)}`); set("cas_loser_refused", "NOT_EXERCISED", "The trim proposal failed.");
+      set("qc_failure_atomicity", "NOT_EXERCISED", "The trim proposal failed."); console.error(error);
     }
     if (firstProposal !== null) try {
       await counted("render_failure", async () => {
         const c = await childExecution(firstProposal!), authorization = await project.authorize({ ...firstProposal, artifacts: c.x.artifacts, parentDag: parent.v, childDag: c.v });
+        trimA = R.revisionIdentity(firstProposal!, c.x.dag, compileRenderProgram(c.v, c.x.artifacts));
         const p = await timed("render_failure.prepare", () => prepare(runtime, authority, c.x, policy));
         const outcome = await timed("render_failure.execute", () => project.execute(authorization, { ...p.request, toolRoot: PINNED_TOOL_ROOT, prior: { receipt: parent.receipt, qc: parent.qc },
           instrumentation: { async beforeAssembly() { throw new Error("Deliberate verification fault: render failure injected before assembly."); } } }));
@@ -349,6 +353,42 @@ async function main(): Promise<number> {
         set("render_failure_atomicity", "PASS", "An injected render failure returned render_failed; the current head did not advance.");
       });
     } catch (error) { if (scenarios.render_failure_atomicity.status === "NOT_EXERCISED") set("render_failure_atomicity", "FAIL", describe(error)); console.error(error); }
+    // QC failure (R02-E): its own revision 0 -> 1 attempt while the locked revision-zero head is current, with an exact trim strictly smaller than
+    // the published one. Its injected corruption touches only this attempt's output, whose identity no later scenario can produce.
+    if (firstProposal !== null) try {
+      await counted("qc_failure", async () => {
+        const c0 = await project.current(), published = trimA, first = firstTrim;
+        if (c0.head.headId !== h1.head.headId || published === null || first === null) {
+          throw new R.HarnessRefusal("qc_failure_parent_not_current", ["The QC-failure attempt runs only from the locked revision-zero head, once the published trim's edit is known."]);
+        }
+        const parentExecution = R.revisionParent(c0, { v: parent.v, receipt: parent.receipt, qc: parent.qc });
+        const distinct = R.trimRequest(c0, "b3d_trim_second_qc", plan, 1, first.trim.removedFrames);
+        const proposed = await project.propose(distinct.request, await interpret(project, distinct.request, distinct.action)), c = await childExecution(proposed);
+        const program = compileRenderProgram(c.v, c.x.artifacts), own = R.revisionIdentity(proposed, c.x.dag, program);
+        const notDistinct = R.distinctRevisionRefusal(own, published, compileRenderProgram(parent.v, parent.x.artifacts));
+        if (notDistinct.length > 0) throw new R.HarnessRefusal("qc_failure_child_not_distinct", notDistinct);
+        const authorization = await project.authorize({ ...proposed, artifacts: c.x.artifacts, parentDag: parentExecution.parentDag, childDag: c.v });
+        const p = await timed("qc_failure.prepare", () => prepare(runtime, authority, c.x, policy)), outputs = join(runtime.layout.root, "render-outputs");
+        const existing = new Set(await readdir(outputs));
+        const outcome = await timed("qc_failure.execute", () => project.execute(authorization, { ...p.request, toolRoot: PINNED_TOOL_ROOT, prior: parentExecution.prior,
+          qcInstrumentation: { async afterIdentityEstablished() {
+            const name = (await readdir(outputs)).find(n => !existing.has(n) && n.endsWith(".mp4"));
+            if (name === undefined) throw new Error("Deliberate QC fault: this attempt published no new output.");
+            await chmod(join(outputs, name), 0o666); await appendFile(join(outputs, name), new Uint8Array([0, 1, 2, 3]));
+            evidence.qcFaultInjection = { output: name, appendedBytes: 4, basis: "deliberate_verification_fault_after_qc_identity_established" };
+          } } }));
+        const headAfter = await headId();
+        evidence.qcFailure = { headBefore: c0.head.headId, headAfter, outcome: outcome.outcome, removedFrames: distinct.trim.removedFrames, keep: distinct.trim.keep,
+          parent: { editGraphId: c0.graph.editGraphId, revision: c0.graph.revision, dagId: parent.v.dag.dagId, receiptId: parent.receipt.receiptId, qcReceiptId: parent.qc.qcReceiptId },
+          child: { ...own, programId: program.programId }, distinctFrom: { ...published, removedFrames: first.trim.removedFrames },
+          render: outcome.outcome === "render_failed" ? null : { receiptId: outcome.result.receipt.receiptId, output: outcome.result.receipt.output,
+            segments: outcome.result.receipt.segments.map(s => ({ position: s.position, disposition: s.disposition })) },
+          qc: outcome.outcome === "render_failed" ? null : outcome.qc };
+        if (outcome.outcome !== "qc_failed" || headAfter !== c0.head.headId) throw new R.HarnessRefusal("qc_failure_advanced_head", [outcome.outcome]);
+        set("qc_failure_atomicity", "PASS", `A distinct revision 0 -> 1 trim (${distinct.trim.removedFrames} frames) rendered; its output bytes changed after QC fixed their identity; `
+          + "QC failed and the current head did not advance.");
+      });
+    } catch (error) { if (scenarios.qc_failure_atomicity.status === "NOT_EXERCISED") set("qc_failure_atomicity", "FAIL", describe(error)); console.error(error); }
     let h1p = h1;
     if (firstProposal !== null) try {
       await counted("cas_loser", async () => {
@@ -436,27 +476,7 @@ async function main(): Promise<number> {
         if (code !== "stale_editing_head" || await headId() !== before) throw new R.HarnessRefusal("stale_request_not_refused", [String(code)]);
         set("stale_request_refusal", "PASS", "Re-proposing the request made against a superseded head was refused (stale_editing_head).");
       } catch (error) { if (scenarios.stale_request_refusal.status === "NOT_EXERCISED") set("stale_request_refusal", "FAIL", describe(error)); console.error(error); }
-
-      // ================================================================ 8. QC failure, last: its injected corruption touches only this attempt's own output
-      try {
-        await counted("qc_failure", async () => {
-          const c0 = await project.current(), later = R.trimRequest(c0, "b3d_trim_second_c", plan);
-          const proposed = await project.propose(later.request, await interpret(project, later.request, later.action)), c = await childExecution(proposed);
-          const authorization = await project.authorize({ ...proposed, artifacts: c.x.artifacts, parentDag: parent.v, childDag: c.v });
-          const p = await timed("qc_failure.prepare", () => prepare(runtime, authority, c.x, policy)), outputs = join(runtime.layout.root, "render-outputs");
-          const existing = new Set(await readdir(outputs)), prior = evidence.trim as { receipt: unknown; qc: unknown };
-          const outcome = await timed("qc_failure.execute", () => project.execute(authorization, { ...p.request, toolRoot: PINNED_TOOL_ROOT, prior: { receipt: prior.receipt, qc: prior.qc },
-            qcInstrumentation: { async afterIdentityEstablished() {
-              const name = (await readdir(outputs)).find(n => !existing.has(n) && n.endsWith(".mp4"));
-              if (name === undefined) throw new Error("Deliberate QC fault: this attempt published no new output.");
-              await chmod(join(outputs, name), 0o666); await appendFile(join(outputs, name), new Uint8Array([0, 1, 2, 3]));
-              evidence.qcFaultInjection = { output: name, appendedBytes: 4, basis: "deliberate_verification_fault_after_qc_identity_established" };
-            } } }));
-          if (outcome.outcome !== "qc_failed" || await headId() !== c0.head.headId) throw new R.HarnessRefusal("qc_failure_advanced_head", [outcome.outcome]);
-          set("qc_failure_atomicity", "PASS", "Output bytes changed after QC fixed their identity; QC failed and the current head did not advance.");
-        });
-      } catch (error) { if (scenarios.qc_failure_atomicity.status === "NOT_EXERCISED") set("qc_failure_atomicity", "FAIL", describe(error)); console.error(error); }
-    } else blockAfter("trim_revision_published", ["locked_target_refusal", "historical_preference_state_only", "stale_request_refusal", "qc_failure_atomicity"]);
+    } else blockAfter("trim_revision_published", ["locked_target_refusal", "historical_preference_state_only", "stale_request_refusal"]);
     receipt.records.finalCurrentHead = await headId();
     return finish();
   } catch (error) {

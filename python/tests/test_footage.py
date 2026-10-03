@@ -24,8 +24,8 @@ class FootagePrimitivesTests(unittest.TestCase):
             media.write_bytes(b"Generated metadata fixture; no real footage required.")
             times = [0, 0.016667, 0.035, 0.051667]
             for rate in ["813600000/13567271", "36000000/601049", "30000/1001"]:
-                stream = {"codec_type": "video", "codec_name": "h264", "duration": "0.070000", "avg_frame_rate": rate, "r_frame_rate": "60/1", "width": 1440, "height": 2558, "sample_aspect_ratio": "1:1"}
-                frames = [{"best_effort_timestamp_time": str(t), "duration_time": "0.018333"} for t in times]
+                stream = {"codec_type": "video", "codec_name": "h264", "duration": "0.070000", "avg_frame_rate": rate, "r_frame_rate": "60/1", "width": 1440, "height": 2558, "sample_aspect_ratio": "1:1", "time_base": "1/1000000"}
+                frames = [{"best_effort_timestamp": round(t * 1_000_000), "best_effort_timestamp_time": str(t), "duration_time": "0.018333"} for t in times]
                 responses = [json.dumps({"streams": [stream]}).encode(), json.dumps({"frames": frames}).encode(), b"ffprobe version 9.0.1 test"]
                 with patch("reference_analyzer.media.tool", side_effect=responses):
                     response = metadata({"mediaPath": str(media), "ffprobePath": "explicit-test-ffprobe"})

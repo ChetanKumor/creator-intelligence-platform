@@ -47,7 +47,7 @@ def allowed_media(filename):
 def metadata(request):
     media = allowed_media(request["mediaPath"])
     base = [request["ffprobePath"], "-v", "error", "-protocol_whitelist", "file,pipe", "-format_whitelist", FORMATS]
-    data = json.loads(tool(base + ["-show_entries", "stream=index,codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,sample_aspect_ratio,duration:stream_tags=rotate:stream_side_data=rotation:format=duration", "-of", "json", media], "metadata"))
+    data = json.loads(tool(base + ["-show_entries", "stream=index,codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,sample_aspect_ratio,time_base,duration:stream_tags=rotate:stream_side_data=rotation:format=duration", "-of", "json", media], "metadata"))
     video = next((stream for stream in data.get("streams", []) if stream.get("codec_type") == "video"), None)
     if video is None:
         raise StageFailure("metadata", "MEDIA_UNSUPPORTED", "No video stream exists.")
@@ -60,12 +60,17 @@ def metadata(request):
     width, height = int(video["width"]), int(video["height"])
     if not math.isfinite(duration_hint) or not 0 < duration_hint <= 600.1 or not 1 <= float(fps) <= 120 or max(width, height) > 16384 or width * height > 40_000_000:
         raise StageFailure("metadata", "MEDIA_UNSUPPORTED", "Video exceeds duration, frame-rate or resolution limits.")
-    frames_data = json.loads(tool(base + ["-select_streams", "v:0", "-read_intervals", "%+601", "-show_frames", "-show_entries", "frame=best_effort_timestamp_time,duration_time,pkt_duration_time", "-of", "json", media], "metadata"))
+    frames_data = json.loads(tool(base + ["-select_streams", "v:0", "-read_intervals", "%+601", "-show_frames", "-show_entries", "frame=best_effort_timestamp,best_effort_timestamp_time,duration_time,pkt_duration_time", "-of", "json", media], "metadata"))
     frames = frames_data.get("frames", [])
     if not 1 <= len(frames) <= 72000:
         raise StageFailure("metadata", "MEDIA_UNREADABLE", "No usable decoded frame timeline.")
-    pts = [float(frame["best_effort_timestamp_time"]) for frame in frames]
-    times = [round(value - pts[0], 9) for value in pts]
+    # A frame's exact instant is its integer timestamp in the stream time base; ffprobe's *_time text is rounded to microseconds. Each
+    # frame time is the correctly rounded double of that exact rational, which is how the renderer states frame i's instant on its grid.
+    time_base = video.get("time_base")
+    ticks = [frame.get("best_effort_timestamp") for frame in frames]
+    if not isinstance(time_base, str) or not re.fullmatch(r"[1-9][0-9]{0,9}/[1-9][0-9]{0,9}", time_base) or any(type(tick) is not int for tick in ticks):
+        raise StageFailure("metadata", "MEDIA_UNREADABLE", "No exact decoded frame timeline.")
+    times = [float((tick - ticks[0]) * Fraction(time_base)) for tick in ticks]
     tail_duration = float(frames[-1].get("duration_time", frames[-1].get("pkt_duration_time", 1 / float(fps))))
     if tail_duration <= 0:
         tail_duration = 1 / float(fps)

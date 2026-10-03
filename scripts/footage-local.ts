@@ -93,7 +93,9 @@ export class LocalFootageServices implements FootageServices {
     const featuresSchema = z.strictObject({ features: z.array(CheapEvidenceSchema).min(1).max(3000), version: z.string() });
     return { bytes: () => localBytes(mediaPath), backend: media, expectedDimensions: () => installedEmbeddingDimensions(config.embedding), media: {
       setDeadline(at: number) { deadline = at; },
-      async metadata() { return (await memo(cache, contentId("cache", ["footage-metadata-v1", authorization.contentHash, "ffprobe-9.0.1"]), (v) => metaSchema.parse(v), () => media.metadata())).value; },
+      // v2 (Gate 7 Batch 3D R02-A): frame times are the correctly rounded doubles of each frame's exact integer timestamp in the stream time
+      // base. v1 memos hold microsecond-rounded tables and are never read.
+      async metadata() { return (await memo(cache, contentId("cache", ["footage-metadata-v2", authorization.contentHash, "ffprobe-9.0.1"]), (v) => metaSchema.parse(v), () => media.metadata())).value; },
       async detect(metadata: MediaMetadata, detector: FootageDetectorConfig): Promise<{ cuts: readonly number[]; version: string }> {
         if (detector.kind !== "transnetv2") {
           const referenceDetector = DetectorConfigSchema.parse(detector);

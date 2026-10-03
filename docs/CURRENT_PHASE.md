@@ -1,9 +1,54 @@
-# Current Phase - Phase 5 Gate 7 Batch 3D Real-Footage Acceptance (code complete; owner-local real-footage run pending)
+# Current Phase - Phase 5 Gate 7 Batch 3D Real-Footage Acceptance (R02, R02-D and R02-E implemented; owner-terminal real-footage run 16/16; final gates PASS; candidate for owner acceptance, pending independent owner review)
 
 Last updated: 2026-10-03
 
 ## Current ruling
 
+- Phase 5 Gate 7 Batch 3D closure (2026-10-03).
+  - **R02-E** (owner-authorized, harness only): QC-failure atomicity runs as its own revision 0 → 1 attempt from the locked revision-0
+    head, with an exact 14-frame trim distinct from the published 15-frame trim. RED first; regression 3D-R02E.
+  - The third real-footage run (`b3d-20261003T092935Z-bec5`) was stopped by the Claude Code memory-pressure reaper: no receipt, not a
+    result.
+  - The fourth run, in the owner's terminal (`b3d-20261003T101716Z-bcfa`): **16/16 PASS**, receipt SHA-256
+    `b646ea76d559622fb0a366a740ec491ab30c805d8ead3b14e19755f14bf8e65c`, independently verified, QC-failure atomicity included.
+  - Final gates. The first full safe suite was 1077/1078; its one failure was environmental (`TEMP` inside the repository). With the
+    owner-ruled `C:\Users\KOUSHIK VARDHON\AppData\Local\Temp`, the corrected suite's first attempt was interrupted without a result and
+    its second passed **1078/1078**. `npm run verify`: **PASS** (exit 0): typecheck, build, 1078/1078 tests, audit, schema check, demo,
+    media 57/57 and Python 23/23.
+  - Footage 9/9 and changed code 9/9 unchanged; renderer, `probe.ts`, both 60 s ceilings, permit and runtime boundary byte-identical to
+    `d579a0e`; no dependency or lockfile change.
+  - Multi-revision real execution freshness: **LIMITATION OBSERVED / NOT FULLY VERIFIED**.
+  - Distinct physical multi-source execution, broad media ingest, non-square-pixel / SAR normalization, professional editing quality
+    and the autonomous Director: **NOT VERIFIED**. VFR normalization: **NOT IMPLEMENTED**.
+  - Real footage verification: **PASS — CANDIDATE FOR OWNER ACCEPTANCE**.
+  - Batch 3D owner acceptance: **PENDING INDEPENDENT OWNER REVIEW**. Gate 7: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**.
+  - Details: §33-§38 of the [Batch-3D record](phases/phase-5-gate-7-batch-3d-real-footage-e2e.md). This supersedes the two "Real
+    footage verified: **FAIL — NOT A PASS CANDIDATE**" bullets below and the earlier "Real-footage Gate 7 closure: **NOT YET RUN**".
+- Phase 5 Gate 7 Batch 3D final-closure attempt (2026-10-03, owner ruling: Decisions 1-3).
+  - **R02-D**, the scenario-14 harness parent-DAG repair, is implemented, with a RED from the first run and regression 3D-R02D.
+  - 3D-L01 **PASS**, test bytes unchanged, under a controlled long-form `TEMP`/`TMP`/`TMPDIR` (`.local-runs\test-temp`).
+  - Focused tests: 23/23 3D, 1/1 R02-A media, 23/23 Python, 28/28 footage and audit.
+  - The second full real-footage run (`b3d-20261003T062658Z-361b`, valid receipt) ended **15/16**. Its outputs are byte-identical to the
+    first run.
+  - `qc_failure_atomicity` **FAIL** (`runtime_probe_stale`). The repaired parent authorization was accepted; then the accepted
+    pre-permit validation of a revision-2 child (about 114 s) exceeded the accepted 60 s evidence window (EVIDENCE_FRESHNESS). No render
+    started and the head did not move.
+  - The full suite and `npm run verify`: **NOT RUN**. Nothing is committed. Real footage verified: **FAIL — NOT A PASS CANDIDATE**.
+  - Batch 3D owner acceptance: **PENDING**. Phase 6: **NOT AUTHORIZED**.
+  - Details: §28-§32 of the [Batch-3D record](phases/phase-5-gate-7-batch-3d-real-footage-e2e.md).
+- Phase 5 Gate 7 Batch 3D owner-local run and R02 repair (2026-10-03).
+  - Preflight on the exact SHA `d579a0e`: **NO_ADMISSIBLE_REAL_FOOTAGE_PAIR**, from three blockers. The owner ruling R02 authorized
+    their smallest repair.
+  - **R02-A:** exact frame times at the analyzer seam, including the metadata memo key. **R02-B:** `local-media/` accepted as a private
+    location. **R02-C:** a bounded LukeRaw analysis with no SigLIP inference. All implemented RED-first and uncommitted.
+  - A fourth blocker, an unspecified SAR against the accepted conformance rule, led to the owner decision "LukeRaw, two clips".
+  - Real-footage run: **15/16 PASS**: baseline render, QC, critic, lock, failure atomicity, CAS loser, published trim, localized
+    reuse and refusals.
+  - `qc_failure_atomicity`: **FAIL**, from a harness defect (`tests/edit-real-footage.local.ts:445` passes the revision-0 DAG). Not
+    repaired.
+  - Real footage verified: **FAIL — NOT A PASS CANDIDATE**. Batch 3D owner acceptance: **PENDING**. Phase 6: **NOT AUTHORIZED**.
+  - Details: §19-§27 of the [Batch-3D record](phases/phase-5-gate-7-batch-3d-real-footage-e2e.md). This supersedes "Real footage
+    verified: NO — PENDING OWNER LOCAL RUN" below.
 - Phase 5 Gate 7 Batch 3D (real-footage end-to-end acceptance): started from the verified `main`
   `da9a73da5d349a6bd71678e65d4e079415043754` on `phase/5-gate7-3d-real-footage`.
   - History: **STOPPED before implementation: PROTECTED_CHANGE_OUTSIDE_3D_AUTHORIZATION** (2026-09-29). The accepted trusted execution
@@ -93,6 +138,143 @@ Professional editing quality: **NOT VERIFIED**
 Batch 3D owner acceptance: **PENDING**
 
 Gate 7 overall: **NOT YET COMPLETE**
+
+### Owner-local run and R02 repair (2026-10-03)
+
+**Preflight.** On the exact SHA `d579a0e`, the committed `planOutput` refused all 81 timelines over the accepted Phase-2 corpus:
+
+- every source retains more than 32 candidates;
+- every frame table is microsecond-rounded and off the exact grid;
+- `local-media/` was refused as a location.
+
+**R02, authorized by the owner and implemented RED-first, uncommitted.**
+
+- **R02-A.** `media.py` emits the correctly rounded double of each frame's exact integer timestamp in the stream time base, and
+  `footage-local.ts` keys metadata memos `footage-metadata-v2`, so stale microsecond memos are never read.
+  - 30, 60 and 30000/1001 fps CFR are now exact.
+  - The 25 and 50 fps controls still pass.
+  - Perturbed and variable timelines still fail.
+  - The renderer is unchanged.
+  - Python and JavaScript agree on all 576,000 instants checked.
+- **R02-B.** `local-media/` is an accepted private location.
+- **R02-C.** A bounded LukeRaw analysis (`maximumPerAsset` 16, `maximumPerProject` 32): job `footage_85d87e22-…`, 16 candidates, 4/4
+  SigLIP cache hits, no model inference. `planOutput`: PASS.
+
+**Blocker 4.** Akshat and Deepinder leave the SAR unspecified, which the accepted conformance rule refuses. The owner chose "LukeRaw,
+two clips".
+
+**Run** (`b3d-20261003T051625Z-0388`, valid receipt): **15/16 PASS**.
+
+- Baseline `9c1c2ade…` and child `461dab97…` both pass QC.
+- The locked segment was reused and the changed segment recomputed.
+- Failure atomicity, the CAS loser and every refusal behaved as required.
+- `qc_failure_atomicity` **FAIL**: the harness passes the revision-0 DAG when authorizing a revision of revision 1. The accepted code
+  refused fail-closed, before any render. Not repaired; it needs an owner ruling.
+- Environment: 3D-L01 fails on this machine's 8.3 `TEMP`, which a pristine `d579a0e` checkout also shows.
+- The full safe suite and `npm run verify`: **NOT RUN** (gated on a stable real-footage path). Nothing is committed or pushed.
+
+R02 repairs: **IMPLEMENTED** (uncommitted)
+
+Real footage verified: **FAIL — NOT A PASS CANDIDATE**
+
+Professional editing quality: **NOT VERIFIED**
+
+Batch 3D owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+### Final-closure attempt (2026-10-03)
+
+**Owner ruling.**
+
+- Decision 1: repair only the scenario-14 harness defect.
+- Decision 2: defer the SAR rule; a same-source LukeRaw proof is allowed, with explicit limitations.
+- Decision 3: run 3D-L01 unchanged under a controlled long-form temporary directory.
+
+**R02-D.** The harness now authorizes and executes scenario 14 against the published revision-1 DAG, receipt and QC, checked by
+`revisionParent`. 3D-R02D is the regression.
+
+**3D-L01.** PASS with unchanged bytes.
+
+**Second full run** (`b3d-20261003T062658Z-361b`): **15/16**.
+
+- Every one of the 15 is independently verified, and the outputs are byte-identical to the first run.
+- Scenario 14's authorization succeeded, but `execute` refused at the permit with `runtime_probe_stale`. The revision-2 pre-permit
+  validation (about 114 s) exceeds the accepted 60 s window.
+- No render started and the head did not move.
+- Category: EVIDENCE_FRESHNESS. Not repaired.
+
+**Smallest option for the owner:** a harness-only redesign that exercises QC failure on a revision 0 → 1 attempt with a distinct trim.
+
+**Gates and limitations.**
+
+- The full suite and `npm run verify`: **NOT RUN**. Nothing is committed or pushed.
+- Not verified: distinct physical multi-source execution, SAR and non-square normalization, broad ingest, professional editing quality and
+  the autonomous Director. VFR normalization is not implemented here.
+
+R02 and R02-D repairs: **IMPLEMENTED** (uncommitted)
+
+Real footage verified: **FAIL — NOT A PASS CANDIDATE**
+
+Professional editing quality: **NOT VERIFIED**
+
+Batch 3D owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+### Closure: R02-E, the owner-terminal run and the final gates (2026-10-03)
+
+**R02-E** (owner-authorized; harness only; no production file changed).
+
+- QC-failure atomicity is its own revision 0 → 1 attempt from the locked revision-0 head, run right after render-failure atomicity.
+- Its exact trim removes 14 frames, strictly fewer than the published 15, so its replacement, changed segment and output frame count
+  differ from the published edit (`distinctRevisionRefusal`). `revisionParent` checks its parent.
+- The former revision 1 → 2 QC-failure scenario is removed.
+- 3D-R02E was RED on the R02-D harness bytes and is GREEN now. The test file changed between RED and GREEN, and the RED bytes were not
+  preserved (§34 of the record). Focused: 3D 24/24, R02-A media 1/1, Python 23/23, footage and audit 28/28.
+
+**Third run** (`b3d-20261003T092935Z-bec5`): stopped by the Claude Code memory-pressure reaper after the CAS-loser render. No receipt;
+not a command failure; not a result.
+
+**Fourth run, owner terminal** (`b3d-20261003T101716Z-bcfa`): **16/16 PASS**.
+
+- Receipt valid, SHA-256 `b646ea76d559622fb0a366a740ec491ab30c805d8ead3b14e19755f14bf8e65c`; runner exit 0.
+- Same inputs (manifest `ca44f382…`, analysis from job `footage_85d87e22-…`): no new analysis, no model inference.
+- Baseline `9c1c2ade…` and child `461dab97…` pass QC. The locked segment is reused and the changed one recomputed. The critic ran with
+  0 findings, and every refusal held.
+- QC failure: the render started, and 4 bytes were appended after QC fixed the output identity. QC failed on `output_identity`, the
+  outcome was `qc_failed`, the head did not move and the corrupt output never became authoritative.
+
+**Final gates.**
+
+- First full safe suite: 1077/1078. The one failure, the Batch-2A temp-isolation test, came from `TEMP` inside the repository
+  (`.local-runs\test-temp`). Owner ruling: environmental; one corrected rerun with `C:\Users\KOUSHIK VARDHON\AppData\Local\Temp`.
+- Corrected suite, owner terminal: attempt 1 interrupted after about 2.5 min (no summary, no failure recorded, cause not recorded);
+  attempt 2 **1078/1078 PASS**, exit 0.
+- `npm run verify`, owner terminal, same `TEMP`: **PASS**, exit 0. Typecheck, build, 1078/1078 tests, audit, 33 schema artifacts,
+  demo, media 57/57, Python 23/23.
+- Closure checks: footage 9/9 and code 9/9 unchanged. The renderer, `probe.ts`, both 60 s ceilings, the permit and the runtime boundary
+  are byte-identical to `d579a0e`. No dependency or lockfile change.
+
+**Not verified.**
+
+- Multi-revision real execution freshness: **LIMITATION OBSERVED / NOT FULLY VERIFIED** (the 16/16 run executes no revision 1 → 2
+  child).
+- Distinct physical multi-source execution, broad media ingest, non-square-pixel / SAR normalization, professional editing quality and
+  the autonomous Director: **NOT VERIFIED**.
+- VFR normalization: **NOT IMPLEMENTED**.
+
+R02, R02-D and R02-E repairs: **IMPLEMENTED** (committed with this update)
+
+Real footage verification: **PASS — CANDIDATE FOR OWNER ACCEPTANCE**
+
+Professional editing quality: **NOT VERIFIED**
+
+Batch 3D owner acceptance: **PENDING INDEPENDENT OWNER REVIEW**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Phase 6: **NOT STARTED**
 
 ## Phase 5 Gate 7 Batch 3C - EditorialState and conversational revision (synthetic media only)
 

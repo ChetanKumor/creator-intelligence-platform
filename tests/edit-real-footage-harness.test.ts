@@ -251,6 +251,61 @@ test("3D-H07 the runner's editorial steps: state-only lock, exact trim proposal 
   assert.equal((await project.current()).head.headId, h2.head.headId);
 });
 
+// ================================================================ R02-E: QC failure as its own revision 0 -> 1 attempt, without media
+test("3D-R02E QC failure is its own revision 0 -> 1 attempt from the current locked head, with an exact trim distinct from the published one", async t => {
+  await mkdir(join(PROJECT_ROOT, ".test-artifacts"), { recursive: true });
+  const root = await mkdtemp(join(PROJECT_ROOT, ".test-artifacts", "b3d-r02e-")); t.after(() => rm(root, { recursive: true, force: true }));
+  const a = await analyzed(), c = chainOf(a, { realMedia: false });
+  const project = await openLocalEditingProject({ root, scope: c.scope, policy: E.createEditorialPolicy(c.scope, OWNER) });
+  const interpret = (request: E.EditorialRequest, action: E.IntentAction) => project.interpret(request, { identity: R.VERIFICATION_INTERPRETER, async interpret() { return action; } });
+  const h0 = await project.initialize(c.root.graph, c.x.artifacts), a0 = E.targetOf(h0.graph, R.videoClip(h0, 0).clipUseId);
+  const lock = R.verificationRequest(h0, "b3d_lock_first", "Keep the first shot exactly as it is.", a0);
+  const h1 = await project.applyStateIntent(lock, await interpret(lock, { kind: "lock_target", target: a0 }));
+  // The published trim's edit, and the QC-failure attempt's strictly smaller exact trim of the same unlocked clip, both from the current head.
+  const published = R.trimRequest(h1, "b3d_trim_second_a", c.plan), qcAttempt = R.trimRequest(h1, "b3d_trim_second_qc", c.plan, 1, published.trim.removedFrames);
+  const propose = async (r: ReturnType<typeof R.trimRequest>) => project.propose(r.request, await interpret(r.request, r.action));
+  const pa = await propose(published), pb = await propose(qcAttempt);
+  const parentDag = openValidatedDag({ dag: c.x.dagArtifact.ref }, c.x.artifacts), parentProgram = compileRenderProgram(parentDag, c.x.artifacts);
+  const child = (p: typeof pa) => {
+    const x = c.execution(R.revisionGraphChain(c.rootChain, p.child, p.artifacts)), v = openValidatedDag({ dag: x.dagArtifact.ref }, x.artifacts);
+    return { x, v, program: compileRenderProgram(v, x.artifacts) };
+  };
+  const ca = child(pa), cb = child(pb), frames = (p: typeof parentProgram) => p.segments.reduce((n, s) => n + s.video.frames, 0);
+  const segment = (p: typeof parentProgram, i: number) => p.segments[i]!.segmentComputationId;
+  // One comparison of every property, so a failure reports them all. A different request key or attempt never makes a distinct render.
+  assert.deepEqual({
+    qcTrimStrictlySmaller: qcAttempt.trim.removedFrames >= 1 && qcAttempt.trim.removedFrames < published.trim.removedFrames,
+    bothFromTheCurrentRevisionZeroHead: [pa, pb].every(p => p.diff.parent.editGraphId === h1.graph.editGraphId && p.diff.parent.revision === 0 && p.child.revision === 1),
+    headUnmovedByProposals: (await project.current()).head.headId === h1.head.headId,
+    distinctReplacement: JSON.stringify(pb.diff.operations) !== JSON.stringify(pa.diff.operations),
+    distinctGraphDiff: pb.diff.graphDiffId !== pa.diff.graphDiffId,
+    distinctChildGraph: pb.child.editGraphId !== pa.child.editGraphId,
+    distinctChildDag: cb.v.dag.dagId !== ca.v.dag.dagId,
+    distinctRenderComputation: cb.v.dag.renderIdentity.renderComputationId !== ca.v.dag.renderIdentity.renderComputationId,
+    distinctChangedSegment: segment(cb.program, 1) !== segment(ca.program, 1),
+    lockedSegmentReusableByBoth: segment(cb.program, 0) === segment(parentProgram, 0) && segment(ca.program, 0) === segment(parentProgram, 0),
+    outputsCannotCollide: frames(cb.program) !== frames(ca.program),
+  }, { qcTrimStrictlySmaller: true, bothFromTheCurrentRevisionZeroHead: true, headUnmovedByProposals: true, distinctReplacement: true, distinctGraphDiff: true,
+    distinctChildGraph: true, distinctChildDag: true, distinctRenderComputation: true, distinctChangedSegment: true, lockedSegmentReusableByBoth: true, outputsCannotCollide: true });
+  // The runner's own check agrees. Re-proposing the published trim under another request key changes the GraphDiff, child graph, DAG and
+  // render computation identities (the last binds the graph, admission and grant: packages/edit-execution/dag.ts:177), yet it is the same
+  // edit: the exact replacement, the changed segment's computation and the output frame count stay equal, and the check refuses it.
+  const identity = (p: typeof pa, x: ReturnType<typeof child>) => R.revisionIdentity(p, x.v.dag, x.program);
+  assert.deepEqual(R.distinctRevisionRefusal(identity(pb, cb), identity(pa, ca), parentProgram), []);
+  const pc = await propose(R.trimRequest(h1, "b3d_trim_second_a_again", c.plan)), cc = child(pc);
+  assert.deepEqual(R.distinctRevisionRefusal(identity(pc, cc), identity(pa, ca), parentProgram),
+    ["same exact replacement", "same changed segment computation", "same output frame count"]);
+  // Production authorization accepts the revision-zero parent graph and DAG for the QC-failure child.
+  assert.ok((await project.authorize({ ...pb, artifacts: cb.x.artifacts, parentDag, childDag: cb.v })).impact !== undefined);
+  // The runner's prior is the revision-zero parent's own execution; the QC-failure attempt's failed execution can never become a later prior.
+  // (Structural render and QC records over the real test DAGs: no media runs here.)
+  const execution = (v: typeof parentDag, verdict: string) => ({ v, receipt: { receiptId: `receipt_${v.dag.dagId}`, renderComputationId: v.dag.renderIdentity.renderComputationId,
+    dag: { dagId: v.dag.dagId }, editGraph: v.dag.graph }, qc: { verdict, execution: { receiptId: `receipt_${v.dag.dagId}`, renderComputationId: v.dag.renderIdentity.renderComputationId,
+    dagId: v.dag.dagId } } });
+  assert.equal(R.revisionParent(h1, execution(parentDag, "pass")).parentDag, parentDag);
+  assert.throws(() => R.revisionParent(h1, execution(cb.v, "fail")), (e: unknown) => e instanceof R.HarnessRefusal && e.code === "revision_parent_mismatch");
+});
+
 // ================================================================ the receipt
 test("3D-H08 the receipt is bounded, its claims are fixed and a dependent scenario never passes without its prerequisite", () => {
   const scenarios = Object.fromEntries(R.SCENARIOS.map(s => [s, { status: "NOT_EXERCISED", detail: "Not reached." }]));
