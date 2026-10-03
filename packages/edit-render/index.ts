@@ -18,7 +18,13 @@ export { FIXTURE_AUTHORITY, FIXTURE_AUTHORITY_DIGEST, FixtureLifecycleObservatio
   StagedInputConformanceSchema, buildFixtureLifecycleObservation, buildRealCapabilityProbe, buildRealRuntimeProbe, buildStagedInputConformance, claimBinding,
   createRealExecutionPolicy, observedEnvironment, stagedFor, type FixtureLifecycleObservation, type RealCapabilityProbe, type RealExecutionPolicy, type RealRuntimeProbe,
   type RuntimeObservation, type StagedInputConformance } from "./records.js";
-export { ExecutablePermitBindingSchema, confirmPermitBindingCurrent, evaluateRealExecutionEvidence, type ExecutablePermitBinding, type RealEvidenceBundle } from "./authorize.js";
+export { ExecutablePermitBindingSchema, SYNTHETIC_FIXTURE_LIFECYCLE_AUTHORITY, confirmPermitBindingCurrent, evaluateRealExecutionEvidence, type ExecutablePermitBinding,
+  type LifecycleObservationRecord, type RealEvidenceBundle } from "./authorize.js";
+// Gate 7 Batch 3D: the owner-local real-media lifecycle authority's pure contract, beside the unchanged synthetic-fixture authority.
+export { OWNER_MEDIA_AUTHORITY, OWNER_MEDIA_AUTHORITY_DIGEST, OWNER_MEDIA_LIFECYCLE_AUTHORITY, OWNER_RENDER_AUTHORIZATION_STATEMENT, OwnerMediaLifecycleObservationSchema,
+  OwnerMediaProvenanceSchema, OwnerMediaRegistrationSchema, OwnerRenderAuthorizationSchema, buildOwnerMediaLifecycleObservation, checkOwnerMediaProvenance,
+  ownerMediaDeclarations, ownerMediaRelativeSegments, type OwnerMediaDeclaration, type OwnerMediaLifecycleObservation, type OwnerMediaProvenance, type OwnerMediaRegistration,
+  type OwnerRenderAuthorization } from "./owner-media.js";
 export { AccountingExecutionSchema, AccountingSchema, COVERAGES, DIMENSIONS, FAILURE_STAGES, RenderExecutionFailureSchema, RenderExecutionReceiptSchema, RenderExecutionStartSchema,
   accountingFrom, accountingOfReceipt, buildExecutionStart, buildFailureReceipt, buildSuccessReceipt, ceilingsOf, deriveAccounting, deriveOutputByteBound,
   deriveRenderTimeoutMilliseconds, diagnosticsOf, outputArtifactIdOf, sanitizeDiagnostics, workOf, type Accounting, type AccountingExecution, type Diagnostics,

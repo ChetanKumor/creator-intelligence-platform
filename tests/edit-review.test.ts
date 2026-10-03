@@ -115,10 +115,12 @@ const FROZEN: readonly (readonly [string, string])[] = [
   ["packages/edit-graph/index.ts", "8315b66518cf42234d57a1e79f3d145e94cbdbb90887328f605a0abac2be87df"],
   ["packages/edit-graph/profile.ts", "5823f09e40027b8632fb5ee045327a376f8154ac878f8adaee4c358753893b14"],
   ["packages/edit-graph/resolution.ts", "f5419d21686c7cf69050b424ae658e941ec065ef4c7da50cf240982526aef753"],
-  ["packages/edit-render/authorize.ts", "860ff1e922ca454a392687a34496bfa25f1e25f5ec61e753c08a2f842a0725a2"],
+  // Gate 7 Batch 3D (owner-authorized protected change, 3D-R01): authorize.ts, index.ts and scripts/edit-render-local.ts accept the owner-local
+  // real-media lifecycle authority beside the unchanged synthetic-fixture one. Prior pins: 860ff1e9..., 3ff1f341..., 379e3bec....
+  ["packages/edit-render/authorize.ts", "43bb22d5d1d44a09b5e8366717c48b2ca8b10f0bf462282e1ca3ff3662a0f44b"],
   ["packages/edit-render/common.ts", "b449777d5bf9800ae109e8f2a3185128691d724e5eeefa1747b31316f097e549"],
   ["packages/edit-render/ffmpeg.ts", "fc7937654bca17cf5c4005ea730aba0801559fee84eee6ca41a419ec9f24f98a"],
-  ["packages/edit-render/index.ts", "3ff1f341a0b10c005aafcf4f55c43c6716699ff4d6ff664ba59ed25b08437fb7"],
+  ["packages/edit-render/index.ts", "1546b1cbff19448ac990e8fc4b90460856ebaa254e6e7ec8aa47c8f4fa7d99c6"],
   ["packages/edit-render/probe.ts", "db2c965fa5161ef406245a764ee07ab0c8c02cb381f7e6b230390f72e9d6cc04"],
   ["packages/edit-render/program.ts", "f0f927b7c4b6b730125d6d13fb488ab7e96a611661251ba7ce9f60340ac3d7e5"],
   ["packages/edit-render/qc.ts", "c45108b328ec989d088b91f5c7f9581bab9a6c22da3cb315b0283bc754e7d855"],
@@ -137,7 +139,7 @@ const FROZEN: readonly (readonly [string, string])[] = [
   ["packages/edit-runtime/validated.ts", "153bace6f31cda5950f54d92920f7cef4afbdf2eaf3107900c7a0462194b595a"],
   ["scripts/edit-media-qc-local.ts", "b8705fe2c8b118a98ed8058c0faa4a7a6b6874adb646eb052c3a3f539c9836e0"],
   ["scripts/edit-render-fixture-authority-local.ts", "6a6719a13cdba1c7eab34ab937c42066214ac3e9aba8eb2e4b62d874076a63cd"],
-  ["scripts/edit-render-local.ts", "379e3bec5d1c703f6e7468240ed787ce1ab2cd22141dbe68cc97d918c0476abf"],
+  ["scripts/edit-render-local.ts", "57e4d4159520acdb9e9955a565303f42bf6fa38f1eea631b8b0eeb2a61e42b7b"],
   ["scripts/edit-runtime-local.ts", "016ae90284b4181909e2dc0ffa79d0824c596d41166af376fc65282f24bc0546"],
   ["tests/edit-render-media.integration.ts", "9d9338d4815f135d1c0b3949d1e2612290e1f3be81cdf9eac2e5a4be41ce6449"],
   ["tests/edit-render.test.ts", "9f3ee736e19774f9e3e6339163cb662747a92a39c2008c96d5299114da7dd20f"],
@@ -147,8 +149,9 @@ const FROZEN: readonly (readonly [string, string])[] = [
 test("R01 the accepted Batch-1, Batch-2A, Batch-2B and Gate-6 files are byte-identical and Batch 3A adds nothing to their packages", () => {
   for (const [path, hash] of FROZEN) assert.equal(sha256File(path), hash, path);
   assert.deepEqual({ render: readdirSync("packages/edit-render").length, runtime: readdirSync("packages/edit-runtime").length, execution: readdirSync("packages/edit-execution").length,
-    // Gate 7 Batch 3B adds exactly packages/edit-render/localized.ts and packages/edit-graph/revision.ts.
-    graph: readdirSync("packages/edit-graph").length }, { render: 11, runtime: 10, execution: 9, graph: 8 });
+    // Gate 7 Batch 3B adds exactly packages/edit-render/localized.ts and packages/edit-graph/revision.ts; Gate 7 Batch 3D adds exactly
+    // packages/edit-render/owner-media.ts.
+    graph: readdirSync("packages/edit-graph").length }, { render: 12, runtime: 10, execution: 9, graph: 8 });
 });
 
 // ================================================================ R02-R10 transcript evidence and the phrase pack

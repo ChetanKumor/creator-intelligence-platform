@@ -1,0 +1,174 @@
+/**
+ * Gate 7 Batch 3D: the pure contract of the owner-local real-media lifecycle authority, the second lifecycle authority the Batch-2B
+ * trusted execution boundary accepts. The synthetic-fixture authority and its FixtureLifecycleObservation are unchanged.
+ *
+ * - Registration reuses the accepted Phase-2 vocabulary: an AuthorizedFootageSet names each source's exact path, and its
+ *   AuthorizedFootage names the exact SHA-256, size and owner provenance. Analysis or evaluation authorization never renders
+ *   (Batch 1), so rendering needs the owner's separate, explicit render authorization.
+ * - Eligibility: only an admitted source whose MediaAsset origin is `creator_upload`, whose analysis authorization is
+ *   `owner_supplied` (`owner_created` or `permission_granted`) and binds exactly the admitted bytes, and which the owner declared
+ *   with exactly that authorization. Synthetic media never qualifies; the fixture authority still answers only for synthetic media.
+ * - The observation is a post-claim, post-stage record of one source's current lifecycle and of a full re-verification of the
+ *   declared bytes. Like every Batch-2B record it is only data: only the adapter's live handle can present it to the permit issuer.
+ *
+ * Nothing here reads a file, clock or environment. The adapter scripts/edit-render-owner-media-authority-local.ts registers files,
+ * hashes bytes and answers queries.
+ */
+import { z } from "zod";
+import { IdSchema, MediaAssetSchema, TimestampSchema } from "../contracts/common.js";
+import { canonicalSerialize } from "../domain/serialization.js";
+import { ArtifactRefSchema, checkIdentity, compareText, identify, type SuppliedArtifact } from "../editorial/common.js";
+import { HashSchema, OwnerSchema, ScopeSchema } from "../edit-graph/common.js";
+import { PositiveSafeInt, RenderIntentSchema } from "../edit-execution/common.js";
+import { RuntimeArtifacts } from "../edit-runtime/common.js";
+import type { ExecutionClaim } from "../edit-runtime/records.js";
+import { requireValidated, type ValidatedExecutionDag } from "../edit-runtime/validated.js";
+import { FootageAnalysisSchema, FootageAuthorizationSchema, FootageManifestSchema, type FootageAuthorization } from "../footage-analyzer/protocol.js";
+import { CheckTimingSchema, ORDERED_CHECK, RenderImplementationSchema, RENDER_IMPLEMENTATION, SessionProofSchema, check, envelope, header, orderedCheck, parse, refuse,
+  sha256, type CheckTiming, type SessionProof } from "./common.js";
+import { ClaimBindingSchema, claimBinding, stagedFor } from "./records.js";
+
+/** The owner-local authority's identity. Its records say `owner_declared_real_media_assets_only_v0`, and its bindings name the literal below. */
+export const OWNER_MEDIA_AUTHORITY = { observerId: "owner_local_media_manifest_registry", version: "0.1.0",
+  descriptor: { authority: "owner_local_media_manifest_registry_v0", registration: "explicit_owner_declared_path_exact_sha256_and_size_one_held_handle_v0",
+    scope: "owner_declared_real_media_assets_only_v0", state: "in_memory_current_deletion_and_owner_declared_expiry",
+    query: "trusted_runtime_clock_check_window_full_byte_reverification_at_observation", eligibility: "creator_upload_origin_and_owner_supplied_authorization_only",
+    discovery: "none_no_directory_listing_no_globbing_no_network" } } as const;
+export const OWNER_MEDIA_AUTHORITY_DIGEST = sha256(canonicalSerialize(OWNER_MEDIA_AUTHORITY.descriptor));
+/** What an executable permit binding names when every source's lifecycle evidence comes from the owner-local authority. */
+export const OWNER_MEDIA_LIFECYCLE_AUTHORITY = "owner_local_media_manifest_registry_not_production_v0" as const;
+
+// ---------------------------------------------------------------- the owner's explicit registration (execution-only local input)
+export const OWNER_RENDER_AUTHORIZATION_STATEMENT = "owner_authorizes_local_render_of_exactly_the_declared_sources_v0" as const;
+/** The explicit owner authorization marker: the owner, the render intents and the window in which the declared sources may be rendered. */
+export const OwnerRenderAuthorizationSchema = z.strictObject({
+  statement: z.literal(OWNER_RENDER_AUTHORIZATION_STATEMENT), owner: OwnerSchema,
+  renderIntents: z.array(RenderIntentSchema).min(1).max(2).refine(v => new Set(v).size === v.length, "Duplicate render intent."),
+  authorizedAt: TimestampSchema, expiresAt: TimestampSchema.nullable(),
+}).refine(v => v.expiresAt === null || v.expiresAt > v.authorizedAt, "A render authorization must end after it begins.");
+export type OwnerRenderAuthorization = z.infer<typeof OwnerRenderAuthorizationSchema>;
+/**
+ * The accepted Phase-2 footage path rule (scripts/footage-local.ts, resolveFootagePath), reused verbatim in meaning: a declared source
+ * path is relative to the AuthorizedFootageSet's own directory and made of plain segments. An absolute, drive, URL, share or device
+ * path, an empty, `.` or `..` segment, a control character, a pattern character or a trailing dot or space refuses. The adapter then
+ * also refuses links anywhere in the resolved path.
+ */
+export function ownerMediaRelativeSegments(path: string): string[] | null {
+  const parts = path.split(/[\\/]/);
+  if (path.length === 0 || path.length > 1024 || parts.some(part => !part || part === "." || part === ".." || /[:\x00-\x1f*?]/.test(part) || /[. ]$/.test(part)
+    || /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(part))) return null;
+  return parts;
+}
+const OWNER_BASES = ["owner_created", "permission_granted"] as const;
+export const OwnerMediaRegistrationSchema = z.strictObject({
+  ...envelope("OwnerMediaRegistration"),
+  /** The accepted Phase-2 AuthorizedFootageSet, reused verbatim: the same object the accepted footage analyzer consumes. */
+  footage: FootageManifestSchema,
+  renderAuthorization: OwnerRenderAuthorizationSchema,
+}).superRefine((value, ctx) => {
+  const issue = (message: string) => ctx.addIssue({ code: "custom", message });
+  const hashes = new Set<string>(), paths = new Set<string>();
+  for (const asset of value.footage.assets) {
+    const segments = ownerMediaRelativeSegments(asset.path);
+    if (segments === null) issue("A declared source is a plain relative path under the footage manifest's directory, never absolute, a URL, share, pattern or traversal.");
+    const authorization = FootageAuthorizationSchema.safeParse(asset.authorization);
+    if (!authorization.success) { issue("Every declared source carries a valid AuthorizedFootage record."); continue; }
+    const a = authorization.data;
+    if (a.sourceType !== "owner_supplied" || !(OWNER_BASES as readonly string[]).includes(a.authorizationBasis)) issue("Only owner-supplied, owner-authorized real media is declared here.");
+    if (a.creatorId !== value.footage.creatorId || a.projectId !== value.footage.projectId) issue("Every authorization belongs to the set's creator and project.");
+    const key = (segments ?? [asset.path]).join("/").toLowerCase();
+    if (hashes.has(a.contentHash) || paths.has(key)) issue("Duplicate or conflicting source declarations are refused.");
+    hashes.add(a.contentHash); paths.add(key);
+  }
+});
+export type OwnerMediaRegistration = z.infer<typeof OwnerMediaRegistrationSchema>;
+export interface OwnerMediaDeclaration { entryId: string; assetId: string; contentHash: string; sizeBytes: number; path: string; authorization: FootageAuthorization }
+/** The validated declarations, in canonical asset order. The path is execution-only data for the adapter; it enters no identity. */
+export function ownerMediaDeclarations(input: unknown): { registration: OwnerMediaRegistration; registrationDigest: string; declarations: OwnerMediaDeclaration[] } {
+  const registration = parse(OwnerMediaRegistrationSchema, input, "lifecycle_authority_scope_invalid");
+  const declarations = registration.footage.assets.map(asset => {
+    const authorization = FootageAuthorizationSchema.parse(asset.authorization);
+    return { entryId: asset.entryId, assetId: `asset_${authorization.contentHash}`, contentHash: authorization.contentHash, sizeBytes: authorization.sizeBytes,
+      path: asset.path, authorization };
+  }).sort((a, b) => compareText(a.assetId, b.assetId));
+  // The digest binds what was declared, excluding locations: moving a file changes no identity, and a path never becomes one.
+  const registrationDigest = sha256(canonicalSerialize({ renderAuthorization: registration.renderAuthorization, creatorId: registration.footage.creatorId,
+    projectId: registration.footage.projectId, sources: declarations.map(d => ({ entryId: d.entryId, assetId: d.assetId, contentHash: d.contentHash,
+      sizeBytes: d.sizeBytes, authorization: d.authorization })) }));
+  return { registration, registrationDigest, declarations };
+}
+
+// ---------------------------------------------------------------- eligibility: truthful creator_upload / owner_supplied provenance only
+export const OwnerMediaProvenanceSchema = z.strictObject({ mediaOrigin: z.literal("creator_upload"), sourceType: z.literal("owner_supplied"),
+  authorizationBasis: z.enum(OWNER_BASES) });
+export type OwnerMediaProvenance = z.infer<typeof OwnerMediaProvenanceSchema>;
+interface AdmittedSource { assetId: string; contentHash: string; sizeBytes: number; mediaAsset: unknown; analysis: unknown }
+/**
+ * The admitted MediaAsset and FootageAnalysis of one source, read from the exact supplied artifacts, must state truthful real-media
+ * provenance for exactly the admitted bytes. Synthetic media, or a creator_upload label whose analysis says otherwise, is refused.
+ */
+export function checkOwnerMediaProvenance(source: AdmittedSource, artifacts: readonly SuppliedArtifact[]): { provenance: OwnerMediaProvenance; authorization: FootageAuthorization } {
+  const supplied = new RuntimeArtifacts(artifacts);
+  let media, analysis;
+  try {
+    media = MediaAssetSchema.parse(supplied.exact(source.mediaAsset, "MediaAsset", "1.0.0", "input_invalid"));
+    analysis = FootageAnalysisSchema.parse(supplied.exact(source.analysis, "FootageAnalysis", "1.0.0", "input_invalid"));
+  } catch { refuse("lifecycle_authority_scope_invalid", "The owner-local authority answers only for exactly supplied MediaAsset and FootageAnalysis records."); }
+  const a = analysis.authorization;
+  check(media.origin === "creator_upload" && media.assetId === source.assetId && analysis.assetId === source.assetId && analysis.contentHash === source.contentHash,
+    "lifecycle_authority_scope_invalid", "The owner-local authority answers only for creator_upload media of exactly the admitted bytes.");
+  check(a.sourceType === "owner_supplied" && (OWNER_BASES as readonly string[]).includes(a.authorizationBasis) && a.contentHash === source.contentHash
+    && a.sizeBytes === source.sizeBytes, "lifecycle_authority_scope_invalid", "The owner-local authority answers only for owner-supplied, owner-authorized real media.");
+  return { provenance: { mediaOrigin: "creator_upload", sourceType: "owner_supplied", authorizationBasis: a.authorizationBasis as OwnerMediaProvenance["authorizationBasis"] },
+    authorization: a };
+}
+
+// ---------------------------------------------------------------- the observation record
+const LifecycleBodySchema = z.strictObject({
+  ...envelope("OwnerMediaLifecycleObservation"), scope: ScopeSchema, claim: ClaimBindingSchema,
+  stagedSource: z.strictObject({ stagedSourceReceiptId: IdSchema, stagedAt: TimestampSchema, stagedObjectId: IdSchema }),
+  source: z.strictObject({ assetId: IdSchema, contentHash: HashSchema, sizeBytes: PositiveSafeInt, mediaAsset: ArtifactRefSchema, analysis: ArtifactRefSchema,
+    sourceAccessReceipt: ArtifactRefSchema }),
+  declaration: z.strictObject({ registrationDigest: HashSchema, entryId: IdSchema, contentHash: HashSchema, sizeBytes: PositiveSafeInt, verifiedAt: TimestampSchema,
+    verification: z.literal("full_byte_sha256_through_one_held_handle_during_this_check_v0") }),
+  provenance: OwnerMediaProvenanceSchema,
+  lifecycle: z.strictObject({ deletionRequestedAt: TimestampSchema.nullable(), expiresAt: TimestampSchema.nullable() }),
+  ...CheckTimingSchema.shape,
+  observer: z.strictObject({ kind: z.literal("real_authoritative_observation"), observerId: z.literal(OWNER_MEDIA_AUTHORITY.observerId),
+    version: z.literal(OWNER_MEDIA_AUTHORITY.version), implementationDigest: HashSchema, basis: z.literal("authoritative_media_lifecycle_record_query_v0") }),
+  authorityScope: z.literal("owner_declared_real_media_assets_only_v0"), recorder: RenderImplementationSchema, session: SessionProofSchema,
+  basis: z.literal("post_claim_post_stage_owner_manifest_lifecycle_query_v0"),
+});
+export const OwnerMediaLifecycleObservationSchema = LifecycleBodySchema.extend({ observationId: IdSchema }).refine(orderedCheck, ORDERED_CHECK)
+  .refine(v => v.observer.implementationDigest === OWNER_MEDIA_AUTHORITY_DIGEST, "The observer is the owner-local media registry.")
+  .refine(v => v.declaration.contentHash === v.source.contentHash && v.declaration.sizeBytes === v.source.sizeBytes, "The declaration names exactly the observed bytes.")
+  .refine(v => v.checkStartedAt <= v.declaration.verifiedAt && v.declaration.verifiedAt <= v.checkCompletedAt, "The bytes were re-verified during this check.")
+  .refine(v => checkIdentity(v, "observationId", "owner_media_lifecycle_observation_v0"), "Owner media lifecycle observation identity mismatch.");
+export type OwnerMediaLifecycleObservation = z.infer<typeof OwnerMediaLifecycleObservationSchema>;
+
+function timingFor(timing: CheckTiming, notBefore: readonly string[]): CheckTiming {
+  const parsed = parse(CheckTimingSchema, timing, "evidence_chronology_invalid");
+  check(orderedCheck(parsed), "evidence_chronology_invalid", ORDERED_CHECK);
+  check(notBefore.every(bound => parsed.checkStartedAt >= bound), "evidence_chronology_invalid", "A post-claim source check starts only after its claim and staging.");
+  return parsed;
+}
+/** One owner-local lifecycle observation of one staged admitted source, under exactly this claim. */
+export function buildOwnerMediaLifecycleObservation(input: { dag: ValidatedExecutionDag; claim: ExecutionClaim; stagedSource: unknown;
+  declaration: { registrationDigest: string; entryId: string; contentHash: string; sizeBytes: number; verifiedAt: string }; provenance: OwnerMediaProvenance;
+  state: { deletionRequestedAt: string | null; expiresAt: string | null }; timing: CheckTiming; session: SessionProof }): OwnerMediaLifecycleObservation {
+  const v = requireValidated(input.dag), claim = claimBinding(v, input.claim), staged = stagedFor(v, input.claim, input.stagedSource);
+  const timing = timingFor(input.timing, [input.claim.claimedAt, staged.stagedAt]);
+  const source = v.admission.sources.find(s => s.assetId === staged.source.assetId)!;
+  const body = { ...header("OwnerMediaLifecycleObservation"), scope: v.dag.scope, claim,
+    stagedSource: { stagedSourceReceiptId: staged.stagedSourceReceiptId, stagedAt: staged.stagedAt, stagedObjectId: staged.stagedObject.stagedObjectId },
+    source: { assetId: source.assetId, contentHash: source.contentHash, sizeBytes: source.sizeBytes, mediaAsset: source.mediaAsset, analysis: source.analysis,
+      sourceAccessReceipt: source.receipt },
+    declaration: { ...input.declaration, verification: "full_byte_sha256_through_one_held_handle_during_this_check_v0" }, provenance: input.provenance,
+    lifecycle: input.state, ...timing,
+    observer: { kind: "real_authoritative_observation", observerId: OWNER_MEDIA_AUTHORITY.observerId, version: OWNER_MEDIA_AUTHORITY.version,
+      implementationDigest: OWNER_MEDIA_AUTHORITY_DIGEST, basis: "authoritative_media_lifecycle_record_query_v0" },
+    authorityScope: "owner_declared_real_media_assets_only_v0", recorder: RENDER_IMPLEMENTATION, session: input.session,
+    basis: "post_claim_post_stage_owner_manifest_lifecycle_query_v0" };
+  return parse(OwnerMediaLifecycleObservationSchema, identify("owner_media_lifecycle_observation_v0", "observationId", parse(LifecycleBodySchema, body,
+    "lifecycle_observation_invalid")), "lifecycle_observation_invalid");
+}

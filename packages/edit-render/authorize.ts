@@ -24,15 +24,20 @@ import { RenderImplementationSchema, RENDER_IMPLEMENTATION, check, envelope, hea
 import { RenderProgramSchema, compileRenderProgram, type RenderProgram } from "./program.js";
 import { FixtureLifecycleObservationSchema, RealCapabilityProbeSchema, RealExecutionPolicySchema, RealRuntimeProbeSchema, StagedInputConformanceSchema, stagedFor,
   type FixtureLifecycleObservation, type RealCapabilityProbe, type RealExecutionPolicy, type RealRuntimeProbe, type StagedInputConformance } from "./records.js";
+import { OWNER_MEDIA_LIFECYCLE_AUTHORITY, OwnerMediaLifecycleObservationSchema, checkOwnerMediaProvenance, type OwnerMediaLifecycleObservation } from "./owner-media.js";
 import { RENDER_SEMANTICS_DIGEST } from "./semantics.js";
 
+/** The Batch-2B synthetic-fixture authority's binding literal, unchanged. Gate 7 Batch 3D adds the owner-local literal beside it. */
+export const SYNTHETIC_FIXTURE_LIFECYCLE_AUTHORITY = "synthetic_fixture_registry_only_not_production_v0" as const;
+/** Lifecycle evidence from exactly one of the two accepted authorities; every source of one execution uses the same one. */
+export type LifecycleObservationRecord = FixtureLifecycleObservation | OwnerMediaLifecycleObservation;
 export interface RealEvidenceBundle {
   policy: RealExecutionPolicy;
   program: RenderProgram;
   runtimeProbe: RealRuntimeProbe;
   capabilityProbe: RealCapabilityProbe;
   staged: readonly StagedSourceReceipt[];
-  lifecycle: readonly FixtureLifecycleObservation[];
+  lifecycle: readonly LifecycleObservationRecord[];
   conformance: readonly StagedInputConformance[];
 }
 const Fresh = z.strictObject({ observedAt: TimestampSchema, freshUntil: TimestampSchema });
@@ -52,7 +57,7 @@ const BindingBodySchema = z.strictObject({
     .refine(v => v.every((s, i) => i === 0 || compareText(v[i - 1]!.assetId, s.assetId) < 0), "Sources are unique and canonical."),
   runtimeProbe: Fresh.extend({ probeId: IdSchema, ffmpegSha256: HashSchema, ffprobeSha256: HashSchema }), capabilityProbe: Fresh.extend({ probeId: IdSchema }),
   authorizedAt: TimestampSchema, validUntil: TimestampSchema, validity: z.literal("authorized_at_inclusive_valid_until_exclusive_v0"),
-  evidenceGrade: z.literal("real_post_claim_probe_evidence_v0"), lifecycleAuthority: z.literal("synthetic_fixture_registry_only_not_production_v0"),
+  evidenceGrade: z.literal("real_post_claim_probe_evidence_v0"), lifecycleAuthority: z.enum([SYNTHETIC_FIXTURE_LIFECYCLE_AUTHORITY, OWNER_MEDIA_LIFECYCLE_AUTHORITY]),
   mediaExecution: z.literal("authorized_not_started"), recorder: RenderImplementationSchema, basis: z.literal("claim_bound_real_evidence_executable_permit_binding_v0"),
 });
 type BindingBody = z.infer<typeof BindingBodySchema>;
@@ -73,6 +78,12 @@ function timely(record: Timed, claim: { claimId: string; claimTarget: { claimTar
   check(record.checkCompletedAt <= now, "evidence_chronology_invalid", "Evidence cannot postdate the permit binding.");
   check(isFresh(record.observedAt, maxAge, now), stale, "The evidence is outside its exclusive freshness window.");
   return freshUntil(record.observedAt, maxAge);
+}
+/** Lifecycle evidence is read by its declared kind; anything that is not an owner-local observation is read exactly as before. */
+function parseLifecycleObservation(value: unknown): LifecycleObservationRecord {
+  const kind = value !== null && typeof value === "object" ? (value as { artifactType?: unknown }).artifactType : undefined;
+  return kind === "OwnerMediaLifecycleObservation" ? parseCanonical(OwnerMediaLifecycleObservationSchema, value, "lifecycle_observation_invalid")
+    : parseCanonical(FixtureLifecycleObservationSchema, value, "lifecycle_observation_invalid");
 }
 /** Evaluates complete real evidence at runtime-now and returns the permit binding, or refuses with one owned code. */
 export async function evaluateRealExecutionEvidence(call: RuntimeCall, evidence: RealEvidenceBundle): Promise<ExecutablePermitBinding> {
@@ -122,10 +133,12 @@ export async function evaluateRealExecutionEvidence(call: RuntimeCall, evidence:
     "The capability probe covers another requirement set than the admission.");
   const capabilityFresh = timely(capability, claim, [], now, f.maxCapabilityProbeAgeMilliseconds, "capability_probe_stale");
 
-  // One real fixture-registry lifecycle observation per source, after its staging: fresh, not deleted, not expired.
+  // One real lifecycle observation per source, after its staging: fresh, not deleted, not expired. It comes from the synthetic-fixture
+  // registry exactly as before, or (Gate 7 Batch 3D) for owner-declared real media from the owner-local registry; one authority per execution.
   check(Array.isArray(evidence.lifecycle), "lifecycle_observation_invalid", "Lifecycle observations are a list.");
-  const lifecycle = evidence.lifecycle.map(o => parseCanonical(FixtureLifecycleObservationSchema, o, "lifecycle_observation_invalid"));
+  const lifecycle = evidence.lifecycle.map(parseLifecycleObservation);
   check(new Set(lifecycle.map(o => o.source.assetId)).size === lifecycle.length, "lifecycle_observation_invalid", "Exactly one lifecycle observation per source.");
+  check(new Set(lifecycle.map(o => o.artifactType)).size <= 1, "lifecycle_observation_invalid", "One lifecycle authority governs every source of one execution.");
   const lifecycleFresh = new Map<string, string>();
   for (const source of admitted) {
     const o = lifecycle.find(l => l.source.assetId === source.assetId);
@@ -134,9 +147,16 @@ export async function evaluateRealExecutionEvidence(call: RuntimeCall, evidence:
     check(equal(o.scope, dag.dag.scope) && o.source.contentHash === source.contentHash && equal(o.source.mediaAsset, source.mediaAsset) && equal(o.source.sourceAccessReceipt, source.receipt)
       && o.stagedSource.stagedSourceReceiptId === receipt.stagedSourceReceiptId && o.stagedSource.stagedAt === receipt.stagedAt, "lifecycle_observation_invalid",
     "The lifecycle observation is not of this source's exact identity and staging.");
+    const owner = o.artifactType === "OwnerMediaLifecycleObservation" ? o : null;
+    check(owner === null || (owner.source.sizeBytes === source.sizeBytes && equal(owner.source.analysis, source.analysis)
+      && owner.stagedSource.stagedObjectId === receipt.stagedObject.stagedObjectId), "lifecycle_observation_invalid",
+    "The owner-local observation is not of this source's exact bytes, analysis and staged object.");
     lifecycleFresh.set(source.assetId, timely(o, claim, [receipt.stagedAt], now, f.maxLifecycleObservationAgeMilliseconds, "lifecycle_stale"));
     check(o.lifecycle.deletionRequestedAt === null, "lifecycle_deleted", "Deletion of the source has been requested.");
     check(o.lifecycle.expiresAt === null || now < o.lifecycle.expiresAt, "lifecycle_expired", "The source's retention has expired.");
+    // Real-media provenance is re-read from the exact admitted records: synthetic media never carries owner-local lifecycle evidence.
+    check(owner === null || equal(checkOwnerMediaProvenance(source, artifacts).provenance, owner.provenance), "lifecycle_authority_scope_invalid",
+      "The owner-local observation's provenance is not the admitted source's.");
   }
   check(lifecycle.length === admitted.length, "lifecycle_observation_invalid", "No lifecycle observation of an unadmitted source.");
 
@@ -182,7 +202,8 @@ export async function evaluateRealExecutionEvidence(call: RuntimeCall, evidence:
       ffprobeSha256: runtimeProbe.binaries.ffprobe.sha256 },
     capabilityProbe: { probeId: capability.probeId, observedAt: capability.observedAt, freshUntil: capabilityFresh },
     authorizedAt: now, validUntil, validity: "authorized_at_inclusive_valid_until_exclusive_v0", evidenceGrade: "real_post_claim_probe_evidence_v0",
-    lifecycleAuthority: "synthetic_fixture_registry_only_not_production_v0", mediaExecution: "authorized_not_started", recorder: RENDER_IMPLEMENTATION,
+    lifecycleAuthority: lifecycle.every(o => o.artifactType === "OwnerMediaLifecycleObservation") ? OWNER_MEDIA_LIFECYCLE_AUTHORITY : SYNTHETIC_FIXTURE_LIFECYCLE_AUTHORITY,
+    mediaExecution: "authorized_not_started", recorder: RENDER_IMPLEMENTATION,
     basis: "claim_bound_real_evidence_executable_permit_binding_v0" };
   return parse(ExecutablePermitBindingSchema, identify("executable_permit_binding_v0", "bindingId", body), "input_invalid");
 }

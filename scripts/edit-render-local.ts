@@ -9,7 +9,8 @@
  *   namespace, verified in full through that handle, and the same handle is inherited by the child as `-fd N fd:` under an
  *   `fd`-only protocol whitelist. The output is a handle this adapter created exclusively. Handles are re-hashed after exit, so a
  *   change made after verification is detected.
- * - A permit is minted only from live trust handles made by this module and the fixture authority, is bound by the pure core to
+ * - A permit is minted only from live trust handles made by this module and a lifecycle authority (the synthetic-fixture registry or,
+ *   since Gate 7 Batch 3D, the owner-local registry of explicitly declared real media), is bound by the pure core to
  *   the claim and every fresh window, expires, is consumed on first use, and throws on serialization. The lifecycle authority is
  *   queried again when the permit is issued and when execution starts. The claim's single execution is consumed durably, by
  *   no-overwrite publication of an execution-start record, before the process starts.
@@ -44,6 +45,15 @@ import { checkGrantWindow, runtimeNow, verifyClaim } from "../packages/edit-runt
 import { ReservationSchema, ROUTING_VERSION, type Reservation } from "../packages/routing/index.js";
 import type { LocalEditRuntime } from "./edit-runtime-local.js";
 import { TrustedLifecycleObservation } from "./edit-render-fixture-authority-local.js";
+import { TrustedOwnerMediaLifecycleObservation } from "./edit-render-owner-media-authority-local.js";
+
+/**
+ * A live lifecycle handle from one of the two accepted lifecycle authorities: the synthetic-fixture registry (Batch 2B) or, for real
+ * media the owner explicitly declared, the owner-local registry (Gate 7 Batch 3D). Records alone are never accepted.
+ */
+export type TrustedLifecycleHandle = TrustedLifecycleObservation | TrustedOwnerMediaLifecycleObservation;
+const isLifecycleHandle = (value: unknown): value is TrustedLifecycleHandle => TrustedLifecycleObservation.is(value) || TrustedOwnerMediaLifecycleObservation.is(value);
+const provesOwnRecord = (handle: TrustedLifecycleHandle): boolean => TrustedLifecycleObservation.is(handle) ? handle.proves(handle.record) : handle.proves(handle.record);
 
 function fail(code: EditRenderErrorCode, message: string): never { throw new EditRenderError(code, message); }
 const PROJECT_ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -397,7 +407,7 @@ function permitContext(call: RuntimeCall): RuntimeCall {
   return context;
 }
 interface PermitState { binding: ExecutablePermitBinding; context: RuntimeCall; root: string; program: RenderProgram; policy: RealExecutionPolicy; reservation: Reservation;
-  runtimeProbe: RealRuntimeProbe; lifecycle: readonly TrustedLifecycleObservation[]; consumed: boolean }
+  runtimeProbe: RealRuntimeProbe; lifecycle: readonly TrustedLifecycleHandle[]; consumed: boolean }
 /**
  * Real media execution is permitted now for exactly this scope, attempt, claim, DAG, render computation, executor, environment,
  * pinned runtime, program, profile, private policy snapshot, private call context, staged sources and fresh evidence, until `validUntil`
@@ -417,13 +427,13 @@ export class ExecutablePermit {
   toJSON(): never { fail("permit_not_serializable", "An executable permit is never serialized or persisted."); }
 }
 export async function issueExecutablePermit(input: { call: RuntimeCall; media: TrustedMediaRuntime; staged: readonly StagedSourceReceipt[];
-  lifecycle: readonly TrustedLifecycleObservation[]; conformance: readonly TrustedInputConformance[]; policy: RealExecutionPolicy;
+  lifecycle: readonly TrustedLifecycleHandle[]; conformance: readonly TrustedInputConformance[]; policy: RealExecutionPolicy;
   repair?: readonly RepairLineageStep[]; editorial?: EditorialExecutionAuthorization }): Promise<ExecutablePermit> {
   if (input === null || typeof input !== "object") fail("input_invalid", "A permit request is required.");
   const { media, lifecycle, conformance } = input;
-  if (!TrustedMediaRuntime.is(media) || !Array.isArray(lifecycle) || !lifecycle.every(l => TrustedLifecycleObservation.is(l)) || !Array.isArray(conformance)
+  if (!TrustedMediaRuntime.is(media) || !Array.isArray(lifecycle) || !lifecycle.every(isLifecycleHandle) || !Array.isArray(conformance)
     || !conformance.every(c => TrustedInputConformance.is(c))) fail("trust_handle_required", "Real evidence is accepted only as live trusted handles, never as records.");
-  if (!media.proves(media.runtimeProbe) || !media.proves(media.capabilityProbe) || !lifecycle.every(l => l.proves(l.record)) || !conformance.every(c => c.proves(c.record))) {
+  if (!media.proves(media.runtimeProbe) || !media.proves(media.capabilityProbe) || !lifecycle.every(provesOwnRecord) || !conformance.every(c => c.proves(c.record))) {
     fail("evidence_session_mismatch", "A record is not the one its trusted handle produced.");
   }
   // The caller's container is read once, here; the permit and every later check use only this private context.

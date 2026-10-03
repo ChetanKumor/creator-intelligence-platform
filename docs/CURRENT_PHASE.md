@@ -1,9 +1,20 @@
-# Current Phase - Phase 5 Gate 7 Batch 3C EditorialState and Conversational Revision (synthetic media)
+# Current Phase - Phase 5 Gate 7 Batch 3D Real-Footage Acceptance (code complete; owner-local real-footage run pending)
 
-Last updated: 2026-09-29
+Last updated: 2026-10-03
 
 ## Current ruling
 
+- Phase 5 Gate 7 Batch 3D (real-footage end-to-end acceptance): started from the verified `main`
+  `da9a73da5d349a6bd71678e65d4e079415043754` on `phase/5-gate7-3d-real-footage`.
+  - History: **STOPPED before implementation: PROTECTED_CHANGE_OUTSIDE_3D_AUTHORIZATION** (2026-09-29). The accepted trusted execution
+    boundary admitted only the synthetic-fixture lifecycle authority (`synthetic_fixture_registry_only_not_production_v0`).
+  - Owner ruling (2026-09-30): the smallest bounded protected change for that gap (3D-R01) is authorized.
+  - Status: **CODE COMPLETE / HARNESS READY**. An owner-local real-media lifecycle authority now sits beside the unchanged synthetic
+    one inside the existing Batch-2B boundary. 3D-R01 is RED on the pre-3D bytes and GREEN now. The owner-run harness, manifest and
+    receipt are implemented.
+  - Real footage verified: **NO — PENDING OWNER LOCAL RUN**. Batch 3D owner acceptance: **PENDING**.
+  - Details: the [Batch-3D record](phases/phase-5-gate-7-batch-3d-real-footage-e2e.md).
+  - This supersedes the "Batch 3D: NOT STARTED" statements below.
 - Architecture V2: **FROZEN**. Gate 7 Batch 3A, Batch 3A-F and Batch 3B: **OWNER-ACCEPTED**.
 - Phase 5 Gate 7 Batch 3C implementation verification: **PASS** (2026-09-29), from exact local and independently verified origin baseline
   `2686367e5566fea6accb965686c81e975e825eec`. Owner acceptance: **OWNER-ACCEPTED** (2026-09-29). Full safe suite: **1054/1054 PASS**; 3C pure: **38/38 PASS**;
@@ -29,6 +40,59 @@ Last updated: 2026-09-29
 - Phase 5 Gate 7 Batch 3A (editorial evidence surfaces and semantic-critic foundation; synthetic media only): owner-authorized from HEAD `c74d5fe649ebe470ee0ea9bcb21cdfc4969641cb`, including two owner-authorized protected changes raised before modification (one workspace-audit adapter registration and the pinned Batch-2B audit count). Batch 3A implementation verification: **PASS**. Actual synthetic rendered-media verification: **PASS**. Semantic critic: port plus synthetic fixture critic only (no model). Real user footage: **NOT RUN**. Professional editing quality: **NOT VERIFIED**. ARCHITECTURE_V2_TIMEBASE_GAP: **YES** (recorded, not modified). Gate 7 Batch 3A owner acceptance: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**.
 - Phase 5 Gate 7 Batch 3A-F (exact timebase foundation; synthetic media only): owner-authorized from HEAD `f0edbb3b05724ad41c062a82585846eba9e0a4d6` to close ARCHITECTURE_V2_TIMEBASE_GAP only, with two owner decisions raised before any protected byte changed (approve hash-pin updates for changed files and float-literal translations in accepted tests; defer Gate-5 planning floats, decoded exactly at the EditGraph seam). Batch 3A-F implementation verification: **PASS**. ARCHITECTURE_V2_TIMEBASE_GAP: **RESOLVED** (the Batch-3A **YES** above was true when recorded). Real user footage: **NOT RUN**. Gate 7 Batch 3A-F owner acceptance: **OWNER-ACCEPTED**. Gate 7 overall: **NOT YET COMPLETE**. Batch 3B: **NOT STARTED**.
 - Phase 5 Gate 7 Batch 3B (RepairPlan, typed GraphDiff, immutable EditGraph revisions, dependency-aware localized recomputation and truthful localized rerender/reuse; synthetic media only): owner-authorized from HEAD `db04f2ed97844bb149fc8f642b423c3adf56776e`; Architecture V2 **FROZEN**; no protected change outside the 3B authorization was needed. Independent owner source review (2026-09-29): one real blocker, OR1, was reproduced test-first and repaired at the execution boundary with `validateRepairLineage`. Before the repair, a revision whose GraphDiff was not backed by a validated RepairPlan lineage reached executable rendering. The owner accepted the repair. On the final repaired bytes: full safe suite **PASS** 1016/1016 (owner-run), workspace audit **PASS**, `git diff --check` **PASS**. The owner accepted the bounded revision-field widening of the internal pre-stable records, with no version-bump cascade; the known NB1-NB4 limitations remain documented. Batch 3B implementation verification: **PASS**. History: **PASS** on the implementation's bytes, then **INCOMPLETE** at the owner-review checkpoint while the full safe suite lacked a valid run. Real user footage: **NOT RUN**. Professional editing quality: **NOT VERIFIED**. Gate 7 Batch 3B owner acceptance: **OWNER-ACCEPTED** (2026-09-29; **PENDING** at the earlier checkpoints). Gate 7 overall: **NOT YET COMPLETE**. Batch 3C: **NOT STARTED**.
+
+## Phase 5 Gate 7 Batch 3D - Real-footage end-to-end acceptance (code complete; owner-local run pending)
+
+Authority: [Batch-3D record](phases/phase-5-gate-7-batch-3d-real-footage-e2e.md), the owner's bounded Batch-3D authorization, and the
+owner ruling of 2026-09-30.
+
+**History (2026-09-29).** Batch 3D stopped before implementation. Every real render passes `issueExecutablePermit`, which accepted
+post-stage lifecycle evidence only from `SyntheticFixtureLifecycleAuthority`, and the frozen permit binding could name only
+`synthetic_fixture_registry_only_not_production_v0`. The first meaningful RED, 3D-R01 (pure, on unmodified accepted bytes), failed on
+exactly that missing contract. The stop record is preserved as §1-§8 of the Batch-3D record.
+
+**Protected change (2026-09-30 ruling).**
+
+- A new pure `packages/edit-render/owner-media.ts` and a filesystem-only adapter `scripts/edit-render-owner-media-authority-local.ts`.
+- The owner registration reuses the accepted `AuthorizedFootageSet`: exact relative path, SHA-256 and size, `owner_supplied`
+  provenance, and an explicit owner render authorization.
+- The authority re-verifies the full bytes at every query and answers only for `creator_upload` / `owner_supplied` sources. Its live
+  handle is re-queried at permit issuance and at execution start.
+- `authorize.ts`, `index.ts` and `edit-render-local.ts` accept it beside the unchanged synthetic authority. The binding literal is a
+  two-member enum, and one authority governs each execution.
+- The audit registers the new adapter: 17 adapters.
+
+**Evidence.**
+
+- 3D-R01: RED on the pre-3D bytes, GREEN now.
+- Twelve hostile lifecycle tests (3D-L01..L12) and four mutation checks.
+- The mismatched-DAG note is **deferred**: QC against the authorized DAG blocks publication, so only non-authoritative computation
+  results.
+
+**Harness.**
+
+- A strict run manifest with no media identity of its own.
+- Admissibility inspected and refused with exact reasons, never repaired.
+- An exact output clock, and an owner-scoped chain with derived provenance labels.
+- Deterministic verification input only; no Director model.
+- An owner-run runner covering the baseline render, QC, observation, critic, lock, failure atomicity, CAS loser, published exact trim,
+  localized reuse, lock refusal, historical preference and stale refusal.
+- One bounded receipt with fixed claims.
+
+The harness refuses more than 32 retained candidates: the accepted per-boundary re-validation must fit the 60-second evidence window.
+
+**Cloud.** No footage, pinned Windows FFmpeg or model cache is available. The actual-media, Python and `verify` gates are
+ENVIRONMENT_UNAVAILABLE_FOR_THIS_CHECK; the other gates are in §15 of the record.
+
+Batch 3D code: **COMPLETE**; harness **READY FOR THE OWNER-LOCAL RUN**
+
+Real footage verified: **NO — PENDING OWNER LOCAL RUN**
+
+Professional editing quality: **NOT VERIFIED**
+
+Batch 3D owner acceptance: **PENDING**
+
+Gate 7 overall: **NOT YET COMPLETE**
 
 ## Phase 5 Gate 7 Batch 3C - EditorialState and conversational revision (synthetic media only)
 
