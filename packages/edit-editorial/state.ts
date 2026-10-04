@@ -3,7 +3,7 @@ import { IdSchema } from "../contracts/common.js";
 import { canonicalSerialize } from "../domain/serialization.js";
 import { ArtifactRefSchema, EditorialArtifactMap, equal, exactDigest, type ArtifactRef, type SuppliedArtifact } from "../editorial/common.js";
 import { HashSchema, Nat, ScopeSchema } from "../edit-graph/common.js";
-import { supplied, validateAnyEditGraph, type AnyEditGraph, type GraphDiff } from "../edit-graph/index.js";
+import { parseAnyEditGraph, supplied, validateAnyEditGraph, type AnyEditGraph, type GraphDiff } from "../edit-graph/index.js";
 import { LIMITS, canonical, check, envelope, header, identity, parse, record } from "./common.js";
 
 export const IntervalSchema = z.strictObject({ startTicks: Nat, endTicks: Nat }).refine(v => v.endTicks > v.startTicks, "Nonempty exact interval.");
@@ -41,6 +41,42 @@ export const stateRef = (s: EditorialState) => supplied(s, s.stateId).ref;
 export function artifactMap(artifacts: readonly SuppliedArtifact[]): EditorialArtifactMap {
   check(Array.isArray(artifacts) && artifacts.length <= LIMITS.artifacts, "editorial_budget_exceeded"); return new EditorialArtifactMap(artifacts);
 }
+/**
+ * Gate 7 Batch 3E-A: one full replay per immutable graph inside one top-level validation. While an exported validator of this module runs,
+ * each successful graph validation over its exact artifact list is remembered under the content digest of the validated graph, with every
+ * ancestor that validation replayed: a revision validates only by replaying its exact parent (named by reference and SHA-256) down to the
+ * Gate-5 root, so each graph reached through `parent.editGraph` has itself validated over the same list. Only an input whose canonical
+ * content is exactly a remembered graph reuses it. A failure is never remembered, and nothing outlives the outermost call or comes from a caller.
+ */
+let scope: { artifacts: readonly SuppliedArtifact[]; graphs: Map<string, AnyEditGraph> } | undefined;
+function scoped<T>(artifacts: readonly SuppliedArtifact[], run: () => T): T {
+  if (scope !== undefined) return run();
+  scope = { artifacts, graphs: new Map() };
+  try { return run(); } finally { scope = undefined; }
+}
+function digestOf(value: unknown): string | undefined {
+  try { return exactDigest(new TextEncoder().encode(canonicalSerialize(value))); } catch { return undefined; }
+}
+function graphOf(input: unknown, artifacts: readonly SuppliedArtifact[]): AnyEditGraph {
+  const memo = scope !== undefined && scope.artifacts === artifacts ? scope.graphs : undefined, key = memo === undefined ? undefined : digestOf(input);
+  const known = key === undefined ? undefined : memo?.get(key);
+  if (known !== undefined) return structuredClone(known);
+  const graph = validateAnyEditGraph(input, artifacts);
+  if (memo !== undefined) remember(memo, graph, artifacts);
+  return graph;
+}
+/** Records a validated graph and the ancestors its validation replayed. An optimisation only: it never refuses, and anything it does not
+ * record is simply replayed in full. The map is the one validateAnyEditGraph has just built over the same list. */
+function remember(memo: Map<string, AnyEditGraph>, graph: AnyEditGraph, artifacts: readonly SuppliedArtifact[]): void {
+  try {
+    const map = new EditorialArtifactMap(artifacts);
+    for (let g: AnyEditGraph | undefined = graph; g !== undefined;) {
+      const key = digestOf(g); if (key === undefined || memo.has(key)) return;
+      memo.set(key, structuredClone(g));
+      g = g.parent.state === "present" ? parseAnyEditGraph(map.get(g.parent.editGraph)) : undefined;
+    }
+  } catch { return; }
+}
 export function targetOf(graph: AnyEditGraph, clipUseId: string, interval?: z.infer<typeof IntervalSchema>): EditorialTarget {
   const clip = graph.clipUses.find(c => c.clipUseId === clipUseId && c.medium === "video"); check(clip, "editorial_target_invalid");
   const target = parse(TargetSchema, { kind: "clip_region", graph: graphBinding(graph), clipUseId, interval: interval ?? clip.output,
@@ -49,10 +85,13 @@ export function targetOf(graph: AnyEditGraph, clipUseId: string, interval?: z.in
   return target;
 }
 export function graphForTarget(input: unknown, current: AnyEditGraph, artifacts: readonly SuppliedArtifact[], historical: boolean): AnyEditGraph {
+  return scoped(artifacts, () => targetGraph(input, current, artifacts, historical));
+}
+function targetGraph(input: unknown, current: AnyEditGraph, artifacts: readonly SuppliedArtifact[], historical: boolean): AnyEditGraph {
   const t = canonical(TargetSchema, input), map = artifactMap(artifacts); let graph = current;
   while (!equal(t.graph, graphBinding(graph))) {
     check(historical && graph.parent.state === "present", "editorial_target_not_ancestor");
-    graph = validateAnyEditGraph(map.get(graph.parent.editGraph), artifacts);
+    graph = graphOf(map.get(graph.parent.editGraph), artifacts);
   }
   check(equal(graph.scope, current.scope), "editorial_scope_mismatch");
   check(equal(targetOf(graph, t.clipUseId, t.interval), t), "editorial_target_invalid"); return graph;
@@ -72,7 +111,10 @@ export function protectedSemantics(graph: AnyEditGraph, target: EditorialTarget)
   return exactDigest(new TextEncoder().encode(canonicalSerialize({ clip, audio, operations, outputProfile: graph.outputProfile, clock: graph.output.clock })));
 }
 export function createRootEditorialState(graphInput: unknown, artifacts: readonly SuppliedArtifact[]): EditorialState {
-  const g = validateAnyEditGraph(graphInput, artifacts);
+  return scoped(artifacts, () => rootState(graphInput, artifacts));
+}
+function rootState(graphInput: unknown, artifacts: readonly SuppliedArtifact[]): EditorialState {
+  const g = graphOf(graphInput, artifacts);
   return record(EditorialStateSchema, "stateId", "editorial_state_v0", { ...header("EditorialState"), scope: g.scope, stateRevision: 0,
     currentGraph: graphBinding(g), parentState: null, change: { kind: "initial" }, hardLocks: [], preferences: [] });
 }
@@ -83,10 +125,13 @@ export function createEditorialStateDiff(stateInput: unknown, operation: unknown
     operation: parse(StateOperationSchema, operation), provenance: parse(ProvenanceSchema, provenance) });
 }
 export function applyEditorialStateDiff(stateInput: unknown, diffInput: unknown, artifacts: readonly SuppliedArtifact[]): EditorialState {
+  return scoped(artifacts, () => appliedState(stateInput, diffInput, artifacts));
+}
+function appliedState(stateInput: unknown, diffInput: unknown, artifacts: readonly SuppliedArtifact[]): EditorialState {
   const state = canonical(EditorialStateSchema, stateInput), diff = canonical(EditorialStateDiffSchema, diffInput);
   check(equal(diff.parentState, stateRef(state)) && diff.parentRevision === state.stateRevision && equal(diff.currentGraph, state.currentGraph), "stale_editorial_state");
   check(equal(diff.scope, state.scope), "editorial_scope_mismatch");
-  const graph = validateAnyEditGraph(artifactMap(artifacts).get(state.currentGraph.artifact), artifacts);
+  const graph = graphOf(artifactMap(artifacts).get(state.currentGraph.artifact), artifacts);
   const op = diff.operation, hardLocks = structuredClone(state.hardLocks), preferences = structuredClone(state.preferences), by = supplied(diff, diff.diffId).ref;
   if (op.op === "add_hard_lock") {
     graphForTarget(op.target, graph, artifacts, false);
@@ -107,10 +152,13 @@ export function applyEditorialStateDiff(stateInput: unknown, diffInput: unknown,
 }
 /** Rebase only by correspondence proven by the current trim primitive and exact protected semantics. Preferences keep their historical targets. */
 export function rebaseEditorialState(stateInput: unknown, childInput: unknown, diff: GraphDiff, artifacts: readonly SuppliedArtifact[]): EditorialState {
-  const state = canonical(EditorialStateSchema, stateInput), child = validateAnyEditGraph(childInput, artifacts);
+  return scoped(artifacts, () => rebasedState(stateInput, childInput, diff, artifacts));
+}
+function rebasedState(stateInput: unknown, childInput: unknown, diff: GraphDiff, artifacts: readonly SuppliedArtifact[]): EditorialState {
+  const state = canonical(EditorialStateSchema, stateInput), child = graphOf(childInput, artifacts);
   check(child.parent.state === "present" && child.changeSet.kind === "graph_diff" && equal(child.parent.editGraph, state.currentGraph.artifact)
     && equal(child.changeSet.graphDiff, supplied(diff, diff.graphDiffId).ref), "editorial_rebase_invalid");
-  const parent = validateAnyEditGraph(artifactMap(artifacts).get(state.currentGraph.artifact), artifacts);
+  const parent = graphOf(artifactMap(artifacts).get(state.currentGraph.artifact), artifacts);
   const hardLocks = state.hardLocks.map(lock => {
     graphForTarget(lock.target, parent, artifacts, false);
     check(protectedSemantics(parent, lock.target) === lock.protectedSemantics, "hard_lock_corrupt");
@@ -126,8 +174,11 @@ export function rebaseEditorialState(stateInput: unknown, childInput: unknown, d
     hardLocks, preferences: state.preferences });
 }
 export function validateEditorialState(input: unknown, artifacts: readonly SuppliedArtifact[], depth = 0): EditorialState {
+  return scoped(artifacts, () => replayedState(input, artifacts, depth));
+}
+function replayedState(input: unknown, artifacts: readonly SuppliedArtifact[], depth: number): EditorialState {
   check(depth <= LIMITS.headRevisions, "editorial_budget_exceeded"); const state = canonical(EditorialStateSchema, input), map = artifactMap(artifacts);
-  const graph = validateAnyEditGraph(map.get(state.currentGraph.artifact), artifacts); check(equal(state.scope, graph.scope), "editorial_scope_mismatch");
+  const graph = graphOf(map.get(state.currentGraph.artifact), artifacts); check(equal(state.scope, graph.scope), "editorial_scope_mismatch");
   let expected: EditorialState;
   if (state.change.kind === "initial") expected = createRootEditorialState(graph, artifacts);
   else {
@@ -137,6 +188,13 @@ export function validateEditorialState(input: unknown, artifacts: readonly Suppl
       : rebaseEditorialState(parent, graph, map.get(state.change.diff) as GraphDiff, artifacts);
   }
   check(equal(state, expected), "editorial_state_replay_mismatch"); return state;
+}
+/** Gate 7 Batch 3E-A: a head's graph, then its state, read and validated exactly as two separate calls would, inside one validation scope. */
+export function validateGraphAndState(graph: ArtifactRef, state: ArtifactRef, artifacts: readonly SuppliedArtifact[]): { graph: AnyEditGraph; state: EditorialState } {
+  return scoped(artifacts, () => {
+    const map = artifactMap(artifacts), validated = graphOf(map.get(graph), artifacts);
+    return { graph: validated, state: validateEditorialState(map.get(state), artifacts) };
+  });
 }
 export function joinArtifacts(...groups: (readonly SuppliedArtifact[])[]): SuppliedArtifact[] {
   const map = new Map<string, SuppliedArtifact>();

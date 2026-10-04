@@ -1,9 +1,41 @@
-# Current Phase - Phase 5 Gate 7 Batch 3D Real-Footage Acceptance (OWNER-ACCEPTED at 40591f6; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-A Multi-Revision Freshness (IMPLEMENTED — PENDING OWNER REVIEW; Gate 7 not yet complete)
 
 Last updated: 2026-10-04
 
 ## Current ruling
 
+- Phase 5 Gate 7 Batch 3E-A, multi-revision freshness and validation performance (2026-10-04; owner-authorized protected changes A1
+  and A2).
+  - Started from the verified 3E start `4f85b559c7eff2c24e221011f3ee1dd1466a111d` on `phase/5-gate7-3e-production-hardening`.
+  - Changed: `scripts/edit-editorial-local.ts` (A1) and `packages/edit-editorial/state.ts` (A2).
+    `packages/edit-graph/revision.ts` was not required and is unchanged.
+  - Reproduced on source-built bytes, on a synthetic history:
+    - an unchanged head was replayed in full on every `current()` (5 to 44 Gate-6 constructions);
+    - one cold validation made 44 constructions for 4 unique graphs at depth 6.
+  - **A1.** One in-memory, per-instance record of the last successful `current()` replay. It is reused only when the digest of every
+    head-slot and artifact byte read by that call is identical. Every read, hash and head check still runs, and a failure is never
+    stored.
+  - **A2.** A call-scoped memo of successful graph validations inside one top-level validation. It is bound to the exact artifact list
+    and records only the ancestors that validation replayed. No refusal and no refusal order changed.
+  - Results:
+    - 3E-A pure tests 16/16 (A01-A15 and the parity corpus P00-P17, with identical outcomes on the old and new bytes);
+    - mutation reds: 11/11 expectations met;
+    - F1-F6 PASS on synthetic media with the real clock;
+    - synthetic depth 6: cold 44 → 4 constructions (25.1 s → 1.39 s), warm 44 → 0 (25.4 s → 94 ms);
+    - revision 1 → 2 evidence age at the permit: 17,576 ms → 1,548 ms.
+  - Gates:
+    - typecheck and build;
+    - legacy 3C and 3D 62/62;
+    - legacy 2A/2B, graph, repair and review 435/435;
+    - 3C media 4/4 and 2B media 34/34;
+    - workspace audit and `git diff --check`.
+    - The full safe suite and `npm run verify` were not run.
+  - Unchanged: the 60 s ceiling, evidence timestamps and permit order; the capability, media-grant, claim, current-head and CAS checks;
+    renderer admission, owner-media authority, MediaTruth, the FFmpeg adapters, schemas, dependencies and lockfile.
+  - Multi-revision real-footage freshness: **NOT VERIFIED** (3E-C). Real-store latency after the repair: not measured.
+  - 3E-A: **IMPLEMENTED — PUSHED FOR OWNER REVIEW**. 3E-B and 3E-C: **NOT STARTED**. Gate 7: **NOT YET COMPLETE**. Phase 6:
+    **NOT STARTED**.
+  - Details: the [Batch-3E-A record](phases/phase-5-gate-7-batch-3e-a-multi-revision-freshness.md).
 - Phase 5 Gate 7 Batch 3D owner acceptance (2026-10-04, owner ruling).
   - Batch 3D: **OWNER-ACCEPTED** after independent owner review. Accepted implementation/closure SHA:
     `40591f6a77108b1d5d9b70789c17a09bbbb3c2bd`.

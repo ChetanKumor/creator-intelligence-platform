@@ -60,14 +60,16 @@ async function publish(root: string, path: string, bytes: Uint8Array): Promise<b
 }
 export class LocalEditingProject {
   readonly #root: string; readonly #scope: Scope; readonly #policy: E.EditorialPolicy; readonly #key: string;
+  /** Gate 7 Batch 3E-A: this instance's last successful current() replay, in memory only. `proof` digests every byte that replay read. */
+  #replayed: { proof: string; graph: AnyEditGraph; state: E.EditorialState } | null = null;
   constructor(key: symbol, root: string, scope: Scope, policy: E.EditorialPolicy) {
     E.check(key === MINT, "editing_project_required"); this.#root = root; this.#scope = structuredClone(scope); this.#policy = structuredClone(policy);
     this.#key = exactDigest(new TextEncoder().encode(canonicalSerialize(scope))); Object.freeze(this);
   }
   #slot(revision: number) { return join(this.#root, `h-${this.#key}-${revision}.json`); }
   #artifact(ref: ArtifactRef) { return join(this.#root, `a-${ref.sha256}.json`); }
-  async #readHead(): Promise<{ head: E.EditingHead; refs: ArtifactRef[] } | null> {
-    let latest: { head: E.EditingHead; refs: ArtifactRef[] } | null = null;
+  async #readHead(): Promise<{ head: E.EditingHead; refs: ArtifactRef[]; slots: string[] } | null> {
+    let latest: { head: E.EditingHead; refs: ArtifactRef[]; slots: string[] } | null = null; const slots: string[] = [];
     for (let i = 0; i <= E.LIMITS.headRevisions; i += 1) {
       const bytes = await readOwned(this.#root, this.#slot(i), E.LIMITS.recordBytes); if (bytes === null) break;
       const value: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
@@ -76,7 +78,7 @@ export class LocalEditingProject {
       E.check(equal(Object.keys(v).sort(), ["artifacts", "head"]) && Array.isArray(v.artifacts) && v.artifacts.length <= E.LIMITS.artifacts, "editing_store_corrupt");
       const head = E.canonical(E.EditingHeadSchema, v.head), refs = v.artifacts.map(r => E.canonical(ArtifactRefSchema, r));
       E.check(head.headRevision === i && equal(head.scope, this.#scope) && equal(head.previousHead, latest ? E.headRef(latest.head) : null), "editing_store_corrupt");
-      latest = { head, refs };
+      slots.push(exactDigest(bytes)); latest = { head, refs, slots };
     }
     return latest;
   }
@@ -88,15 +90,21 @@ export class LocalEditingProject {
       artifacts.push({ ref, bytes, value: JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)) as unknown });
     }
     const map = E.artifactMap(artifacts), head = latest.head;
-    const graph = validateAnyEditGraph(map.get(head.currentGraph.artifact), artifacts), state = E.validateEditorialState(map.get(head.currentState), artifacts);
+    // 3E-A: the replay is reused only for exactly the bytes it read (every head slot in order and every artifact) in this project and scope.
+    const proof = exactDigest(new TextEncoder().encode(canonicalSerialize({ root: this.#root, scope: this.#key, slots: latest.slots,
+      artifacts: artifacts.map(a => exactDigest(a.bytes)) })));
+    const reused = this.#replayed?.proof === proof ? this.#replayed : null;
+    const { graph, state } = reused === null ? E.validateGraphAndState(head.currentGraph.artifact, head.currentState, artifacts)
+      : { graph: structuredClone(reused.graph), state: structuredClone(reused.state) };
     E.check(equal(head.currentGraph, E.graphBinding(graph)) && equal(head.currentState, E.stateRef(state)), "head_graph_state_mismatch");
     const previous = head.previousHead ? E.canonical(E.EditingHeadSchema, map.get(head.previousHead)) : null;
     E.check(equal(E.createEditingHead(graph, state, previous, head.transition), head), "head_transition_invalid");
+    if (reused === null) this.#replayed = { proof, graph: structuredClone(graph), state: structuredClone(state) };
     return { head, graph, state, artifacts };
   }
   async #commit(head: E.EditingHead, artifactsInput: readonly SuppliedArtifact[], previous: E.EditingHead | null): Promise<E.CurrentEditingContext> {
-    const artifacts = structuredClone(E.joinArtifacts(artifactsInput, [supplied(head, head.headId)])), map = E.artifactMap(artifacts);
-    const graph = validateAnyEditGraph(map.get(head.currentGraph.artifact), artifacts), state = E.validateEditorialState(map.get(head.currentState), artifacts);
+    const artifacts = structuredClone(E.joinArtifacts(artifactsInput, [supplied(head, head.headId)]));
+    const { graph, state } = E.validateGraphAndState(head.currentGraph.artifact, head.currentState, artifacts);
     E.check(equal(E.createEditingHead(graph, state, previous, head.transition), head), "head_transition_invalid");
     const existing = await this.#readHead();
     E.check(equal(existing ? E.headRef(existing.head) : null, previous ? E.headRef(previous) : null), previous ? "stale_editing_head" : "head_already_initialized");
