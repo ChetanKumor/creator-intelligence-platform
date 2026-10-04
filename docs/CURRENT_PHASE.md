@@ -1,9 +1,24 @@
-# Current Phase - Phase 5 Gate 7 Batch 3D Real-Footage Acceptance (R02, R02-D and R02-E implemented; owner-terminal real-footage run 16/16; final gates PASS; candidate for owner acceptance, pending independent owner review)
+# Current Phase - Phase 5 Gate 7 Batch 3D Real-Footage Acceptance (OWNER-ACCEPTED at 40591f6; Gate 7 not yet complete)
 
-Last updated: 2026-10-03
+Last updated: 2026-10-04
 
 ## Current ruling
 
+- Phase 5 Gate 7 Batch 3D owner acceptance (2026-10-04, owner ruling).
+  - Batch 3D: **OWNER-ACCEPTED** after independent owner review. Accepted implementation/closure SHA:
+    `40591f6a77108b1d5d9b70789c17a09bbbb3c2bd`.
+  - Evidence established before acceptance (closure bullet below and §36-§38 of the
+    [Batch-3D record](phases/phase-5-gate-7-batch-3d-real-footage-e2e.md)): owner real-footage run 16/16 PASS, receipt SHA-256
+    `b646ea76d559622fb0a366a740ec491ab30c805d8ead3b14e19755f14bf8e65c`; corrected full safe suite 1078/1078 PASS; `npm run verify`
+    PASS. The run covers an actual real render, Technical QC, rendered-output observation, critic execution, an exact GraphDiff
+    revision, localized reuse and recomputation, render-failure and QC-failure atomicity, CAS-loser protection, and current-head, lock
+    and stale-request protections.
+  - The acceptance changes none of these limitations. Multi-revision real execution freshness: **LIMITATION OBSERVED / NOT FULLY
+    VERIFIED**. Distinct physical multi-source execution, broad creator-media ingest, non-square-pixel / SAR normalization,
+    professional editing quality and the autonomous Director: **NOT VERIFIED**. VFR normalization: **NOT IMPLEMENTED**.
+  - Gate 7 overall: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**.
+  - This supersedes "Real footage verification: **PASS — CANDIDATE FOR OWNER ACCEPTANCE**" and "Batch 3D owner acceptance: **PENDING
+    INDEPENDENT OWNER REVIEW**" in the closure bullet below, which is kept as written.
 - Phase 5 Gate 7 Batch 3D closure (2026-10-03).
   - **R02-E** (owner-authorized, harness only): QC-failure atomicity runs as its own revision 0 → 1 attempt from the locked revision-0
     head, with an exact 14-frame trim distinct from the published 15-frame trim. RED first; regression 3D-R02E.

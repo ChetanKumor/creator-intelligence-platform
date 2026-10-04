@@ -1,5 +1,8 @@
 # Phase 5 Gate 7 Batch 3D — Real-footage end-to-end acceptance
 
+**Current status (2026-10-04, §39).** Batch 3D: **OWNER-ACCEPTED** at `40591f6a77108b1d5d9b70789c17a09bbbb3c2bd`. The §38
+limitations are unchanged. Gate 7: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**. The closure status line below is preserved history.
+
 **Current status (2026-10-03 closure, §33-§38).** Real footage verification: **PASS — CANDIDATE FOR OWNER ACCEPTANCE** (owner-terminal
 run 16/16, §36; final gates PASS, §37). Batch 3D owner acceptance: **PENDING INDEPENDENT OWNER REVIEW**. Gate 7: **NOT YET COMPLETE**.
 Phase 6: **NOT STARTED**. The status line below and §1-§32 are preserved history.
@@ -1305,6 +1308,29 @@ Real footage verification: **PASS — CANDIDATE FOR OWNER ACCEPTANCE**
 Professional editing quality: **NOT VERIFIED**
 
 Batch 3D owner acceptance: **PENDING INDEPENDENT OWNER REVIEW**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Phase 6: **NOT STARTED**
+
+## 39. Owner acceptance (2026-10-04)
+
+The owner independently reviewed Batch 3D and ruled: **Batch 3D: OWNER-ACCEPTED**. Accepted implementation/closure SHA:
+`40591f6a77108b1d5d9b70789c17a09bbbb3c2bd`.
+
+- The acceptance rests on the evidence recorded before it: the owner real-footage run 16/16 PASS, receipt SHA-256
+  `b646ea76d559622fb0a366a740ec491ab30c805d8ead3b14e19755f14bf8e65c` (§36); the corrected full safe suite 1078/1078 PASS and
+  `npm run verify` PASS (§37).
+- This acceptance is recorded by a documentation-only commit. No code, test, schema, dependency, lockfile, evidence or media byte
+  changed, and no gate was rerun for it.
+- The §38 limitations are unchanged: multi-revision real execution freshness **LIMITATION OBSERVED / NOT FULLY VERIFIED** (§31);
+  distinct physical multi-source execution, broad creator-media ingest, non-square-pixel / SAR normalization, professional editing
+  quality and the autonomous Director **NOT VERIFIED**; VFR normalization **NOT IMPLEMENTED**.
+
+**Superseded statements** (kept above as written): the top-of-record closure status and §38 "Real footage verification: **PASS —
+CANDIDATE FOR OWNER ACCEPTANCE**" and "Batch 3D owner acceptance: **PENDING INDEPENDENT OWNER REVIEW**".
+
+Batch 3D owner acceptance: **OWNER-ACCEPTED** (2026-10-04)
 
 Gate 7 overall: **NOT YET COMPLETE**
 
