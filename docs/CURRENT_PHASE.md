@@ -1,9 +1,22 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-A Multi-Revision Freshness (IMPLEMENTED — PENDING OWNER REVIEW; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-A Multi-Revision Freshness (OWNER-ACCEPTED at 820e218; Gate 7 not yet complete)
 
 Last updated: 2026-10-04
 
 ## Current ruling
 
+- Phase 5 Gate 7 Batch 3E-A owner acceptance (2026-10-04, owner ruling).
+  - Batch 3E-A: **OWNER-ACCEPTED** after independent owner review. Accepted SHA:
+    `820e218e8213c20f7bd48b338c9d4e1c8b1396b2`.
+  - Accepted properties (bullet below and §14 of the
+    [Batch-3E-A record](phases/phase-5-gate-7-batch-3e-a-multi-revision-freshness.md)): the exact-byte successful-validation memo;
+    one graph replay per immutable graph per top-level cold validation; A01-A15 PASS; F1-F6 PASS (synthetic media, real clock);
+    refusal parity PASS. The 60 s policy, evidence timestamp semantics, permit order, current-head semantics and CAS semantics are
+    unchanged.
+  - The acceptance changes none of these limitations. Real-owner-footage revision 1 → 2 freshness: **NOT VERIFIED** (awaits 3E-C).
+    Broad media ingest: **NOT IMPLEMENTED**. Distinct physical multi-source execution: **NOT VERIFIED**. SAR normalization and VFR
+    normalization: **NOT IMPLEMENTED**.
+  - 3E-B and 3E-C implementation: **NOT STARTED**. Gate 7 overall: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**.
+  - This supersedes "3E-A: **IMPLEMENTED — PUSHED FOR OWNER REVIEW**" in the bullet below, which is kept as written.
 - Phase 5 Gate 7 Batch 3E-A, multi-revision freshness and validation performance (2026-10-04; owner-authorized protected changes A1
   and A2).
   - Started from the verified 3E start `4f85b559c7eff2c24e221011f3ee1dd1466a111d` on `phase/5-gate7-3e-production-hardening`.

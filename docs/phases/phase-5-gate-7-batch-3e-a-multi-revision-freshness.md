@@ -1,5 +1,8 @@
 # Phase 5 Gate 7 Batch 3E-A — Multi-revision freshness and validation performance
 
+**Current status (2026-10-04, §14).** 3E-A: **OWNER-ACCEPTED** at `820e218e8213c20f7bd48b338c9d4e1c8b1396b2`. The §12 limitations
+are unchanged. Gate 7: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**. The status line below is preserved history.
+
 **Status (2026-10-04).** 3E-A: **IMPLEMENTED — PUSHED FOR OWNER REVIEW** (§13). Gate 7: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**.
 3E-B and 3E-C: **NOT STARTED**.
 
@@ -288,6 +291,36 @@ Consequences:
 
 3E-A: **IMPLEMENTED — PUSHED FOR OWNER REVIEW** (commit `fix(gate7): harden multi-revision freshness` on
 `phase/5-gate7-3e-production-hardening`; `main` not modified).
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Phase 6: **NOT STARTED**
+
+## 14. Owner acceptance (2026-10-04)
+
+The owner independently reviewed Batch 3E-A and ruled: **Gate 7 Batch 3E-A: OWNER-ACCEPTED**. Accepted SHA:
+`820e218e8213c20f7bd48b338c9d4e1c8b1396b2`.
+
+- The accepted properties are the ones recorded above:
+  - the exact-byte successful-validation memo (A1, §4);
+  - one graph replay per immutable graph per top-level cold validation (A2, §5);
+  - A01-A15 PASS and refusal parity PASS (§7);
+  - F1-F6 PASS on synthetic media with the real clock (§8);
+  - the 60 s policy, evidence timestamp semantics, permit order, current-head semantics and CAS semantics unchanged (§11).
+- This acceptance is recorded by a documentation-only commit. No code, test, schema, dependency, lockfile, evidence or media byte
+  changed, and no gate was rerun for it.
+- The §12 limitations are unchanged:
+  - real-owner-footage revision 1 → 2 freshness is **NOT VERIFIED** and awaits 3E-C;
+  - broad media ingest is **NOT IMPLEMENTED**;
+  - distinct physical multi-source execution is **NOT VERIFIED**;
+  - SAR normalization and VFR normalization are **NOT IMPLEMENTED**.
+
+**Superseded statements** (kept above as written): the top-of-record status and §13 "3E-A: **IMPLEMENTED — PUSHED FOR OWNER
+REVIEW**".
+
+3E-A owner acceptance: **OWNER-ACCEPTED** (2026-10-04)
+
+3E-B and 3E-C implementation: **NOT STARTED**
 
 Gate 7 overall: **NOT YET COMPLETE**
 
