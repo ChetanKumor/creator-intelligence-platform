@@ -1,9 +1,26 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B1A Canonical Media Provenance Foundation (IMPLEMENTED — PUSHED FOR OWNER REVIEW; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B1A Canonical Media Provenance Foundation (OWNER-ACCEPTED at 2b2b49e; Gate 7 not yet complete)
 
 Last updated: 2026-10-05
 
 ## Current ruling
 
+- Phase 5 Gate 7 Batch 3E-B1A owner acceptance (2026-10-05, owner ruling).
+  - Batch 3E-B1A: **OWNER-ACCEPTED** after independent owner review. Accepted SHA:
+    `2b2b49e058de40d2cd166a9d8764947eb5dde6b7`.
+  - Accepted contract (bullet below and §15 of the
+    [Batch-3E-B1A record](phases/phase-5-gate-7-batch-3e-b1a-canonical-media-provenance.md)): AuthorizedFootage 1.0.0 kept exactly;
+    the 1.1.0 root and `system_canonicalized` derived forms with one-level lineage and the dedicated `canonicalizationConsent` root
+    field; `CanonicalMediaDerivation` with exact source and output identity and separate computation and derivation identities; the
+    pure N1 classifier and the one bounded N1 recipe; one owner-media authority with the original path unchanged; the effective derived
+    lifecycle; the derived-capable owner render authorization.
+  - The acceptance changes none of the B1A §12 limitations. Nothing is executed yet: the N1 argv template and the verification methods
+    are declared and unexecuted, and probe-to-bytes binding is not implemented. Real-owner-footage revision 1 → 2 freshness, distinct
+    physical multi-source execution, broad ingest, SAR normalization on media and VFR normalization: **NOT VERIFIED / NOT
+    IMPLEMENTED**.
+  - 3E-B1B: **AUTHORIZED by the owner, NOT STARTED** at this checkpoint. 3E-C: **NOT STARTED**. Gate 7 overall: **NOT YET COMPLETE**.
+    Phase 6: **NOT STARTED**.
+  - This supersedes "3E-B1A: **IMPLEMENTED — PUSHED FOR OWNER REVIEW**" and "3E-B1B and 3E-C: **NOT STARTED**" in the bullet below,
+    which is kept as written.
 - Phase 5 Gate 7 Batch 3E-B1A, the derived-media provenance and canonical-ingest contract foundation (2026-10-04 to 2026-10-05;
   owner-authorized bounded protected scope: contract and pure logic only).
   - Started from the verified `86d2a100289587ce55cdf521a10a92a9312ab44b` (3E-A accepted) on `phase/5-gate7-3e-production-hardening`.

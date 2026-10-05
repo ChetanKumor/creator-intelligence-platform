@@ -1,5 +1,9 @@
 # Phase 5 Gate 7 Batch 3E-B1A — Derived media provenance and canonical-ingest contract foundation
 
+**Current status (2026-10-05, §15).** 3E-B1A: **OWNER-ACCEPTED** at `2b2b49e058de40d2cd166a9d8764947eb5dde6b7`. The §12 limitations
+are unchanged. 3E-B1B: authorized, not started at this checkpoint. Gate 7: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**. The status
+line below is preserved history.
+
 **Status (2026-10-05, §14).** 3E-B1A: **IMPLEMENTED — PUSHED FOR OWNER REVIEW**. 3E-B1B (filesystem registry and adapter, FFmpeg
 canonicalization): **NOT STARTED**. 3E-C: **NOT STARTED**. Gate 7: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**.
 
@@ -371,3 +375,36 @@ No dependency, lockfile, configuration, script, adapter or accepted production b
 `phase/5-gate7-3e-production-hardening`; `main` not modified).
 
 3E-B1B: **NOT STARTED** (not authorized by this batch). Gate 7 overall: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**.
+
+## 15. Owner acceptance (2026-10-05)
+
+The owner independently reviewed Batch 3E-B1A and ruled: **Gate 7 Batch 3E-B1A: OWNER-ACCEPTED**. Accepted SHA:
+`2b2b49e058de40d2cd166a9d8764947eb5dde6b7`.
+
+- The accepted contract is the one recorded above:
+  - AuthorizedFootage 1.0.0 semantics, kept exactly (§3);
+  - the AuthorizedFootage 1.1.0 root and derived semantics: `system_canonicalized`, one-level derivation only, and the explicit
+    `canonicalizationConsent` field on the root (§2, §3);
+  - `CanonicalMediaDerivation`, with exact source and output identity and the separation of the computation identity from the
+    derivation identity (§4);
+  - the pure N1 classifier and the one bounded N1 recipe (§4, §5);
+  - one owner-media authority, with the original owner-media path compatible, the effective derived lifecycle, and the
+    derived-capable owner render authorization (§6).
+- This acceptance is recorded by a documentation-only commit. No code, test, schema, dependency, lockfile, evidence or media byte
+  changed, and no gate was rerun for it.
+- The §12 limitations are unchanged. In particular nothing is executed: the N1 argv template and the verification digest methods are
+  declared and unexecuted, and probe-to-bytes binding is not implemented. The 0° display-matrix limitation of the renderer's DIRECT rule
+  stays a candidate for B2.
+- The owner authorized 3E-B1B (executable N1 canonicalization, trusted publication and the derived-media lifecycle) in the same
+  ruling. It starts from the commit that records this acceptance and must not redesign the accepted contract.
+
+**Superseded statements** (kept above as written): the top-of-record status and §14 "3E-B1A: **IMPLEMENTED — PUSHED FOR OWNER
+REVIEW**" and "3E-B1B: **NOT STARTED** (not authorized by this batch)".
+
+3E-B1A owner acceptance: **OWNER-ACCEPTED** (2026-10-05)
+
+3E-B1B: **AUTHORIZED, NOT STARTED** at this checkpoint. 3E-C: **NOT STARTED**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Phase 6: **NOT STARTED**
