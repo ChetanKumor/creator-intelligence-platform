@@ -917,7 +917,7 @@ test("B96 the pure core imports only zod, node:crypto and accepted internal modu
       if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
         const s = node.moduleSpecifier.text;
         assert.ok(s === "zod" || s === "node:crypto" || s.startsWith("./")
-          || /^\.\.\/(contracts|domain|editorial|edit-graph|edit-execution|edit-runtime|footage-analyzer|reference-analyzer|routing|planning)\//.test(s), `${path}: ${s}`);
+          || /^\.\.\/(contracts|domain|editorial|edit-graph|edit-execution|edit-runtime|footage-analyzer|reference-analyzer|routing|planning|media-ingest)\//.test(s), `${path}: ${s}`);
       }
       if (ts.isCallExpression(node) || ts.isNewExpression(node)) {
         // A bare call of any process or evaluation entry point, or a property call of the process ones (RegExp.prototype.exec is not a process).

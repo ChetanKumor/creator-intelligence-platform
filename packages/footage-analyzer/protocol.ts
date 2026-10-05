@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EmbeddingReferenceSchema, IdSchema, TimeRangeSchema } from "../contracts/index.js";
+import { EmbeddingReferenceSchema, IdSchema, TimeRangeSchema, TimestampSchema } from "../contracts/index.js";
 import { AuthorizationManifestSchema, DetectorConfigSchema, EmbeddingConfigSchema, HashSchema, MeasurementSchema, MetadataSchema, SampleSchema, ShotSchema, validateAuthorizationProvenance } from "../reference-analyzer/protocol.js";
 import { siglipConfiguration, SIGLIP_MODELS } from "../reference-analyzer/models.js";
 import { contentId } from "../reference-analyzer/features.js";
@@ -12,10 +12,50 @@ export const PROPOSAL_VERSION = "coverage-multiscale-v1";
 export const AGGREGATION_VERSION = "footage-evidence-v1";
 export const MEASUREMENT_VERSION = "opencv-temporal-v1";
 
-export const FootageAuthorizationSchema = z.strictObject({
+/** AuthorizedFootage 1.0.0, exactly as accepted: its meaning never changes. */
+export const FootageAuthorizationV1Schema = z.strictObject({
   ...AuthorizationManifestSchema.shape, manifestType: z.literal("AuthorizedFootage"),
   allowedPurposes: z.array(z.enum(["local_footage_analysis", "local_evaluation"])).min(1).max(2),
 }).superRefine(validateAuthorizationProvenance);
+export type FootageAuthorizationV1 = z.infer<typeof FootageAuthorizationV1Schema>;
+/*
+ * AuthorizedFootage 1.1.0 (Gate 7 Batch 3E-B1A) adds two footage-only forms and widens nothing in 1.0.0 or in the shared
+ * AuthorizedReference contract:
+ * - a root: owner-supplied media whose owner gave explicit consent to local canonicalization (an owner who does not consent keeps
+ *   using 1.0.0);
+ * - a derived record: bytes the system canonicalized from exactly one such root. It says so (`system_canonicalized`), inherits the
+ *   root's rights basis and scope, never gains a purpose, carries no consent of its own, and binds its root, derivation and recipe.
+ * The consent is its own field, never an allowed purpose: every form keeps exactly the 1.0.0 purpose vocabulary, so a purpose-scoped
+ * consumer can never be authorized by consent (owner ruling after the self-found purpose-label red). Depth is exactly one: a
+ * derived record's root is a root form, which carries no lineage. Synthetic media stays 1.0.0.
+ */
+const OwnerBasisSchema = z.enum(["owner_created", "permission_granted"]);
+const FootagePurposesSchema = z.array(z.enum(["local_footage_analysis", "local_evaluation"])).min(1).max(2);
+const FootageAuthorizationRootSchema = z.strictObject({
+  manifestType: z.literal("AuthorizedFootage"), schemaVersion: z.literal("1.1.0"), contentHash: HashSchema, sizeBytes: z.number().int().positive().safe(),
+  sourceType: z.literal("owner_supplied"), authorizationBasis: OwnerBasisSchema, allowedPurposes: FootagePurposesSchema,
+  canonicalizationConsent: z.literal("local_media_canonicalization"), dateAdded: TimestampSchema, creatorId: IdSchema, projectId: IdSchema,
+}).superRefine(validateAuthorizationProvenance);
+const FootageAuthorizationDerivedSchema = z.strictObject({
+  manifestType: z.literal("AuthorizedFootage"), schemaVersion: z.literal("1.1.0"), contentHash: HashSchema, sizeBytes: z.number().int().positive().safe(),
+  sourceType: z.literal("system_canonicalized"), authorizationBasis: OwnerBasisSchema, allowedPurposes: FootagePurposesSchema,
+  dateAdded: TimestampSchema, creatorId: IdSchema, projectId: IdSchema,
+  derivedFrom: z.strictObject({ rootAuthorization: FootageAuthorizationRootSchema, derivationId: IdSchema, recipeId: IdSchema }),
+}).superRefine((value, ctx) => {
+  const issue = (message: string) => ctx.addIssue({ code: "custom", message });
+  validateAuthorizationProvenance(value, ctx);
+  const root = value.derivedFrom.rootAuthorization;
+  if (value.contentHash === root.contentHash) issue("A derived record names bytes distinct from its root.");
+  if (value.authorizationBasis !== root.authorizationBasis) issue("A derived record inherits exactly its root's rights basis.");
+  if (value.creatorId !== root.creatorId || value.projectId !== root.projectId) issue("A derived record keeps exactly its root's creator and project.");
+  if (value.dateAdded < root.dateAdded) issue("A derived record is never dated before its root.");
+  if (!value.allowedPurposes.every(purpose => root.allowedPurposes.includes(purpose))) issue("A derived record never gains a purpose its root did not grant.");
+});
+export type FootageAuthorizationRoot = z.infer<typeof FootageAuthorizationRootSchema>;
+export type FootageAuthorizationDerived = z.infer<typeof FootageAuthorizationDerivedSchema>;
+export { FootageAuthorizationDerivedSchema, FootageAuthorizationRootSchema };
+/** Every accepted AuthorizedFootage form. A 1.0.0 record parses exactly as before; each form is identified by version and source type. */
+export const FootageAuthorizationSchema = z.union([FootageAuthorizationV1Schema, FootageAuthorizationRootSchema, FootageAuthorizationDerivedSchema]);
 export type FootageAuthorization = z.infer<typeof FootageAuthorizationSchema>;
 // Authorization is checked per asset, so one invalid attestation cannot erase other results.
 export const FootageManifestSchema = z.strictObject({

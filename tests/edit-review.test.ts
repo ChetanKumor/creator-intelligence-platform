@@ -142,7 +142,7 @@ const FROZEN: readonly (readonly [string, string])[] = [
   ["scripts/edit-render-local.ts", "57e4d4159520acdb9e9955a565303f42bf6fa38f1eea631b8b0eeb2a61e42b7b"],
   ["scripts/edit-runtime-local.ts", "016ae90284b4181909e2dc0ffa79d0824c596d41166af376fc65282f24bc0546"],
   ["tests/edit-render-media.integration.ts", "9d9338d4815f135d1c0b3949d1e2612290e1f3be81cdf9eac2e5a4be41ce6449"],
-  ["tests/edit-render.test.ts", "9f3ee736e19774f9e3e6339163cb662747a92a39c2008c96d5299114da7dd20f"],
+  ["tests/edit-render.test.ts", "a8848d039e1f5d15deb00024f43219c9304552dfc88f916c13038c9bf5fe172a"],
   ["tests/support/edit-render-media.ts", "640b8880150c4682fc6a6d336c430af3bd97678afa9509527fb447f4db03819f"],
   ["tests/support/edit-render.ts", "e0e3a8734713520ebef83eeb6b107c6ad875450d236003629a0bfea8b97e17c3"],
 ];

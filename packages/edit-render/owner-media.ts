@@ -13,19 +13,27 @@
  *
  * Nothing here reads a file, clock or environment. The adapter scripts/edit-render-owner-media-authority-local.ts registers files,
  * hashes bytes and answers queries.
+ *
+ * Gate 7 Batch 3E-B1A extends the pure contract only (the adapter is unchanged until B1B):
+ * - the original path above stays exactly AuthorizedFootage 1.0.0, so the unchanged adapter and permit keep their exact accepted set;
+ * - an OwnerMediaRegistration 0.2.0 can also declare canonical derivatives, each bound to its declared root, its derived
+ *   authorization and its CanonicalMediaDerivation, under a distinct derived-capable render statement;
+ * - two provenance kinds (original and derived), and the pure lifecycle rule by which a derivative never outlives its root.
  */
 import { z } from "zod";
 import { IdSchema, MediaAssetSchema, TimestampSchema } from "../contracts/common.js";
 import { canonicalSerialize } from "../domain/serialization.js";
-import { ArtifactRefSchema, checkIdentity, compareText, identify, type SuppliedArtifact } from "../editorial/common.js";
+import { ArtifactRefSchema, checkIdentity, compareText, equal, identify, type SuppliedArtifact } from "../editorial/common.js";
 import { HashSchema, OwnerSchema, ScopeSchema } from "../edit-graph/common.js";
 import { PositiveSafeInt, RenderIntentSchema } from "../edit-execution/common.js";
 import { RuntimeArtifacts } from "../edit-runtime/common.js";
 import type { ExecutionClaim } from "../edit-runtime/records.js";
 import { requireValidated, type ValidatedExecutionDag } from "../edit-runtime/validated.js";
-import { FootageAnalysisSchema, FootageAuthorizationSchema, FootageManifestSchema, type FootageAuthorization } from "../footage-analyzer/protocol.js";
-import { CheckTimingSchema, ORDERED_CHECK, RenderImplementationSchema, RENDER_IMPLEMENTATION, SessionProofSchema, check, envelope, header, orderedCheck, parse, refuse,
-  sha256, type CheckTiming, type SessionProof } from "./common.js";
+import { FootageAnalysisSchema, FootageAuthorizationDerivedSchema, FootageAuthorizationSchema, FootageAuthorizationV1Schema, FootageManifestSchema,
+  type FootageAuthorization, type FootageAuthorizationDerived, type FootageAuthorizationRoot, type FootageAuthorizationV1 } from "../footage-analyzer/protocol.js";
+import { CanonicalMediaDerivationSchema, type CanonicalMediaDerivation } from "../media-ingest/canonical.js";
+import { CheckTimingSchema, EDIT_RENDER_VERSION, MAX_RENDER_SOURCES, ORDERED_CHECK, RenderImplementationSchema, RENDER_IMPLEMENTATION, SessionProofSchema, check, envelope,
+  header, orderedCheck, parse, refuse, sha256, type CheckTiming, type SessionProof } from "./common.js";
 import { ClaimBindingSchema, claimBinding, stagedFor } from "./records.js";
 
 /** The owner-local authority's identity. Its records say `owner_declared_real_media_assets_only_v0`, and its bindings name the literal below. */
@@ -60,34 +68,45 @@ export function ownerMediaRelativeSegments(path: string): string[] | null {
   return parts;
 }
 const OWNER_BASES = ["owner_created", "permission_granted"] as const;
+/**
+ * The accepted original-declaration rules (paths, owner-supplied authorization, scope, uniqueness), shared by both registration
+ * versions. `read` decides which AuthorizedFootage forms a version accepts. Returns the parsed owner-supplied declarations and every
+ * declared content hash.
+ */
+function checkDeclaredOriginals(footage: z.infer<typeof FootageManifestSchema>, read: (value: unknown) => FootageAuthorization | null, issue: (message: string) => void):
+  { originals: { entryId: string; authorization: FootageAuthorizationV1 | FootageAuthorizationRoot }[]; hashes: Set<string> } {
+  const hashes = new Set<string>(), paths = new Set<string>(), originals: { entryId: string; authorization: FootageAuthorizationV1 | FootageAuthorizationRoot }[] = [];
+  for (const asset of footage.assets) {
+    const segments = ownerMediaRelativeSegments(asset.path);
+    if (segments === null) issue("A declared source is a plain relative path under the footage manifest's directory, never absolute, a URL, share, pattern or traversal.");
+    const a = read(asset.authorization);
+    if (a === null) { issue("Every declared source carries a valid AuthorizedFootage record."); continue; }
+    if (a.sourceType !== "owner_supplied" || !(OWNER_BASES as readonly string[]).includes(a.authorizationBasis)) issue("Only owner-supplied, owner-authorized real media is declared here.");
+    if (a.creatorId !== footage.creatorId || a.projectId !== footage.projectId) issue("Every authorization belongs to the set's creator and project.");
+    const key = (segments ?? [asset.path]).join("/").toLowerCase();
+    if (hashes.has(a.contentHash) || paths.has(key)) issue("Duplicate or conflicting source declarations are refused.");
+    hashes.add(a.contentHash); paths.add(key);
+    if (a.sourceType === "owner_supplied") originals.push({ entryId: asset.entryId, authorization: a });
+  }
+  return { originals, hashes };
+}
+/** 3E-B1A: the original path reads exactly AuthorizedFootage 1.0.0, as it did before the 1.1.0 forms existed. */
+const readV1 = (value: unknown): FootageAuthorizationV1 | null => { const result = FootageAuthorizationV1Schema.safeParse(value); return result.success ? result.data : null; };
 export const OwnerMediaRegistrationSchema = z.strictObject({
   ...envelope("OwnerMediaRegistration"),
   /** The accepted Phase-2 AuthorizedFootageSet, reused verbatim: the same object the accepted footage analyzer consumes. */
   footage: FootageManifestSchema,
   renderAuthorization: OwnerRenderAuthorizationSchema,
 }).superRefine((value, ctx) => {
-  const issue = (message: string) => ctx.addIssue({ code: "custom", message });
-  const hashes = new Set<string>(), paths = new Set<string>();
-  for (const asset of value.footage.assets) {
-    const segments = ownerMediaRelativeSegments(asset.path);
-    if (segments === null) issue("A declared source is a plain relative path under the footage manifest's directory, never absolute, a URL, share, pattern or traversal.");
-    const authorization = FootageAuthorizationSchema.safeParse(asset.authorization);
-    if (!authorization.success) { issue("Every declared source carries a valid AuthorizedFootage record."); continue; }
-    const a = authorization.data;
-    if (a.sourceType !== "owner_supplied" || !(OWNER_BASES as readonly string[]).includes(a.authorizationBasis)) issue("Only owner-supplied, owner-authorized real media is declared here.");
-    if (a.creatorId !== value.footage.creatorId || a.projectId !== value.footage.projectId) issue("Every authorization belongs to the set's creator and project.");
-    const key = (segments ?? [asset.path]).join("/").toLowerCase();
-    if (hashes.has(a.contentHash) || paths.has(key)) issue("Duplicate or conflicting source declarations are refused.");
-    hashes.add(a.contentHash); paths.add(key);
-  }
+  checkDeclaredOriginals(value.footage, readV1, message => ctx.addIssue({ code: "custom", message }));
 });
 export type OwnerMediaRegistration = z.infer<typeof OwnerMediaRegistrationSchema>;
-export interface OwnerMediaDeclaration { entryId: string; assetId: string; contentHash: string; sizeBytes: number; path: string; authorization: FootageAuthorization }
+export interface OwnerMediaDeclaration { entryId: string; assetId: string; contentHash: string; sizeBytes: number; path: string; authorization: FootageAuthorizationV1 }
 /** The validated declarations, in canonical asset order. The path is execution-only data for the adapter; it enters no identity. */
 export function ownerMediaDeclarations(input: unknown): { registration: OwnerMediaRegistration; registrationDigest: string; declarations: OwnerMediaDeclaration[] } {
   const registration = parse(OwnerMediaRegistrationSchema, input, "lifecycle_authority_scope_invalid");
   const declarations = registration.footage.assets.map(asset => {
-    const authorization = FootageAuthorizationSchema.parse(asset.authorization);
+    const authorization = FootageAuthorizationV1Schema.parse(asset.authorization);
     return { entryId: asset.entryId, assetId: `asset_${authorization.contentHash}`, contentHash: authorization.contentHash, sizeBytes: authorization.sizeBytes,
       path: asset.path, authorization };
   }).sort((a, b) => compareText(a.assetId, b.assetId));
@@ -107,14 +126,15 @@ interface AdmittedSource { assetId: string; contentHash: string; sizeBytes: numb
  * The admitted MediaAsset and FootageAnalysis of one source, read from the exact supplied artifacts, must state truthful real-media
  * provenance for exactly the admitted bytes. Synthetic media, or a creator_upload label whose analysis says otherwise, is refused.
  */
-export function checkOwnerMediaProvenance(source: AdmittedSource, artifacts: readonly SuppliedArtifact[]): { provenance: OwnerMediaProvenance; authorization: FootageAuthorization } {
+export function checkOwnerMediaProvenance(source: AdmittedSource, artifacts: readonly SuppliedArtifact[]): { provenance: OwnerMediaProvenance; authorization: FootageAuthorizationV1 } {
   const supplied = new RuntimeArtifacts(artifacts);
-  let media, analysis;
+  let media, analysis, a;
   try {
     media = MediaAssetSchema.parse(supplied.exact(source.mediaAsset, "MediaAsset", "1.0.0", "input_invalid"));
     analysis = FootageAnalysisSchema.parse(supplied.exact(source.analysis, "FootageAnalysis", "1.0.0", "input_invalid"));
+    // 3E-B1A: the original path answers only for AuthorizedFootage 1.0.0, exactly as before the 1.1.0 forms existed.
+    a = FootageAuthorizationV1Schema.parse(analysis.authorization);
   } catch { refuse("lifecycle_authority_scope_invalid", "The owner-local authority answers only for exactly supplied MediaAsset and FootageAnalysis records."); }
-  const a = analysis.authorization;
   check(media.origin === "creator_upload" && media.assetId === source.assetId && analysis.assetId === source.assetId && analysis.contentHash === source.contentHash,
     "lifecycle_authority_scope_invalid", "The owner-local authority answers only for creator_upload media of exactly the admitted bytes.");
   check(a.sourceType === "owner_supplied" && (OWNER_BASES as readonly string[]).includes(a.authorizationBasis) && a.contentHash === source.contentHash
@@ -171,4 +191,164 @@ export function buildOwnerMediaLifecycleObservation(input: { dag: ValidatedExecu
     basis: "post_claim_post_stage_owner_manifest_lifecycle_query_v0" };
   return parse(OwnerMediaLifecycleObservationSchema, identify("owner_media_lifecycle_observation_v0", "observationId", parse(LifecycleBodySchema, body,
     "lifecycle_observation_invalid")), "lifecycle_observation_invalid");
+}
+
+// ---------------------------------------------------------------- 3E-B1A: declared canonical derivatives (pure; the adapter is wired in B1B)
+/** The owner's distinct, explicit authorization to render declared, verified canonical derivatives of declared sources, as well as the sources. */
+export const OWNER_CANONICAL_RENDER_AUTHORIZATION_STATEMENT =
+  "owner_authorizes_local_render_of_exactly_the_declared_sources_and_their_declared_verified_canonical_derivatives_v0" as const;
+export const OwnerCanonicalRenderAuthorizationSchema = z.strictObject({
+  statement: z.literal(OWNER_CANONICAL_RENDER_AUTHORIZATION_STATEMENT), owner: OwnerSchema,
+  renderIntents: z.array(RenderIntentSchema).min(1).max(2).refine(v => new Set(v).size === v.length, "Duplicate render intent."),
+  authorizedAt: TimestampSchema, expiresAt: TimestampSchema.nullable(),
+}).refine(v => v.expiresAt === null || v.expiresAt > v.authorizedAt, "A render authorization must end after it begins.");
+export type OwnerCanonicalRenderAuthorization = z.infer<typeof OwnerCanonicalRenderAuthorizationSchema>;
+/** Either variant. The original statement keeps exactly its accepted scope; neither statement alone ever authorizes a hash. */
+export const AnyOwnerRenderAuthorizationSchema = z.union([OwnerRenderAuthorizationSchema, OwnerCanonicalRenderAuthorizationSchema]);
+
+export const OWNER_MEDIA_CANONICAL_REGISTRATION_VERSION = "0.2.0" as const;
+const OwnerMediaCanonicalDerivativeSchema = z.strictObject({ entryId: IdSchema, rootEntryId: IdSchema, authorization: FootageAuthorizationDerivedSchema,
+  derivation: CanonicalMediaDerivationSchema });
+const readAny = (value: unknown): FootageAuthorization | null => { const result = FootageAuthorizationSchema.safeParse(value); return result.success ? result.data : null; };
+/**
+ * OwnerMediaRegistration 0.2.0: the owner's declared originals (1.0.0 or 1.1.0 root authorizations) and their declared canonical
+ * derivatives. A derivative names no location: the canonical store is content-addressed. It is accepted only if all of these hold:
+ * - it sits beside its declared root, and its lineage carries exactly that root's authorization, which consented to canonicalization;
+ * - its derivation's source and output are exactly the root's bytes and its own;
+ * - its lineage names exactly that derivation and recipe;
+ * - it stays in the set's scope;
+ * - the owner gave the derived-capable render statement.
+ */
+export const OwnerMediaCanonicalRegistrationSchema = z.strictObject({
+  artifactType: z.literal("OwnerMediaRegistration"), artifactVersion: z.literal(OWNER_MEDIA_CANONICAL_REGISTRATION_VERSION), stability: z.literal("internal_pre_stable"),
+  footage: FootageManifestSchema, canonicalDerivatives: z.array(OwnerMediaCanonicalDerivativeSchema).max(MAX_RENDER_SOURCES),
+  renderAuthorization: AnyOwnerRenderAuthorizationSchema,
+}).superRefine((value, ctx) => {
+  const issue = (message: string) => ctx.addIssue({ code: "custom", message });
+  const { originals, hashes } = checkDeclaredOriginals(value.footage, readAny, issue);
+  const roots = new Map(originals.map(o => [o.entryId, o.authorization])), entries = new Set(value.footage.assets.map(a => a.entryId)), rootRecipes = new Set<string>();
+  for (const declared of value.canonicalDerivatives) {
+    const { authorization: b, derivation } = declared, root = roots.get(declared.rootEntryId);
+    if (entries.has(declared.entryId)) issue("Every declaration has its own entry identity.");
+    entries.add(declared.entryId);
+    if (hashes.has(b.contentHash)) issue("Duplicate or conflicting source declarations are refused.");
+    hashes.add(b.contentHash);
+    if (root === undefined) issue("A canonical derivative is declared only beside its declared root source.");
+    else {
+      if (!equal(b.derivedFrom.rootAuthorization, root)) issue("A derivative's root authorization is exactly the declared root's authorization.");
+      if (root.schemaVersion !== "1.1.0" || root.canonicalizationConsent !== "local_media_canonicalization") {
+        issue("Only a root whose owner consented to canonicalization has a derivative.");
+      }
+      const s = derivation.source;
+      if (s.assetId !== `asset_${root.contentHash}` || s.contentHash !== root.contentHash || s.sizeBytes !== root.sizeBytes || !equal(s.rootAuthorization, root)) {
+        issue("The derivation's source is exactly the declared root's bytes, asset and authorization.");
+      }
+      const pair = canonicalSerialize([declared.rootEntryId, derivation.recipe.recipeId]);
+      if (rootRecipes.has(pair)) issue("A declared root has at most one derivative per recipe.");
+      rootRecipes.add(pair);
+    }
+    const o = derivation.output;
+    if (o.contentHash !== b.contentHash || o.sizeBytes !== b.sizeBytes || o.assetId !== `asset_${b.contentHash}`) {
+      issue("The derivation's output is exactly the declared derivative's bytes and asset.");
+    }
+    if (b.derivedFrom.derivationId !== derivation.derivationId || b.derivedFrom.recipeId !== derivation.recipe.recipeId) {
+      issue("A derivative's lineage names exactly its derivation and recipe.");
+    }
+    if (b.creatorId !== value.footage.creatorId || b.projectId !== value.footage.projectId || derivation.scope.creatorId !== value.footage.creatorId
+      || derivation.scope.projectId !== value.footage.projectId) issue("Every derivative belongs to the set's creator and project.");
+  }
+  if (value.canonicalDerivatives.length > 0 && value.renderAuthorization.statement !== OWNER_CANONICAL_RENDER_AUTHORIZATION_STATEMENT) {
+    issue("Rendering a declared canonical derivative needs the owner's derived-capable render authorization.");
+  }
+});
+export type OwnerMediaCanonicalRegistration = z.infer<typeof OwnerMediaCanonicalRegistrationSchema>;
+export interface OwnerMediaOriginalDeclaration { entryId: string; assetId: string; contentHash: string; sizeBytes: number; path: string;
+  authorization: FootageAuthorizationV1 | FootageAuthorizationRoot }
+export interface OwnerMediaCanonicalDerivative { entryId: string; assetId: string; contentHash: string; sizeBytes: number; rootEntryId: string; rootAssetId: string;
+  derivationId: string; computationId: string; recipeId: string; authorization: FootageAuthorizationDerived; derivation: CanonicalMediaDerivation }
+export interface OwnerMediaRenderScope { statement: string; assetIds: string[] }
+/**
+ * The validated declarations of either registration version, in canonical asset order. A 0.1.0 registration reads exactly as
+ * ownerMediaDeclarations reads it, with no derivatives. The render scope covers exactly the declared originals; under the derived-capable
+ * statement only, it also covers the declared verified derivatives, and never any other hash. The digest binds what was declared and
+ * never a location.
+ */
+export function ownerMediaCanonicalDeclarations(input: unknown): { registrationDigest: string; declarations: OwnerMediaOriginalDeclaration[];
+  derivatives: OwnerMediaCanonicalDerivative[]; renderScope: OwnerMediaRenderScope } {
+  if (typeof input === "object" && input !== null && (input as { artifactVersion?: unknown }).artifactVersion === EDIT_RENDER_VERSION) {
+    const legacy = ownerMediaDeclarations(input);
+    return { registrationDigest: legacy.registrationDigest, declarations: legacy.declarations, derivatives: [],
+      renderScope: { statement: legacy.registration.renderAuthorization.statement, assetIds: legacy.declarations.map(d => d.assetId) } };
+  }
+  const registration = parse(OwnerMediaCanonicalRegistrationSchema, input, "lifecycle_authority_scope_invalid");
+  const declarations = registration.footage.assets.map(asset => {
+    const authorization = readAny(asset.authorization);
+    check(authorization !== null && authorization.sourceType === "owner_supplied", "lifecycle_authority_scope_invalid", "Every original is owner-supplied.");
+    return { entryId: asset.entryId, assetId: `asset_${authorization.contentHash}`, contentHash: authorization.contentHash, sizeBytes: authorization.sizeBytes,
+      path: asset.path, authorization };
+  }).sort((a, b) => compareText(a.assetId, b.assetId));
+  const byEntry = new Map(declarations.map(d => [d.entryId, d]));
+  const derivatives = registration.canonicalDerivatives.map(d => {
+    const root = byEntry.get(d.rootEntryId);
+    check(root !== undefined, "lifecycle_authority_scope_invalid", "A canonical derivative is declared only beside its declared root source.");
+    return { entryId: d.entryId, assetId: `asset_${d.authorization.contentHash}`, contentHash: d.authorization.contentHash, sizeBytes: d.authorization.sizeBytes,
+      rootEntryId: d.rootEntryId, rootAssetId: root.assetId, derivationId: d.derivation.derivationId, computationId: d.derivation.computationId,
+      recipeId: d.derivation.recipe.recipeId, authorization: d.authorization, derivation: d.derivation };
+  }).sort((a, b) => compareText(a.assetId, b.assetId));
+  const registrationDigest = sha256(canonicalSerialize({ artifactVersion: OWNER_MEDIA_CANONICAL_REGISTRATION_VERSION, renderAuthorization: registration.renderAuthorization,
+    creatorId: registration.footage.creatorId, projectId: registration.footage.projectId,
+    sources: declarations.map(d => ({ entryId: d.entryId, assetId: d.assetId, contentHash: d.contentHash, sizeBytes: d.sizeBytes, authorization: d.authorization })),
+    derivatives: derivatives.map(d => ({ entryId: d.entryId, rootEntryId: d.rootEntryId, assetId: d.assetId, contentHash: d.contentHash, sizeBytes: d.sizeBytes,
+      authorization: d.authorization, derivationId: d.derivationId, computationId: d.computationId })) }));
+  const covered = registration.renderAuthorization.statement === OWNER_CANONICAL_RENDER_AUTHORIZATION_STATEMENT ? [...declarations, ...derivatives] : declarations;
+  return { registrationDigest, declarations, derivatives,
+    renderScope: { statement: registration.renderAuthorization.statement, assetIds: covered.map(d => d.assetId).sort(compareText) } };
+}
+
+/** The derived provenance kind: creator-origin media whose bytes the system canonicalized from exactly one declared root. */
+export const OwnerMediaDerivedProvenanceSchema = z.strictObject({ mediaOrigin: z.literal("creator_upload"), sourceType: z.literal("system_canonicalized"),
+  authorizationBasis: z.enum(OWNER_BASES), root: z.strictObject({ assetId: IdSchema, contentHash: HashSchema, sizeBytes: PositiveSafeInt }), derivationId: IdSchema,
+  recipeId: IdSchema });
+export type OwnerMediaDerivedProvenance = z.infer<typeof OwnerMediaDerivedProvenanceSchema>;
+export type OwnerMediaProvenanceKind = { kind: "original"; provenance: OwnerMediaProvenance; authorization: FootageAuthorizationV1 | FootageAuthorizationRoot }
+  | { kind: "derived"; provenance: OwnerMediaDerivedProvenance; authorization: FootageAuthorizationDerived };
+/**
+ * The provenance kind of one admitted source, read from its exact MediaAsset and FootageAnalysis. ORIGINAL is creator_upload with
+ * an owner-supplied 1.0.0 or 1.1.0 root authorization. DERIVED is creator_upload with a system_canonicalized authorization. Anything
+ * else, or any mismatch with the admitted bytes, is refused. The original check above is unchanged and stays 1.0.0 only.
+ */
+export function ownerMediaProvenanceKindOf(source: AdmittedSource, artifacts: readonly SuppliedArtifact[]): OwnerMediaProvenanceKind {
+  const supplied = new RuntimeArtifacts(artifacts);
+  let media, analysis;
+  try {
+    media = MediaAssetSchema.parse(supplied.exact(source.mediaAsset, "MediaAsset", "1.0.0", "input_invalid"));
+    analysis = FootageAnalysisSchema.parse(supplied.exact(source.analysis, "FootageAnalysis", "1.0.0", "input_invalid"));
+  } catch { refuse("lifecycle_authority_scope_invalid", "The owner-local authority answers only for exactly supplied MediaAsset and FootageAnalysis records."); }
+  const a = analysis.authorization;
+  check(media.origin === "creator_upload" && media.assetId === source.assetId && analysis.assetId === source.assetId && analysis.contentHash === source.contentHash
+    && a.contentHash === source.contentHash && a.sizeBytes === source.sizeBytes, "lifecycle_authority_scope_invalid",
+  "The owner-local authority answers only for creator_upload media of exactly the admitted bytes.");
+  if (a.sourceType === "system_canonicalized") {
+    const root = a.derivedFrom.rootAuthorization;
+    return { kind: "derived", authorization: a, provenance: { mediaOrigin: "creator_upload", sourceType: "system_canonicalized", authorizationBasis: a.authorizationBasis,
+      root: { assetId: `asset_${root.contentHash}`, contentHash: root.contentHash, sizeBytes: root.sizeBytes }, derivationId: a.derivedFrom.derivationId,
+      recipeId: a.derivedFrom.recipeId } };
+  }
+  check(a.sourceType === "owner_supplied" && (OWNER_BASES as readonly string[]).includes(a.authorizationBasis), "lifecycle_authority_scope_invalid",
+    "The owner-local authority answers only for owner-supplied or system-canonicalized, owner-authorized real media.");
+  return { kind: "original", authorization: a, provenance: { mediaOrigin: "creator_upload", sourceType: "owner_supplied",
+    authorizationBasis: a.authorizationBasis as OwnerMediaProvenance["authorizationBasis"] } };
+}
+
+const LifecycleStateSchema = z.strictObject({ deletionRequestedAt: TimestampSchema.nullable(), expiresAt: TimestampSchema.nullable() });
+export type OwnerMediaLifecycleState = z.infer<typeof LifecycleStateSchema>;
+const earlier = (a: string | null, b: string | null): string | null => (a === null ? b : b === null || a <= b ? a : b);
+/**
+ * The effective lifecycle of a declared derivative, from its root's state and its own. A deletion request on either makes it
+ * unavailable. Its expiry is the earlier non-null expiry, so it never outlives its root. The result has the shape of the observation's
+ * lifecycle field. It is pure: the adapter applies its trusted runtime clock to the result (B1B).
+ */
+export function effectiveDerivedLifecycle(root: unknown, derived: unknown): OwnerMediaLifecycleState {
+  const r = parse(LifecycleStateSchema, root, "lifecycle_observation_invalid"), d = parse(LifecycleStateSchema, derived, "lifecycle_observation_invalid");
+  return { deletionRequestedAt: earlier(r.deletionRequestedAt, d.deletionRequestedAt), expiresAt: earlier(r.expiresAt, d.expiresAt) };
 }

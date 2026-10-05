@@ -1,8 +1,44 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-A Multi-Revision Freshness (OWNER-ACCEPTED at 820e218; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B1A Canonical Media Provenance Foundation (IMPLEMENTED — PUSHED FOR OWNER REVIEW; Gate 7 not yet complete)
 
-Last updated: 2026-10-04
+Last updated: 2026-10-05
 
 ## Current ruling
+
+- Phase 5 Gate 7 Batch 3E-B1A, the derived-media provenance and canonical-ingest contract foundation (2026-10-04 to 2026-10-05;
+  owner-authorized bounded protected scope: contract and pure logic only).
+  - Started from the verified `86d2a100289587ce55cdf521a10a92a9312ab44b` (3E-A accepted) on `phase/5-gate7-3e-production-hardening`.
+    `main` (`4f85b55`) is unchanged.
+  - Owner rulings made during B1A, each before the bytes it governs changed:
+    - B96 may import `media-ingest`, and R01's pin of `tests/edit-render.test.ts` is updated last;
+    - FootageAnalysis stays 1.0.0;
+    - the canonicalization consent is a dedicated root field, never an allowed purpose. A self-found red showed that consent as a
+      purpose authorized world-model scopes labelled with it.
+  - **AuthorizedFootage.**
+    - 1.0.0 is kept exactly.
+    - New in 1.1.0: a root form (owner-supplied, with `canonicalizationConsent`) and a derived form (`system_canonicalized`, with the
+      inherited basis and scope, a subset of the root's purposes, and one-level lineage to its root, derivation and recipe).
+    - `AuthorizedReference` and `MediaAsset` are unchanged.
+  - **`packages/media-ingest`** (new) contains:
+    - a pure DIRECT / NORMALIZE_N1 / REFUSE classifier that reuses the unchanged renderer evaluator and proves that the SAR is the only
+      blocker with a square-pixel counterfactual;
+    - one bounded N1 recipe and the pinned toolchain;
+    - `CanonicalMediaDerivation`, with a computation identity (source bytes, recipe and toolchain only) and a derivation identity.
+  - **The owner-media pure contract** gains OwnerMediaRegistration 0.2.0 derived declarations with full lineage rules, a
+    derived-capable render statement, two provenance kinds, and the derived lifecycle rule. The original path (0.1.0, the provenance
+    check), the adapter, the permit and the authority descriptor are unchanged.
+  - **Results.**
+    - B1A pure: 87/87. Final RED on the baseline: 87 tests, 8 invariants pass, 79 fail on absent behaviour. Mutation check: 17/17 killed.
+    - Legacy suites: footage and authorization 240/240, 3D owner-media 24/24, render pins (B96, R01) 96/96, 2A runtime 339/339, 3E-A
+      and 3C editorial 54/54.
+    - typecheck, build, schema check (2 files regenerated, 33/33 verified), workspace audit (130 files, 17 adapters) and
+      `git diff --check`: all PASS.
+    - The full safe suite and `npm run verify` were not run.
+  - **Not done.** No FFmpeg or ffprobe process, no owner media, no canonical bytes and no adapter change. That is B1B.
+  - 3E-B1A: **IMPLEMENTED — PUSHED FOR OWNER REVIEW**. 3E-B1B and 3E-C: **NOT STARTED**. Gate 7: **NOT YET COMPLETE**. Phase 6:
+    **NOT STARTED**.
+  - This supersedes "3E-B and 3E-C implementation: **NOT STARTED**" in the 3E-A acceptance bullet below, for 3E-B1A only. That bullet
+    is kept as written.
+  - Details: the [Batch-3E-B1A record](phases/phase-5-gate-7-batch-3e-b1a-canonical-media-provenance.md).
 
 - Phase 5 Gate 7 Batch 3E-A owner acceptance (2026-10-04, owner ruling).
   - Batch 3E-A: **OWNER-ACCEPTED** after independent owner review. Accepted SHA:
