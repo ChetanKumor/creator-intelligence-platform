@@ -1,9 +1,43 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B1A Canonical Media Provenance Foundation (OWNER-ACCEPTED at 2b2b49e; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B1B Executable N1 Canonicalization (IMPLEMENTED — PUSHED FOR OWNER REVIEW; Gate 7 not yet complete)
 
 Last updated: 2026-10-05
 
 ## Current ruling
 
+- Phase 5 Gate 7 Batch 3E-B1B: executable N1 canonicalization, trusted publication and the derived-media lifecycle (2026-10-05; an
+  owner-authorized, bounded protected implementation).
+  - **Start.** B1B started from the verified `2b2b49e` (local equal to remote). Before any B1B work, the owner's B1A acceptance was
+    recorded by the documentation-only commit `afaa5d6`, which was pushed and verified. `main` (`4f85b55`) is unchanged.
+  - **Stage 1.** The accepted `N1_ARGV_TEMPLATE` was executed exactly on the pinned FFmpeg and ffprobe, whose SHA-256, size and version
+    were verified. The fixtures were generated: video only, PCM and AAC.
+    - Each source classified NORMALIZE_N1 from its real probe, and each output classified DIRECT with an explicit 1:1 SAR.
+    - Every invariant held: decoded frames, exact frame and audio timing, packets, samples and durations unchanged, and no side data.
+    - Outputs were byte-identical across two runs and across processes.
+    - The recipe is unchanged, and no contract expansion was needed.
+  - **New `scripts/media-ingest-local.ts`** (strict_spawn, the 18th registered adapter):
+    - every child gets its own fresh handle, verified before and after (probe-to-bytes binding);
+    - the accepted classifier decides, and DIRECT and REFUSE create nothing;
+    - for N1, the accepted recipe runs, every Stage-1C invariant is verified, and the output is published content-addressed without
+      overwrite into the private `.local-media/canonical-v0/`;
+    - the v0 decoded-frame and audio-packet methods bind exact timing;
+    - a scope-free computation record supports the cache: a hit is fully re-verified, and cache identity is never authorization.
+  - **Owner-media wiring.**
+    - `OWNER_MEDIA_AUTHORITY` states its declared verified canonical derivatives and their lineage lifecycle. Its digest changed from
+      `e154b615…` to `0cd89b68…`; its version and the binding literal are unchanged.
+    - The observation's provenance gains the derived variant, additively, with no version change.
+    - The registry reads 0.1.0 exactly as before. It registers 0.2.0 originals first and only then each derivative, from its content
+      address, re-hashed and record-checked.
+    - B's lifecycle is computed from A's at every query.
+    - `authorize.ts` re-derives provenance by kind. Nothing else in the permit changed.
+  - **Results.** B1B: media 27/27, pure 22/22. Final RED on the final test bytes: every new test fails on absent behaviour. Mutation check
+    12/12 killed. B1A 87/87, 3D 24/24, render pins 96/96, 2A 339/339, 3E-A and 3C 54/54 (plus F2-F6 media 3/3), footage 240/240, 2B
+    actual media 34/34. typecheck, build, schema check (33/33), workspace audit (130 files, 18 adapters) and `git diff --check`
+    all PASS. Dependencies and lockfile unchanged.
+  - **Not done.** No owner footage, model or network. No real derived source rendered end to end (3E-C). The 0° display-matrix
+    limitation is recorded for B2.
+  - 3E-B1B: **IMPLEMENTED — PUSHED FOR OWNER REVIEW**. 3E-C: **NOT STARTED**. Gate 7: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**.
+  - This supersedes "3E-B1B: **AUTHORIZED by the owner, NOT STARTED**" in the B1A acceptance bullet below, which is kept as written.
+  - Details: the [Batch-3E-B1B record](phases/phase-5-gate-7-batch-3e-b1b-executable-canonicalization.md).
 - Phase 5 Gate 7 Batch 3E-B1A owner acceptance (2026-10-05, owner ruling).
   - Batch 3E-B1A: **OWNER-ACCEPTED** after independent owner review. Accepted SHA:
     `2b2b49e058de40d2cd166a9d8764947eb5dde6b7`.

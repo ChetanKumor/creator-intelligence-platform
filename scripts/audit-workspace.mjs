@@ -77,10 +77,12 @@ const adapterPolicy = {
   "scripts/edit-render-local.ts": { imports: ["node:child_process", "node:crypto", "node:fs/promises", "node:path", "node:perf_hooks", "node:url"], process: "strict_spawn" },
   "scripts/edit-media-qc-local.ts": { imports: ["node:child_process", "node:crypto", "node:fs/promises", "node:path", "node:url"], process: "strict_spawn" },
   "scripts/edit-observation-local.ts": { imports: ["node:child_process", "node:crypto", "node:fs/promises", "node:path", "node:url"], process: "strict_spawn" },
+  // Gate 7 Batch 3E-B1B: the one canonical-ingest adapter (pinned ffprobe classification, the accepted N1 recipe, canonical publication).
+  "scripts/media-ingest-local.ts": { imports: ["node:child_process", "node:crypto", "node:fs/promises", "node:path", "node:url"], process: "strict_spawn" },
 };
 // Test harness files that start processes (fixture generation with the pinned tool, or running this audit in a fixture).
 const testProcessFiles = new Set(["tests/workspace-boundary.test.ts", "tests/reference-media.integration.ts", "tests/support/footage-media.ts", "tests/support/edit-render-media.ts",
-  "tests/edit-render-audit.test.ts"]);
+  "tests/edit-render-audit.test.ts", "tests/support/canonical-media-fixtures.ts"]);
 const processModules = new Set(["node:child_process", "child_process"]);
 const legacyProcessNames = new Set(["spawn", "execFile"]), strictProcessNames = new Set(["spawn"]);
 const forbiddenProcessNames = new Set(["exec", "execSync", "execFileSync", "spawnSync", "fork"]);

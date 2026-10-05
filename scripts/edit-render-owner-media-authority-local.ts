@@ -14,6 +14,14 @@
  *   the admitted ones, so it never answers for synthetic media. Its handle can query the registry again at permit issuance and
  *   execution start.
  *
+ * Gate 7 Batch 3E-B1B: an OwnerMediaRegistration 0.2.0 may also declare verified canonical derivatives (a 0.1.0 registration reads
+ * exactly as before). Every declared original is registered and verified first. Only then is each derivative considered: it must name a
+ * registered root, it is read only from its content address in the private canonical store (`<canonical workspace>/.local-media/canonical-v0/`;
+ * a derivative never names a location), its bytes are re-hashed in full through one held handle and must be its derivation's output, its
+ * derivation and derived authorization are revalidated, and the store's computation record must name exactly that derivation's verified
+ * computation. A derivative's lifecycle is computed from its root's current state and its own at every query, so it never outlives its
+ * root; its observation records derived provenance (root identity, derivation, recipe, inherited basis), never owner-supplied provenance.
+ *
  * It starts no process and reaches no network. It is a local owner registry for verification runs, not a production user-media
  * lifecycle service.
  */
@@ -25,10 +33,14 @@ import { equal } from "../packages/editorial/common.js";
 import { EditRenderError, buildOwnerMediaLifecycleObservation, checkOwnerMediaProvenance, ownerMediaDeclarations, ownerMediaRelativeSegments, sessionProofOf, stagedFor,
   type EditRenderErrorCode,
   type OwnerMediaDeclaration, type OwnerMediaLifecycleObservation, type OwnerRenderAuthorization } from "../packages/edit-render/index.js";
+import { CANONICAL_STORE, OwnerMediaCanonicalRegistrationSchema, canonicalComputationRecordOf, canonicalObjectName, effectiveDerivedLifecycle, ownerMediaCanonicalDeclarations,
+  ownerMediaProvenanceKindOf, type OwnerCanonicalRenderAuthorization, type OwnerMediaObservedProvenance } from "../packages/edit-render/owner-media.js";
 import { MAX_STAGED_SOURCE_BYTES } from "../packages/edit-runtime/common.js";
 import type { RuntimeCall, RuntimeClock } from "../packages/edit-runtime/index.js";
 import { requireCall } from "../packages/edit-runtime/call.js";
 import { runtimeNow, verifyClaim } from "../packages/edit-runtime/ledger.js";
+import { FootageAuthorizationDerivedSchema } from "../packages/footage-analyzer/protocol.js";
+import { CanonicalMediaDerivationSchema } from "../packages/media-ingest/index.js";
 
 const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/, MAX_LOCATION_LENGTH = 1024, WINDOWS = sep === "\\";
 function fail(code: EditRenderErrorCode, message: string): never { throw new EditRenderError(code, message); }
@@ -78,26 +90,33 @@ export class TrustedOwnerMediaLifecycleObservation {
   toJSON(): never { fail("trust_handle_required", "A trusted observation handle is never serialized; persist its record instead."); }
 }
 
-interface Entry { declaration: OwnerMediaDeclaration; location: string; dev: bigint; ino: bigint; deletionRequestedAt: string | null; expiresAt: string | null }
+/** The identity a registered entry was declared with, by either registration version. */
+interface DeclaredIdentity { entryId: string; assetId: string; contentHash: string; sizeBytes: number; authorization: unknown }
+/** A registered derivative's lineage: its registered root, and the derivation it was declared with. */
+interface Lineage { rootAssetId: string; derivationId: string; recipeId: string; derivation: unknown }
+interface Entry { declaration: DeclaredIdentity; location: string; dev: bigint; ino: bigint; deletionRequestedAt: string | null; expiresAt: string | null;
+  lineage: Lineage | null }
+type AnyRenderAuthorization = OwnerRenderAuthorization | OwnerCanonicalRenderAuthorization;
 /** The declared-source identity this authority verified, without its location. */
 export interface VerifiedOwnerSource { entryId: string; assetId: string; contentHash: string; sizeBytes: number; checkedAt: string }
 export class OwnerMediaLifecycleAuthority {
   readonly #clock: RuntimeClock;
   readonly #registry: ReadonlyMap<string, Entry>;
   readonly #registrationDigest: string;
-  readonly #renderAuthorization: OwnerRenderAuthorization;
+  readonly #renderAuthorization: AnyRenderAuthorization;
   readonly #scope: { projectId: string; creatorId: string };
-  constructor(construction: symbol, clock: RuntimeClock, registry: Map<string, Entry>, registrationDigest: string, renderAuthorization: OwnerRenderAuthorization,
-    scope: { projectId: string; creatorId: string }) {
+  readonly #version: "0.1.0" | "0.2.0";
+  constructor(construction: symbol, clock: RuntimeClock, registry: Map<string, Entry>, registrationDigest: string, renderAuthorization: AnyRenderAuthorization,
+    scope: { projectId: string; creatorId: string }, version: "0.1.0" | "0.2.0" = "0.1.0") {
     if (construction !== CONSTRUCTION) fail("trust_handle_required", "The owner-local authority is created only by createOwnerMediaLifecycleAuthority.");
     this.#clock = clock; this.#registry = registry; this.#registrationDigest = registrationDigest;
-    this.#renderAuthorization = structuredClone(renderAuthorization); this.#scope = { ...scope };
+    this.#renderAuthorization = structuredClone(renderAuthorization); this.#scope = { ...scope }; this.#version = version;
     Object.freeze(this);
   }
   static is(value: unknown): value is OwnerMediaLifecycleAuthority { return typeof value === "object" && value !== null && #registry in value; }
   /** The digest of what the owner declared, excluding locations. */
   get registrationDigest(): string { return this.#registrationDigest; }
-  get renderAuthorization(): OwnerRenderAuthorization { return structuredClone(this.#renderAuthorization); }
+  get renderAuthorization(): AnyRenderAuthorization { return structuredClone(this.#renderAuthorization); }
   get scope(): { projectId: string; creatorId: string } { return { ...this.#scope }; }
   /** The verified declarations, in canonical asset order: identities only, never a location. */
   get declared(): { entryId: string; assetId: string; contentHash: string; sizeBytes: number }[] {
@@ -119,6 +138,13 @@ export class OwnerMediaLifecycleAuthority {
     if (entry === undefined) fail("lifecycle_authority_unknown_asset", "The owner-local authority has no declaration of this asset.");
     return entry;
   }
+  /** An entry's lifecycle now: its own, or for a derivative the effective one, from its registered root's current state and its own. */
+  #state(entry: Entry): { deletionRequestedAt: string | null; expiresAt: string | null } {
+    const own = { deletionRequestedAt: entry.deletionRequestedAt, expiresAt: entry.expiresAt };
+    if (entry.lineage === null) return own;
+    const root = this.#entry(entry.lineage.rootAssetId);
+    return effectiveDerivedLifecycle({ deletionRequestedAt: root.deletionRequestedAt, expiresAt: root.expiresAt }, own);
+  }
   /** Re-verifies one registered source's full bytes now, through one held handle of the registered file. */
   async verify(assetId: string): Promise<VerifiedOwnerSource> {
     const entry = this.#entry(assetId);
@@ -128,11 +154,12 @@ export class OwnerMediaLifecycleAuthority {
   }
   /**
    * The current lifecycle of one declared source at `now`, an instant of the trusted runtime clock: unknown, deleted or expired refuses.
-   * It grants nothing; it can only refuse. Every observation handle re-queries through the same rule.
+   * A derivative is deleted or expired whenever its root is. It grants nothing; it can only refuse. Every observation handle re-queries
+   * through the same rule.
    */
   assertCurrent(assetId: string, now: string): void {
     if (typeof now !== "string" || !TIMESTAMP.test(now)) fail("input_invalid", "A lifecycle query instant is exact UTC milliseconds.");
-    const current = this.#entry(assetId);
+    const current = this.#state(this.#entry(assetId));
     if (current.deletionRequestedAt !== null) fail("lifecycle_deleted", "Deletion of the source has been requested.");
     if (current.expiresAt !== null && now >= current.expiresAt) fail("lifecycle_expired", "The owner's authorization for the source has ended.");
   }
@@ -145,6 +172,24 @@ export class OwnerMediaLifecycleAuthority {
     entry.expiresAt = entry.expiresAt === null || expiresAt < entry.expiresAt ? expiresAt : entry.expiresAt;
   }
   /**
+   * A derivative's lineage, revalidated at its observation: the admitted provenance is the derived kind naming exactly its registered
+   * root, derivation and recipe, the root is still the registered original whose authorization the lineage carries, and the declared
+   * derivation and derived authorization still validate. An original is observed only with original provenance.
+   */
+  #lineageOf(entry: Entry, provenance: OwnerMediaObservedProvenance): void {
+    if (entry.lineage === null) {
+      if (provenance.sourceType !== "owner_supplied") fail("lifecycle_authority_scope_invalid", "A declared original is observed only as owner-supplied media.");
+      return;
+    }
+    const lineage = entry.lineage, root = this.#entry(lineage.rootAssetId), derived = FootageAuthorizationDerivedSchema.safeParse(entry.declaration.authorization);
+    if (provenance.sourceType !== "system_canonicalized" || !derived.success || !CanonicalMediaDerivationSchema.safeParse(lineage.derivation).success
+      || root.lineage !== null || !equal(root.declaration.authorization, derived.data.derivedFrom.rootAuthorization)
+      || !equal(provenance.root, { assetId: root.declaration.assetId, contentHash: root.declaration.contentHash, sizeBytes: root.declaration.sizeBytes })
+      || provenance.derivationId !== lineage.derivationId || provenance.recipeId !== lineage.recipeId) {
+      fail("lifecycle_authority_scope_invalid", "A declared derivative is observed only with exactly its registered lineage.");
+    }
+  }
+  /**
    * The post-claim, post-stage query. Claim ownership and the staged receipt are verified first, and real-media provenance is read
    * from the exact admitted records. The declared bytes are then re-verified in full inside a check window on the trusted runtime clock.
    */
@@ -153,15 +198,19 @@ export class OwnerMediaLifecycleAuthority {
     const { claim } = await verifyClaim(dag, runtime, ownership);
     const receipt = stagedFor(dag, claim, stagedSource);
     const source = dag.admission.sources.find(s => s.assetId === receipt.source.assetId)!;
-    const { provenance, authorization } = checkOwnerMediaProvenance(source, artifacts);
+    // A 0.1.0 registration reads provenance exactly as before; a 0.2.0 one reads either provenance kind.
+    let provenance: OwnerMediaObservedProvenance, authorization: unknown;
+    if (this.#version === "0.1.0") ({ provenance, authorization } = checkOwnerMediaProvenance(source, artifacts));
+    else ({ provenance, authorization } = ownerMediaProvenanceKindOf(source, artifacts));
     const entry = this.#entry(source.assetId);
     if (entry.declaration.contentHash !== source.contentHash || entry.declaration.sizeBytes !== source.sizeBytes) fail("lifecycle_authority_unknown_asset",
       "The declared bytes are not the admitted bytes.");
     if (!equal(entry.declaration.authorization, authorization)) fail("lifecycle_authority_scope_invalid", "The admitted authorization is not the one the owner declared.");
+    if (this.#version === "0.2.0") this.#lineageOf(entry, provenance);
     const checkStartedAt = runtimeNow(runtime);
     await verifyBytes(entry.location, entry.declaration, { dev: entry.dev, ino: entry.ino });
     const verifiedAt = runtimeNow(runtime);
-    const state = { deletionRequestedAt: entry.deletionRequestedAt, expiresAt: entry.expiresAt };
+    const state = this.#state(entry);
     const checkCompletedAt = runtimeNow(runtime);
     if (verifiedAt < checkStartedAt || checkCompletedAt < verifiedAt) fail("evidence_chronology_invalid", "The runtime clock ran backwards during the query.");
     const token = randomBytes(32).toString("hex");
@@ -181,7 +230,8 @@ export class OwnerMediaLifecycleAuthority {
 }
 
 /** Hashes exactly the regular file lstat found, through one held handle, and refuses any difference from the declaration. */
-async function verifyBytes(location: string, declaration: OwnerMediaDeclaration, expected: { dev: bigint; ino: bigint } | null): Promise<{ dev: bigint; ino: bigint }> {
+async function verifyBytes(location: string, declaration: { contentHash: string; sizeBytes: number }, expected: { dev: bigint; ino: bigint } | null):
+  Promise<{ dev: bigint; ino: bigint }> {
   let info;
   try { info = await lstat(location, { bigint: true }); } catch { fail("lifecycle_authority_scope_invalid", "A declared source does not exist."); }
   if (info.isSymbolicLink() || !info.isFile() || info.size === 0n) fail("lifecycle_authority_scope_invalid", "Only a non-empty regular file, never a link or directory, is a declared source.");
@@ -217,39 +267,117 @@ async function assertNoLinkedParents(location: string): Promise<void> {
     current = dirname(current);
   }
 }
+const sameLocation = (a: string, b: string) => (WINDOWS ? a.toLowerCase() === b.toLowerCase() : a === b);
+/** An existing real directory, link-free, resolving exactly where it is named: the store is only ever read here, never created. */
+async function exactDirectory(location: string): Promise<string> {
+  await assertNoLinkedParents(location);
+  let real: string;
+  try { real = await realpath(location); } catch { fail("lifecycle_authority_scope_invalid", "A canonical store location does not exist."); }
+  if (!sameLocation(real, location) || !(await lstat(real)).isDirectory()) fail("lifecycle_authority_scope_invalid", "A canonical store location is not exactly a real directory.");
+  return real;
+}
+/** True when the regular, link-free file at `location` holds exactly `expected` (a bounded record). */
+async function holdsExactly(location: string, expected: string): Promise<boolean> {
+  let info;
+  try { info = await lstat(location, { bigint: true }); } catch { return false; }
+  const bytes = Buffer.from(expected, "utf8");
+  if (info.isSymbolicLink() || !info.isFile() || info.size !== BigInt(bytes.length) || bytes.length > CANONICAL_STORE.maxRecordBytes) return false;
+  const handle = await open(location, "r");
+  try {
+    const opened = await handle.stat({ bigint: true });
+    if (opened.ino !== info.ino || opened.dev !== info.dev) return false;
+    const found = Buffer.alloc(bytes.length);
+    const { bytesRead } = await handle.read(found, 0, bytes.length, 0);
+    return bytesRead === bytes.length && found.equals(bytes);
+  } finally { await handle.close(); }
+}
+/** One declared original: the accepted path rule, no links, an exact location, and its bytes verified through one held handle. */
+async function registerOriginal(base: string, declaration: { entryId: string; assetId: string; contentHash: string; sizeBytes: number; path: string; authorization: unknown },
+  registry: Map<string, Entry>, locations: Set<string>, expiresAt: string | null): Promise<void> {
+  const segments = ownerMediaRelativeSegments(declaration.path);
+  if (segments === null) fail("lifecycle_authority_scope_invalid", "A declared source is a plain relative path under the footage manifest's directory.");
+  const requested = join(base, ...segments), inside = relative(base, requested);
+  if (inside === "" || inside.startsWith("..") || isAbsolute(inside)) fail("lifecycle_authority_scope_invalid", "A declared source lies inside the footage manifest's directory.");
+  await assertNoLinkedParents(requested);
+  let real: string;
+  try { real = await realpath(requested); } catch { fail("lifecycle_authority_scope_invalid", "A declared source does not exist."); }
+  if (WINDOWS ? real.toLowerCase() !== requested.toLowerCase() : real !== requested) fail("lifecycle_authority_scope_invalid",
+    "A declared source resolves elsewhere than its declared location.");
+  const identity = await verifyBytes(real, declaration, null);
+  const key = WINDOWS ? real.toLowerCase() : real;
+  if (locations.has(key)) fail("lifecycle_authority_scope_invalid", "Two declarations name one file.");
+  locations.add(key);
+  const { entryId, assetId, contentHash, sizeBytes, authorization } = declaration;
+  registry.set(declaration.assetId, { declaration: { entryId, assetId, contentHash, sizeBytes, authorization }, location: real, dev: identity.dev, ino: identity.ino,
+    deletionRequestedAt: null, expiresAt, lineage: null });
+}
 /**
  * Creates the authority from the owner's explicit registration and verifies every declared file before anything may use it. The
- * registration and the footage manifest's directory are the only inputs: nothing is discovered, and a location is kept only to re-verify
- * the same file.
+ * registration, the footage manifest's directory and, for declared derivatives, the canonical workspace are the only inputs: nothing is
+ * discovered, and a location is kept only to re-verify the same file.
  */
-export async function createOwnerMediaLifecycleAuthority(input: { registration: unknown; baseDirectory: string; clock: RuntimeClock }): Promise<OwnerMediaLifecycleAuthority> {
+export async function createOwnerMediaLifecycleAuthority(input: { registration: unknown; baseDirectory: string; clock: RuntimeClock; canonicalWorkspace?: string }):
+  Promise<OwnerMediaLifecycleAuthority> {
   if (input === null || typeof input !== "object") fail("input_invalid", "An owner registration, its base directory and a runtime clock are required.");
   if (input.clock === null || typeof input.clock !== "object" || typeof input.clock.now !== "function") fail("input_invalid", "A runtime clock is required.");
   if (typeof input.baseDirectory !== "string") fail("lifecycle_authority_scope_invalid", "The footage manifest's directory is an explicit local directory.");
-  const { registration, registrationDigest, declarations } = ownerMediaDeclarations(structuredClone(input.registration));
-  const requestedBase = declaredLocation(input.baseDirectory);
+  const supplied = structuredClone(input.registration), canonicalWorkspace = input.canonicalWorkspace;
+  if ((supplied as { artifactVersion?: unknown } | null)?.artifactVersion === "0.2.0") return createCanonical(supplied, input.baseDirectory, input.clock, canonicalWorkspace);
+  const { registration, registrationDigest, declarations } = ownerMediaDeclarations(supplied);
+  const base = await baseOf(input.baseDirectory);
+  const registry = new Map<string, Entry>(), locations = new Set<string>();
+  for (const declaration of declarations) await registerOriginal(base, declaration as OwnerMediaDeclaration, registry, locations, registration.renderAuthorization.expiresAt);
+  return new OwnerMediaLifecycleAuthority(CONSTRUCTION, input.clock, registry, registrationDigest, registration.renderAuthorization,
+    { projectId: registration.footage.projectId, creatorId: registration.footage.creatorId });
+}
+async function baseOf(baseDirectory: string): Promise<string> {
+  const requestedBase = declaredLocation(baseDirectory);
   await assertNoLinkedParents(requestedBase);
   let base: string;
   try { base = await realpath(requestedBase); } catch { fail("lifecycle_authority_scope_invalid", "The footage manifest's directory does not exist."); }
   if (!(await lstat(base)).isDirectory()) fail("lifecycle_authority_scope_invalid", "The footage manifest's location is a directory.");
+  return base;
+}
+/** OwnerMediaRegistration 0.2.0: every original first, then each declared derivative from the canonical store only. */
+async function createCanonical(supplied: unknown, baseDirectory: string, clock: RuntimeClock, canonicalWorkspace: unknown): Promise<OwnerMediaLifecycleAuthority> {
+  const declared = ownerMediaCanonicalDeclarations(supplied);
+  const registration = OwnerMediaCanonicalRegistrationSchema.parse(supplied), expiresAt = registration.renderAuthorization.expiresAt;
+  const base = await baseOf(baseDirectory);
   const registry = new Map<string, Entry>(), locations = new Set<string>();
-  for (const declaration of declarations) {
-    const segments = ownerMediaRelativeSegments(declaration.path);
-    if (segments === null) fail("lifecycle_authority_scope_invalid", "A declared source is a plain relative path under the footage manifest's directory.");
-    const requested = join(base, ...segments), inside = relative(base, requested);
-    if (inside === "" || inside.startsWith("..") || isAbsolute(inside)) fail("lifecycle_authority_scope_invalid", "A declared source lies inside the footage manifest's directory.");
-    await assertNoLinkedParents(requested);
-    let real: string;
-    try { real = await realpath(requested); } catch { fail("lifecycle_authority_scope_invalid", "A declared source does not exist."); }
-    if (WINDOWS ? real.toLowerCase() !== requested.toLowerCase() : real !== requested) fail("lifecycle_authority_scope_invalid",
-      "A declared source resolves elsewhere than its declared location.");
-    const identity = await verifyBytes(real, declaration, null);
-    const key = WINDOWS ? real.toLowerCase() : real;
-    if (locations.has(key)) fail("lifecycle_authority_scope_invalid", "Two declarations name one file.");
-    locations.add(key);
-    registry.set(declaration.assetId, { declaration, location: real, dev: identity.dev, ino: identity.ino, deletionRequestedAt: null,
-      expiresAt: registration.renderAuthorization.expiresAt });
+  for (const declaration of declared.declarations) await registerOriginal(base, declaration, registry, locations, expiresAt);
+  if (declared.derivatives.length > 0) {
+    if (typeof canonicalWorkspace !== "string") fail("lifecycle_authority_scope_invalid", "A declared canonical derivative is read only from an explicit canonical workspace.");
+    let store = await exactDirectory(declaredLocation(canonicalWorkspace));
+    for (const name of CANONICAL_STORE.directory) store = await exactDirectory(join(store, name));
+    const objects = await exactDirectory(join(store, CANONICAL_STORE.objects)), computations = await exactDirectory(join(store, CANONICAL_STORE.computations));
+    for (const d of declared.derivatives) {
+      // A derivative is considered only after its root is registered and verified.
+      const root = registry.get(d.rootAssetId);
+      if (root === undefined || root.lineage !== null) fail("lifecycle_authority_scope_invalid", "A canonical derivative is registered only after its declared root.");
+      const authorization = FootageAuthorizationDerivedSchema.safeParse(d.authorization), derivation = CanonicalMediaDerivationSchema.safeParse(d.derivation);
+      if (!authorization.success || !derivation.success || !equal(authorization.data.derivedFrom.rootAuthorization, root.declaration.authorization)
+        || derivation.data.output.contentHash !== d.contentHash || derivation.data.output.sizeBytes !== d.sizeBytes || derivation.data.source.contentHash !== root.declaration.contentHash) {
+        fail("lifecycle_authority_scope_invalid", "A declared derivative's derivation and authorization must revalidate against its registered root.");
+      }
+      // The store's record of the verified computation must name exactly this derivation's measured result.
+      const record = canonicalComputationRecordOf(derivation.data);
+      if (!(await holdsExactly(join(computations, record.name), record.bytes))) {
+        fail("lifecycle_authority_scope_invalid", "A declared derivative is only a result the canonical store's verified computation names.");
+      }
+      // Its bytes come only from their content address, re-hashed in full through one held handle.
+      const location = join(objects, canonicalObjectName(d.contentHash));
+      const identity = await verifyBytes(location, d, null);
+      let real: string;
+      try { real = await realpath(location); } catch { fail("lifecycle_authority_scope_invalid", "A declared source does not exist."); }
+      if (!sameLocation(real, location)) fail("lifecycle_authority_scope_invalid", "A canonical object resolves elsewhere than its content address.");
+      const key = WINDOWS ? real.toLowerCase() : real;
+      if (locations.has(key)) fail("lifecycle_authority_scope_invalid", "Two declarations name one file.");
+      locations.add(key);
+      registry.set(d.assetId, { declaration: { entryId: d.entryId, assetId: d.assetId, contentHash: d.contentHash, sizeBytes: d.sizeBytes, authorization: d.authorization },
+        location: real, dev: identity.dev, ino: identity.ino, deletionRequestedAt: null, expiresAt,
+        lineage: { rootAssetId: d.rootAssetId, derivationId: d.derivationId, recipeId: d.recipeId, derivation: d.derivation } });
+    }
   }
-  return new OwnerMediaLifecycleAuthority(CONSTRUCTION, input.clock, registry, registrationDigest, registration.renderAuthorization,
-    { projectId: registration.footage.projectId, creatorId: registration.footage.creatorId });
+  return new OwnerMediaLifecycleAuthority(CONSTRUCTION, clock, registry, declared.registrationDigest, registration.renderAuthorization,
+    { projectId: registration.footage.projectId, creatorId: registration.footage.creatorId }, "0.2.0");
 }

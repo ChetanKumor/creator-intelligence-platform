@@ -33,5 +33,7 @@ test("3D-R01 the trusted execution boundary can carry lifecycle evidence for an 
   assert.equal(ownerRecord?.shape?.authorityScope?.safeParse("owner_declared_real_media_assets_only_v0").success, true,
     `permit lifecycle evidence must be able to cover ${realOrigins.join(", ")} media`);
   const ownerAuthority = exported["OWNER_MEDIA_AUTHORITY"] as { descriptor?: { eligibility?: string } } | undefined;
-  assert.equal(ownerAuthority?.descriptor?.eligibility, "creator_upload_origin_and_owner_supplied_authorization_only");
+  // Gate 7 Batch 3E-B1B (owner-authorized): the same authority also answers for declared, verified system_canonicalized derivatives of
+  // declared owner sources. Prior literal: creator_upload_origin_and_owner_supplied_authorization_only.
+  assert.equal(ownerAuthority?.descriptor?.eligibility, "creator_upload_origin_and_owner_supplied_or_declared_system_canonicalized_authorization_only");
 });

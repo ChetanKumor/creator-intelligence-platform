@@ -24,7 +24,7 @@ import { RenderImplementationSchema, RENDER_IMPLEMENTATION, check, envelope, hea
 import { RenderProgramSchema, compileRenderProgram, type RenderProgram } from "./program.js";
 import { FixtureLifecycleObservationSchema, RealCapabilityProbeSchema, RealExecutionPolicySchema, RealRuntimeProbeSchema, StagedInputConformanceSchema, stagedFor,
   type FixtureLifecycleObservation, type RealCapabilityProbe, type RealExecutionPolicy, type RealRuntimeProbe, type StagedInputConformance } from "./records.js";
-import { OWNER_MEDIA_LIFECYCLE_AUTHORITY, OwnerMediaLifecycleObservationSchema, checkOwnerMediaProvenance, type OwnerMediaLifecycleObservation } from "./owner-media.js";
+import { OWNER_MEDIA_LIFECYCLE_AUTHORITY, OwnerMediaLifecycleObservationSchema, ownerMediaProvenanceKindOf, type OwnerMediaLifecycleObservation } from "./owner-media.js";
 import { RENDER_SEMANTICS_DIGEST } from "./semantics.js";
 
 /** The Batch-2B synthetic-fixture authority's binding literal, unchanged. Gate 7 Batch 3D adds the owner-local literal beside it. */
@@ -155,7 +155,9 @@ export async function evaluateRealExecutionEvidence(call: RuntimeCall, evidence:
     check(o.lifecycle.deletionRequestedAt === null, "lifecycle_deleted", "Deletion of the source has been requested.");
     check(o.lifecycle.expiresAt === null || now < o.lifecycle.expiresAt, "lifecycle_expired", "The source's retention has expired.");
     // Real-media provenance is re-read from the exact admitted records: synthetic media never carries owner-local lifecycle evidence.
-    check(owner === null || equal(checkOwnerMediaProvenance(source, artifacts).provenance, owner.provenance), "lifecycle_authority_scope_invalid",
+    // 3E-B1B: it is re-derived by kind, so an original is exactly as before and a canonical derivative's bytes, root, derivation, recipe
+    // and inherited basis must be exactly the observed ones.
+    check(owner === null || equal(ownerMediaProvenanceKindOf(source, artifacts).provenance, owner.provenance), "lifecycle_authority_scope_invalid",
       "The owner-local observation's provenance is not the admitted source's.");
   }
   check(lifecycle.length === admitted.length, "lifecycle_observation_invalid", "No lifecycle observation of an unadmitted source.");

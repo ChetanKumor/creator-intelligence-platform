@@ -19,6 +19,10 @@
  * - an OwnerMediaRegistration 0.2.0 can also declare canonical derivatives, each bound to its declared root, its derived
  *   authorization and its CanonicalMediaDerivation, under a distinct derived-capable render statement;
  * - two provenance kinds (original and derived), and the pure lifecycle rule by which a derivative never outlives its root.
+ *
+ * Gate 7 Batch 3E-B1B wires it: the one authority's descriptor states its declared verified canonical derivatives and their lineage
+ * lifecycle; the observation's provenance is either the accepted original record, unchanged, or the derived record (an additive
+ * variant); and the private canonical store is named here, as names only.
  */
 import { z } from "zod";
 import { IdSchema, MediaAssetSchema, TimestampSchema } from "../contracts/common.js";
@@ -36,11 +40,18 @@ import { CheckTimingSchema, EDIT_RENDER_VERSION, MAX_RENDER_SOURCES, ORDERED_CHE
   header, orderedCheck, parse, refuse, sha256, type CheckTiming, type SessionProof } from "./common.js";
 import { ClaimBindingSchema, claimBinding, stagedFor } from "./records.js";
 
-/** The owner-local authority's identity. Its records say `owner_declared_real_media_assets_only_v0`, and its bindings name the literal below. */
+/**
+ * The owner-local authority's identity. Its records say `owner_declared_real_media_assets_only_v0`, and its bindings name the literal below.
+ * 3E-B1B: the one authority also answers for declared, verified canonical derivatives (read only from their content address in the canonical
+ * store, registered only after their root, re-hashed in full at every query), whose lifecycle is computed from their root's at query time.
+ */
 export const OWNER_MEDIA_AUTHORITY = { observerId: "owner_local_media_manifest_registry", version: "0.1.0",
   descriptor: { authority: "owner_local_media_manifest_registry_v0", registration: "explicit_owner_declared_path_exact_sha256_and_size_one_held_handle_v0",
+    derivatives: "declared_verified_canonical_derivatives_by_content_identity_in_the_canonical_store_registered_only_after_their_root_v0",
     scope: "owner_declared_real_media_assets_only_v0", state: "in_memory_current_deletion_and_owner_declared_expiry",
-    query: "trusted_runtime_clock_check_window_full_byte_reverification_at_observation", eligibility: "creator_upload_origin_and_owner_supplied_authorization_only",
+    lineage: "derived_lifecycle_effective_from_root_and_derivative_at_query_time_never_outlives_root_v0",
+    query: "trusted_runtime_clock_check_window_full_byte_reverification_at_observation",
+    eligibility: "creator_upload_origin_and_owner_supplied_or_declared_system_canonicalized_authorization_only",
     discovery: "none_no_directory_listing_no_globbing_no_network" } } as const;
 export const OWNER_MEDIA_AUTHORITY_DIGEST = sha256(canonicalSerialize(OWNER_MEDIA_AUTHORITY.descriptor));
 /** What an executable permit binding names when every source's lifecycle evidence comes from the owner-local authority. */
@@ -143,6 +154,18 @@ export function checkOwnerMediaProvenance(source: AdmittedSource, artifacts: rea
     authorization: a };
 }
 
+/** The derived provenance kind: creator-origin media whose bytes the system canonicalized from exactly one declared root. */
+export const OwnerMediaDerivedProvenanceSchema = z.strictObject({ mediaOrigin: z.literal("creator_upload"), sourceType: z.literal("system_canonicalized"),
+  authorizationBasis: z.enum(OWNER_BASES), root: z.strictObject({ assetId: IdSchema, contentHash: HashSchema, sizeBytes: PositiveSafeInt }), derivationId: IdSchema,
+  recipeId: IdSchema });
+export type OwnerMediaDerivedProvenance = z.infer<typeof OwnerMediaDerivedProvenanceSchema>;
+/**
+ * 3E-B1B: what an observation records. The accepted original record is one variant, unchanged, so every accepted observation keeps its
+ * exact meaning; a declared canonical derivative records the derived variant, never an owner-supplied one.
+ */
+export const OwnerMediaObservedProvenanceSchema = z.union([OwnerMediaProvenanceSchema, OwnerMediaDerivedProvenanceSchema]);
+export type OwnerMediaObservedProvenance = z.infer<typeof OwnerMediaObservedProvenanceSchema>;
+
 // ---------------------------------------------------------------- the observation record
 const LifecycleBodySchema = z.strictObject({
   ...envelope("OwnerMediaLifecycleObservation"), scope: ScopeSchema, claim: ClaimBindingSchema,
@@ -151,7 +174,7 @@ const LifecycleBodySchema = z.strictObject({
     sourceAccessReceipt: ArtifactRefSchema }),
   declaration: z.strictObject({ registrationDigest: HashSchema, entryId: IdSchema, contentHash: HashSchema, sizeBytes: PositiveSafeInt, verifiedAt: TimestampSchema,
     verification: z.literal("full_byte_sha256_through_one_held_handle_during_this_check_v0") }),
-  provenance: OwnerMediaProvenanceSchema,
+  provenance: OwnerMediaObservedProvenanceSchema,
   lifecycle: z.strictObject({ deletionRequestedAt: TimestampSchema.nullable(), expiresAt: TimestampSchema.nullable() }),
   ...CheckTimingSchema.shape,
   observer: z.strictObject({ kind: z.literal("real_authoritative_observation"), observerId: z.literal(OWNER_MEDIA_AUTHORITY.observerId),
@@ -163,6 +186,8 @@ export const OwnerMediaLifecycleObservationSchema = LifecycleBodySchema.extend({
   .refine(v => v.observer.implementationDigest === OWNER_MEDIA_AUTHORITY_DIGEST, "The observer is the owner-local media registry.")
   .refine(v => v.declaration.contentHash === v.source.contentHash && v.declaration.sizeBytes === v.source.sizeBytes, "The declaration names exactly the observed bytes.")
   .refine(v => v.checkStartedAt <= v.declaration.verifiedAt && v.declaration.verifiedAt <= v.checkCompletedAt, "The bytes were re-verified during this check.")
+  .refine(v => v.provenance.sourceType !== "system_canonicalized" || (v.provenance.root.contentHash !== v.source.contentHash
+    && v.provenance.root.assetId === `asset_${v.provenance.root.contentHash}`), "A derivative's root is other bytes than the derivative.")
   .refine(v => checkIdentity(v, "observationId", "owner_media_lifecycle_observation_v0"), "Owner media lifecycle observation identity mismatch.");
 export type OwnerMediaLifecycleObservation = z.infer<typeof OwnerMediaLifecycleObservationSchema>;
 
@@ -174,7 +199,7 @@ function timingFor(timing: CheckTiming, notBefore: readonly string[]): CheckTimi
 }
 /** One owner-local lifecycle observation of one staged admitted source, under exactly this claim. */
 export function buildOwnerMediaLifecycleObservation(input: { dag: ValidatedExecutionDag; claim: ExecutionClaim; stagedSource: unknown;
-  declaration: { registrationDigest: string; entryId: string; contentHash: string; sizeBytes: number; verifiedAt: string }; provenance: OwnerMediaProvenance;
+  declaration: { registrationDigest: string; entryId: string; contentHash: string; sizeBytes: number; verifiedAt: string }; provenance: OwnerMediaObservedProvenance;
   state: { deletionRequestedAt: string | null; expiresAt: string | null }; timing: CheckTiming; session: SessionProof }): OwnerMediaLifecycleObservation {
   const v = requireValidated(input.dag), claim = claimBinding(v, input.claim), staged = stagedFor(v, input.claim, input.stagedSource);
   const timing = timingFor(input.timing, [input.claim.claimedAt, staged.stagedAt]);
@@ -305,11 +330,7 @@ export function ownerMediaCanonicalDeclarations(input: unknown): { registrationD
     renderScope: { statement: registration.renderAuthorization.statement, assetIds: covered.map(d => d.assetId).sort(compareText) } };
 }
 
-/** The derived provenance kind: creator-origin media whose bytes the system canonicalized from exactly one declared root. */
-export const OwnerMediaDerivedProvenanceSchema = z.strictObject({ mediaOrigin: z.literal("creator_upload"), sourceType: z.literal("system_canonicalized"),
-  authorizationBasis: z.enum(OWNER_BASES), root: z.strictObject({ assetId: IdSchema, contentHash: HashSchema, sizeBytes: PositiveSafeInt }), derivationId: IdSchema,
-  recipeId: IdSchema });
-export type OwnerMediaDerivedProvenance = z.infer<typeof OwnerMediaDerivedProvenanceSchema>;
+// (OwnerMediaDerivedProvenanceSchema, the derived provenance kind, is defined beside the observation record above, unchanged.)
 export type OwnerMediaProvenanceKind = { kind: "original"; provenance: OwnerMediaProvenance; authorization: FootageAuthorizationV1 | FootageAuthorizationRoot }
   | { kind: "derived"; provenance: OwnerMediaDerivedProvenance; authorization: FootageAuthorizationDerived };
 /**
@@ -351,4 +372,41 @@ const earlier = (a: string | null, b: string | null): string | null => (a === nu
 export function effectiveDerivedLifecycle(root: unknown, derived: unknown): OwnerMediaLifecycleState {
   const r = parse(LifecycleStateSchema, root, "lifecycle_observation_invalid"), d = parse(LifecycleStateSchema, derived, "lifecycle_observation_invalid");
   return { deletionRequestedAt: earlier(r.deletionRequestedAt, d.deletionRequestedAt), expiresAt: earlier(r.expiresAt, d.expiresAt) };
+}
+
+// ---------------------------------------------------------------- 3E-B1B: the private canonical store, as names only
+/**
+ * The content-addressed canonical store under one explicit local workspace: `<workspace>/.local-media/canonical-v0/`. A trusted object is
+ * named by its exact SHA-256; the internal record of one verified computation is named by the digest of its computation identity. These
+ * are names, never locations: the media-ingest adapter (scripts/media-ingest-local.ts) is the only writer, and the owner-media adapter
+ * only reads.
+ */
+export const CANONICAL_STORE = { directory: [".local-media", "canonical-v0"], objects: "objects", computations: "computations", pending: "pending",
+  maxRecordBytes: 262_144 } as const;
+const OBJECT_HASH = /^[a-f0-9]{64}$/;
+export function canonicalObjectName(contentHash: string): string {
+  check(typeof contentHash === "string" && OBJECT_HASH.test(contentHash), "lifecycle_authority_scope_invalid", "A canonical object is named only by its exact SHA-256.");
+  return `${contentHash}.mp4`;
+}
+export function canonicalComputationRecordName(computationId: string): string {
+  check(IdSchema.safeParse(computationId).success, "lifecycle_authority_scope_invalid", "A computation record is named only by its computation identity.");
+  return `${sha256(computationId)}.json`;
+}
+export const CANONICAL_COMPUTATION_RECORD_IDENTITY = "canonical_computation_record_v0" as const;
+/**
+ * The canonical store's internal record of one verified computation: exactly the scope-free part of a derivation (the computation, the
+ * source bytes, the classification, the recipe, the toolchain and the verified output). It names no creator, project, root authorization,
+ * derivation or location, and it authorizes nothing: it lets the adapter find a verified result again, and lets the owner-media registry
+ * confirm that a declared derivation is one the adapter measured. Its bytes are a pure function of the derivation, so any two
+ * derivations of one computation, whatever their scope, have exactly one record.
+ */
+export function canonicalComputationRecordOf(input: unknown): { name: string; bytes: string; record: Record<string, unknown> } {
+  const derivation = parse(CanonicalMediaDerivationSchema, input, "lifecycle_authority_scope_invalid");
+  const { computationId, source, classification, recipe, toolchain, output } = derivation;
+  const record = identify(CANONICAL_COMPUTATION_RECORD_IDENTITY, "recordId", { artifactType: "CanonicalComputationRecord", artifactVersion: "0.1.0",
+    stability: "internal_pre_stable", computationId, source: { assetId: source.assetId, contentHash: source.contentHash, sizeBytes: source.sizeBytes }, classification,
+    recipe, toolchain, output });
+  const bytes = `${canonicalSerialize(record)}\n`;
+  check(new TextEncoder().encode(bytes).length <= CANONICAL_STORE.maxRecordBytes, "limit_exceeded", "A computation record exceeds its bound.");
+  return { name: canonicalComputationRecordName(computationId), bytes, record };
 }

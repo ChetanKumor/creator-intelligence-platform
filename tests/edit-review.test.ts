@@ -117,7 +117,9 @@ const FROZEN: readonly (readonly [string, string])[] = [
   ["packages/edit-graph/resolution.ts", "f5419d21686c7cf69050b424ae658e941ec065ef4c7da50cf240982526aef753"],
   // Gate 7 Batch 3D (owner-authorized protected change, 3D-R01): authorize.ts, index.ts and scripts/edit-render-local.ts accept the owner-local
   // real-media lifecycle authority beside the unchanged synthetic-fixture one. Prior pins: 860ff1e9..., 3ff1f341..., 379e3bec....
-  ["packages/edit-render/authorize.ts", "43bb22d5d1d44a09b5e8366717c48b2ca8b10f0bf462282e1ca3ff3662a0f44b"],
+  // Gate 7 Batch 3E-B1B (owner-authorized protected change): authorize.ts re-derives owner-media provenance by kind (original or declared
+  // canonical derivative). Prior pin: 43bb22d5....
+  ["packages/edit-render/authorize.ts", "c57accc5ff585ab85f833942b2a017c05ba0c903b24877d4e017905390da37ca"],
   ["packages/edit-render/common.ts", "b449777d5bf9800ae109e8f2a3185128691d724e5eeefa1747b31316f097e549"],
   ["packages/edit-render/ffmpeg.ts", "fc7937654bca17cf5c4005ea730aba0801559fee84eee6ca41a419ec9f24f98a"],
   ["packages/edit-render/index.ts", "1546b1cbff19448ac990e8fc4b90460856ebaa254e6e7ec8aa47c8f4fa7d99c6"],

@@ -47,14 +47,16 @@ const outputOf = (d: Json): Json => d.output as Json;
 const forgedScope = (): Json => withDerivative(forged(d => { (d.scope as Json).projectId = "project_other"; }));
 
 // ================================================================ the unchanged original path (invariants: true before and after B1A)
-test("B1A-O01 the 0.1.0 registration, its digest and its declarations are byte-identical to the baseline, and the authority is unchanged", () => {
+test("B1A-O01 the 0.1.0 registration, its digest and its declarations are byte-identical to the baseline, and the authority is the pinned one", () => {
   const registration = registrationV1([original("clip_a", "clip_a.mp4", v1({ contentHash: "a".repeat(64), sizeBytes: 4099 })),
     original("clip_b", "nested/clip_b.mp4", v1({ contentHash: "b".repeat(64), sizeBytes: 5003 }))]);
   const declared = ownerMediaDeclarations(registration);
   assert.equal(declared.registrationDigest, "18fcc06dccf3b47efe2fa4737ff7690bd685bf1774e883d1d60861b26e50c438", "frozen from the unmodified 86d2a10 build");
   assert.deepEqual(declared.declarations.map(d => [d.entryId, d.assetId, d.sizeBytes]), [["clip_a", `asset_${"a".repeat(64)}`, 4099], ["clip_b", `asset_${"b".repeat(64)}`, 5003]]);
-  assert.equal(OWNER_MEDIA_AUTHORITY_DIGEST, "e154b61538988ed347210ced01fc4ea16a408500ca38a1511bd371edf28579c0");
-  assert.equal(OWNER_MEDIA_AUTHORITY.descriptor.eligibility, "creator_upload_origin_and_owner_supplied_authorization_only");
+  // Gate 7 Batch 3E-B1B (owner-authorized): the one authority now also states declared verified canonical derivatives and their lineage
+  // lifecycle. Its 3D/B1A digest was e154b61538988ed347210ced01fc4ea16a408500ca38a1511bd371edf28579c0.
+  assert.equal(OWNER_MEDIA_AUTHORITY_DIGEST, "0cd89b68e42aca92acdfba826dff4c1dfe471134506712f20188343cec0a2f37");
+  assert.equal(OWNER_MEDIA_AUTHORITY.descriptor.eligibility, "creator_upload_origin_and_owner_supplied_or_declared_system_canonicalized_authorization_only");
 });
 
 test("B1A-O02 the 0.1.0 path refuses AuthorizedFootage 1.1.0 records exactly as before 1.1.0 existed", () => {
