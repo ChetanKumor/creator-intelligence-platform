@@ -1,5 +1,9 @@
 # Phase 5 Gate 7 Batch 3E-B1B — Executable N1 canonicalization, trusted publication and derived-media lifecycle
 
+**Current status (2026-10-05, §15).** 3E-B1B: **OWNER-ACCEPTED** at `fc0e38a5c354a6dfc7aa7e4f60d64bb56083c4b3`. The §11 limitations
+are unchanged. 3E-B2R (read-only research): authorized, not started at this checkpoint. B2 implementation and 3E-C: **NOT STARTED**.
+Gate 7: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**. The status line below is preserved history.
+
 **Status (2026-10-05, §14).** 3E-B1B: **IMPLEMENTED — PUSHED FOR OWNER REVIEW**. 3E-B1A: **OWNER-ACCEPTED** at `2b2b49e`. 3E-C:
 **NOT STARTED**. B2: **NOT STARTED**. Gate 7: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**.
 
@@ -412,3 +416,40 @@ adapter changed. The B1A files (`packages/media-ingest/*`, `packages/footage-ana
 - Owner footage canonicalized: **NO**.
 - 3E-C: **NOT STARTED** and not authorized by this batch. B2: **NOT STARTED**.
 - Gate 7 overall: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**.
+
+## 15. Owner acceptance (2026-10-05)
+
+The owner independently reviewed Batch 3E-B1B and ruled: **Gate 7 Batch 3E-B1B: OWNER-ACCEPTED**. Accepted implementation:
+`fc0e38a5c354a6dfc7aa7e4f60d64bb56083c4b3`.
+
+- The accepted facts are the ones recorded above:
+  - the exact accepted N1 recipe, empirically proven on the pinned FFmpeg and ffprobe (§2);
+  - NORMALIZE_N1 → DIRECT, with an explicit 1:1 output SAR (§2, §3.4);
+  - exact frame count, frame table and timing preservation; decoded-video equality; the accepted audio payload and timing
+    preservation (§3.3, §3.4);
+  - deterministic output (§2);
+  - probe-to-bytes binding (§3.2);
+  - no-overwrite publication, concurrent publication protection, cache re-verification and tamper refusal (§3.5 to §3.7);
+  - the derived-media lifecycle with root → derivative lifecycle inheritance, and derived provenance at observation (§4);
+  - permit provenance (§5);
+  - the 60 s freshness policy, the claim and CAS order, dependencies and lockfile: unchanged (§5, §9, §10).
+- This acceptance is recorded by a documentation-only commit. No code, test, schema, dependency, lockfile, evidence or media byte
+  changed, and no gate was rerun for it.
+- The §11 limitations are unchanged. No real derived source has been rendered end to end (3E-C), and no owner footage was
+  canonicalized. The proof is synthetic in scope, and verification cost on large sources is unmeasured. The computation record is local
+  evidence, not an attestation. The 0° display-matrix limitation of the DIRECT rule stays open, and N1 still refuses ordinary x264
+  encodes for their user-data SEI frame side data.
+- In the same ruling the owner authorized 3E-B2R: read-only research into the real creator-media envelope and the canonicalization
+  architecture (§12). It starts from the commit that records this acceptance and changes no production source. B2 implementation is
+  not authorized by this ruling.
+
+**Superseded statements** (kept above as written): the top-of-record status and §14 "3E-B1B: **IMPLEMENTED — PUSHED FOR OWNER
+REVIEW**".
+
+3E-B1B owner acceptance: **OWNER-ACCEPTED** (2026-10-05)
+
+3E-B2R (read-only research): **AUTHORIZED, NOT STARTED** at this checkpoint. B2 implementation: **NOT STARTED**. 3E-C: **NOT STARTED**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Phase 6: **NOT STARTED**

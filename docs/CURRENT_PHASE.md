@@ -1,9 +1,28 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B1B Executable N1 Canonicalization (IMPLEMENTED — PUSHED FOR OWNER REVIEW; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B1B Executable N1 Canonicalization (OWNER-ACCEPTED at fc0e38a; Gate 7 not yet complete)
 
 Last updated: 2026-10-05
 
 ## Current ruling
 
+- Phase 5 Gate 7 Batch 3E-B1B owner acceptance (2026-10-05, owner ruling).
+  - Batch 3E-B1B: **OWNER-ACCEPTED** after independent owner review. Accepted SHA:
+    `fc0e38a5c354a6dfc7aa7e4f60d64bb56083c4b3`.
+  - Accepted facts (bullet below and §15 of the
+    [Batch-3E-B1B record](phases/phase-5-gate-7-batch-3e-b1b-executable-canonicalization.md)): the exact accepted N1 recipe,
+    empirically proven on the pinned FFmpeg and ffprobe; NORMALIZE_N1 → DIRECT with an explicit 1:1 output SAR; exact frame count,
+    frame table and timing preservation; decoded-video equality; the accepted audio payload and timing preservation; deterministic
+    output; probe-to-bytes binding; no-overwrite publication and concurrent publication protection; cache re-verification and tamper
+    refusal; the derived-media lifecycle with root → derivative lifecycle inheritance; derived provenance at observation; permit
+    provenance. The 60 s freshness policy, the claim and CAS order, dependencies and lockfile are unchanged.
+  - The acceptance changes none of the B1B §11 limitations: no real derived source rendered end to end, no owner footage
+    canonicalized, synthetic scope only, verification cost on large sources unmeasured, the computation record is local evidence and
+    not an attestation, the 0° display-matrix limitation of the DIRECT rule, and N1's refusal of ordinary x264 encodes for their
+    user-data SEI frame side data. Real-owner-footage revision 1 → 2 freshness, distinct physical multi-source execution, broad
+    ingest, VFR, non-square SAR resampling, rotation, HDR, 10-bit, HEVC and audio resampling: **NOT VERIFIED / NOT IMPLEMENTED**.
+  - 3E-B2R (read-only research into the real creator-media envelope and the canonicalization architecture): **AUTHORIZED by the
+    owner, NOT STARTED** at this checkpoint. B2 implementation and 3E-C: **NOT STARTED**. Gate 7 overall: **NOT YET COMPLETE**.
+    Phase 6: **NOT STARTED**.
+  - This supersedes "3E-B1B: **IMPLEMENTED — PUSHED FOR OWNER REVIEW**" in the bullet below, which is kept as written.
 - Phase 5 Gate 7 Batch 3E-B1B: executable N1 canonicalization, trusted publication and the derived-media lifecycle (2026-10-05; an
   owner-authorized, bounded protected implementation).
   - **Start.** B1B started from the verified `2b2b49e` (local equal to remote). Before any B1B work, the owner's B1A acceptance was
