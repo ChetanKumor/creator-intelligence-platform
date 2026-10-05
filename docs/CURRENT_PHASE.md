@@ -1,9 +1,41 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B1B Executable N1 Canonicalization (OWNER-ACCEPTED at fc0e38a; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-A1 Canonical Media Profile and Typed Canonicalization Plan (IMPLEMENTED — PUSHED FOR OWNER REVIEW; Gate 7 not yet complete)
 
 Last updated: 2026-10-05
 
 ## Current ruling
 
+- Phase 5 Gate 7 Batch 3E-B2-A1: CanonicalMediaProfile v1 and the typed CanonicalizationPlan v1, a pure contract (2026-10-05; owner-authorized,
+  contract and planning only, after the owner resolved the B2R research as decisions D1-D15).
+  - **Start.** B2-A1 started from the verified `01a58d8` (local equal to remote; `main` `4f85b55` unchanged). 3E-B2R, the read-only research,
+    ran after `01a58d8` and changed no tracked file; its evidence is `.local-runs/phase5-gate7/3e-b2r-20261005T1353Z/` (ignored). Every B2R
+    conclusion B2-A1 uses was re-verified from the underlying evidence; the exact snap rate set and the 9-sample audio bound were both
+    recoverable, and B2R established no assumption for an unspecified colour range.
+  - **New, beside the accepted B1 contract and wired to nothing** (`packages/media-ingest/profile.ts`, `plan.ts`; additive `index.ts`):
+    - CanonicalMediaFacts 1.0.0: typed observations of exact bytes, with decoded presentation timestamps, the full nine-coefficient display
+      matrix, both SAR declarations, declared and decoded geometry, a closed side-data vocabulary and decoded audio frames.
+    - CanonicalMediaProfile v1 (`canonical_media_profile_v1_376754b9…`): H.264 8-bit 4:2:0 progressive, explicit agreeing 1:1, no matrix
+      or the identity, no clean aperture, exact CFR from a common zero, BT.709 limited range (unspecified primaries, transfer and matrix as
+      BT.709 under an explicit assumption; an unspecified range is refused), only the x264 encoder SEI, contiguous AAC LC or PCM audio.
+    - The total evaluation: CONFORMS, CANONICALIZABLE_EXACT_REMUX, CANONICALIZABLE_REENCODE_DEFERRED (D4 orientation, HEVC 8-bit SDR,
+      non-square SAR, true VFR) or REFUSE, with 56 findings each naming its dimension.
+    - CanonicalizationPlan v1: the closed, ordered vocabulary SELECT_AV_STREAMS, REBASE_TIMELINE_ZERO, DECLARE_SQUARE_SAMPLE_ASPECT,
+      SNAP_VIDEO_TIMESTAMPS (≤ P/4, the B2R rate set), RETIME_AUDIO_CONTIGUOUS (≤ 9 samples). The planId binds the profile, the plan semantics
+      and every parameter, never the source bytes. The planner derives DIRECT, PLAN, DEFER or REFUSE from the facts alone.
+    - CanonicalMediaDerivation 0.2.0, with `canonical_media_computation_v1` (source bytes + plan + pinned plan toolchain) and
+      `canonical_media_derivation_v1`; its derived authorization names the planId as `recipeId`.
+  - **Unchanged.** N1 (semantics, argv template, recipe, the v0 identities), CanonicalMediaDerivation 0.1.0, the B1 classifier (still the
+    production path), `canonical.ts`, the renderer, probe, admission, permit and the 60 s policy, the owner-media pure contract and every
+    adapter, the FootageAuthorization schemas, dependencies and lockfile: before/after fingerprints identical.
+  - **Results.** B2-A1 88/88. Final RED on the final test bytes: 175 tests, 95 invariant passes and 80 absent-behaviour failures. Mutation
+    check: 34 mutants, 33 killed, 1 equivalent. B1A 87/87, B1B pure 22/22, 3D 24/24, render pins 96/96. typecheck, build, schema check
+    (33/33), workspace audit (132 files, 18 adapters) and `git diff --check`: PASS. Test pins: 153, none stale.
+  - **Not done.** No facts were derived from bytes, no plan was compiled or executed, and no owner footage, media process, model or network
+    was used. 0.2.0 derivations are not registrable in the owner-media registry yet. That is B2-A2.
+  - 3E-B2-A1: **IMPLEMENTED — PUSHED FOR OWNER REVIEW**. B2-A2, B2-B and 3E-C: **NOT STARTED**. Gate 7: **NOT YET COMPLETE**. Phase 6:
+    **NOT STARTED**.
+  - This supersedes "3E-B2R …: **AUTHORIZED by the owner, NOT STARTED**" and "B2 implementation and 3E-C: **NOT STARTED**" in the B1B
+    acceptance bullet below, which is kept as written.
+  - Details: the [Batch-3E-B2-A1 record](phases/phase-5-gate-7-batch-3e-b2a1-canonical-profile-and-plan.md).
 - Phase 5 Gate 7 Batch 3E-B1B owner acceptance (2026-10-05, owner ruling).
   - Batch 3E-B1B: **OWNER-ACCEPTED** after independent owner review. Accepted SHA:
     `fc0e38a5c354a6dfc7aa7e4f60d64bb56083c4b3`.
