@@ -1,5 +1,9 @@
 # Phase 5 Gate 7 Batch 3E-B2-A1 — Canonical media profile v1 and typed canonicalization plan (pure contract)
 
+**Current status (2026-10-06, §17).** 3E-B2-A1: **OWNER-ACCEPTED** at `68195af2777753e29b442d5b8ada26dddeb81e72`. The §13 limitations
+are unchanged. B2-A2 (executable typed exact-remux canonicalization): authorized, not started at this checkpoint. B2-B and 3E-C: **NOT
+STARTED**. Gate 7: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**. The status line below is preserved history.
+
 **Status (2026-10-05, §16).** 3E-B2-A1: **IMPLEMENTED — PUSHED FOR OWNER REVIEW**. 3E-B1B: **OWNER-ACCEPTED** at `fc0e38a`. B2-A2 (runtime),
 B2-B (re-encode) and 3E-C: **NOT STARTED** and not authorized by this batch. Gate 7: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**.
 
@@ -311,3 +315,41 @@ derivatives in the owner-media registry and adapter; re-prove every operation on
 - B2-A2: **NOT STARTED**, not authorized by this batch. The new plan was not executed.
 - B2-B: **NOT STARTED**. 3E-C: **NOT STARTED**.
 - Gate 7 overall: **NOT YET COMPLETE**. Phase 6: **NOT STARTED**.
+
+## 17. Owner acceptance (2026-10-06)
+
+The owner independently reviewed Batch 3E-B2-A1 and ruled: **Gate 7 Batch 3E-B2-A1: OWNER-ACCEPTED**. Accepted implementation:
+`68195af2777753e29b442d5b8ada26dddeb81e72`.
+
+- The accepted contract is the one recorded above:
+  - CanonicalMediaProfile v1, CanonicalMediaFacts 1.0.0, CanonicalizationPlan 1.0.0 and CanonicalMediaDerivation 0.2.0 (§3-§8);
+  - the `canonical_media_computation_v1` and `canonical_media_derivation_v1` identities (§8);
+  - the five-operation exact-remux vocabulary SELECT_AV_STREAMS, REBASE_TIMELINE_ZERO, DECLARE_SQUARE_SAMPLE_ASPECT,
+    SNAP_VIDEO_TIMESTAMPS and RETIME_AUDIO_CONTIGUOUS, in that order (§6);
+  - a plan identity that excludes the source identity, and a computation identity that binds the source, the plan and the pinned
+    toolchain; `recipeId` = planId for 0.2.0 derivations (§6, §8);
+  - full display-matrix evidence; an explicit limited-range profile, with the explicit BT.709 assumption only for unspecified
+    primaries, transfer and matrix; refusal of an unspecified colour range and of a held first frame; true VFR, non-square SAR, D4
+    orientation and HEVC 8-bit SDR deferred (§3-§5, §7).
+- N1 (`N1_SEMANTICS`, `N1_ARGV_TEMPLATE`, `N1_RECIPE`, `canonical_media_computation_v0`, `canonical_media_derivation_v0`) stays frozen.
+- This acceptance is recorded by a documentation-only commit. No code, test, schema, dependency, lockfile, evidence or media byte
+  changed, and no gate was rerun for it.
+- The §13 limitations are unchanged. The contract is pure: no facts are derived from bytes, no plan is compiled or executed, and every
+  fixture is synthetic. An unspecified colour range is still refused.
+- In the same ruling the owner authorized **3E-B2-A2**, executable typed exact-remux canonicalization, starting from the commit that
+  records this acceptance. It adds no pixel-changing or re-encoding canonicalization.
+- Roadmap ruling in the same ruling: non-square SAR resampling and true-VFR resampling are **not** required before Gate 7 closes and stay
+  deferred. Future B2-B is scoped only to D4 orientation and mirror baking and HEVC 8-bit SDR → canonical H.264, subject to later owner
+  approval.
+
+**Superseded statements** (kept above as written): the top-of-record status and §16 "3E-B2-A1: **IMPLEMENTED — PUSHED FOR OWNER
+REVIEW**" and "B2-A2: **NOT STARTED**, not authorized by this batch"; in §14, "non-square SAR resampling, true VFR resampling
+(`RESAMPLE_FRAME_TIMELINE` with an explicit mapping table)" as B2-B scope.
+
+3E-B2-A1 owner acceptance: **OWNER-ACCEPTED** (2026-10-06)
+
+3E-B2-A2: **AUTHORIZED, NOT STARTED** at this checkpoint. B2-B: **NOT STARTED**. 3E-C: **NOT STARTED**
+
+Gate 7 overall: **NOT YET COMPLETE**
+
+Phase 6: **NOT STARTED**

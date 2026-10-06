@@ -1,9 +1,29 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-A1 Canonical Media Profile and Typed Canonicalization Plan (IMPLEMENTED — PUSHED FOR OWNER REVIEW; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-A1 Canonical Media Profile and Typed Canonicalization Plan (OWNER-ACCEPTED at 68195af; Gate 7 not yet complete)
 
-Last updated: 2026-10-05
+Last updated: 2026-10-06
 
 ## Current ruling
 
+- Phase 5 Gate 7 Batch 3E-B2-A1 owner acceptance (2026-10-06, owner ruling).
+  - Batch 3E-B2-A1: **OWNER-ACCEPTED** after independent owner review. Accepted SHA:
+    `68195af2777753e29b442d5b8ada26dddeb81e72`.
+  - Accepted contract (bullet below and §17 of the
+    [Batch-3E-B2-A1 record](phases/phase-5-gate-7-batch-3e-b2a1-canonical-profile-and-plan.md)): CanonicalMediaProfile v1,
+    CanonicalMediaFacts 1.0.0, CanonicalizationPlan 1.0.0 and CanonicalMediaDerivation 0.2.0; `canonical_media_computation_v1` and
+    `canonical_media_derivation_v1`; the five-operation exact-remux vocabulary in its one order; a plan identity without the source
+    identity and a computation identity with it; `recipeId` = planId for 0.2.0 derivations; full display-matrix evidence; an explicit
+    limited-range profile with the explicit BT.709 assumption only for unspecified primaries, transfer and matrix; refusal of an
+    unspecified colour range and of a held first frame; true VFR, non-square SAR, D4 orientation and HEVC 8-bit SDR deferred. N1 stays
+    frozen.
+  - The acceptance changes none of the B2-A1 §13 limitations: a pure contract only, no facts derived from bytes, no plan compiled or
+    executed, synthetic fixtures only, an unspecified colour range refused.
+  - In the same ruling the owner authorized **3E-B2-A2** (executable typed exact-remux canonicalization; no pixel-changing or
+    re-encoding canonicalization), **NOT STARTED** at this checkpoint. Roadmap ruling: non-square SAR resampling and true-VFR resampling
+    are not required before Gate 7 closes and stay deferred; future B2-B is scoped only to D4 orientation and mirror baking and HEVC
+    8-bit SDR → canonical H.264, subject to later owner approval. B2-B and 3E-C: **NOT STARTED**. Gate 7 overall: **NOT YET
+    COMPLETE**. Phase 6: **NOT STARTED**.
+  - This supersedes "3E-B2-A1: **IMPLEMENTED — PUSHED FOR OWNER REVIEW**" and "B2-A2, B2-B and 3E-C: **NOT STARTED**" in the bullet
+    below, which is kept as written.
 - Phase 5 Gate 7 Batch 3E-B2-A1: CanonicalMediaProfile v1 and the typed CanonicalizationPlan v1, a pure contract (2026-10-05; owner-authorized,
   contract and planning only, after the owner resolved the B2R research as decisions D1-D15).
   - **Start.** B2-A1 started from the verified `01a58d8` (local equal to remote; `main` `4f85b55` unchanged). 3E-B2R, the read-only research,
