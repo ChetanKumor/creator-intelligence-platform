@@ -1,8 +1,56 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-A1 Canonical Media Profile and Typed Canonicalization Plan (OWNER-ACCEPTED at 68195af; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-A2 (IMPLEMENTED; OWNER REVIEW PENDING; Gate 7 not yet complete)
 
-Last updated: 2026-10-06
+Last updated: 2026-10-08
 
 ## Current ruling
+
+- Phase 5 Gate 7 Batch 3E-B2-A2 (2026-10-08): **IMPLEMENTED; OWNER REVIEW PENDING**.
+  - Continued from `9cd339534867260ec77461776a85f7c33ab0aa75`; no reset, history rewrite or duplicated acceptance checkpoint. The 18
+    authorized historical untracked files remain byte-identical and excluded from the change set. Main remains `4f85b559c7eff2c24e221011f3ee1dd1466a111d`.
+  - The existing ingest adapter now derives independent container/bitstream SAR, full matrix/carrier, crop, color, decoded PTS and audio
+    sample facts from verified held bytes. Profile v1 controls DIRECT. The owner-authorized propagated-matrix clarification retains both
+    carriers; independent/conflicting frame transforms still refuse. Unspecified range remains REFUSE.
+  - A closed compiler executes the accepted ordered remux operations in one invocation. All M01-M10, including all five operations, pass
+    two independent executions with identical bytes/derivations. B-frame snap, quantized 30000/1001 time-base expansion, mov_text selection,
+    PCM retention and AAC rebase are also proved with generated media. No frame drop/duplication or audio encoding is requested.
+  - Fresh output facts, exact temporal mappings, decoded-frame equality and required packet equality precede 0.2 derivation, no-overwrite
+    publication, winning-object reverification, versioned computation record and fresh 1.1 authorization. Cache never supplies trusted facts
+    or authorization. The existing owner-media authority registers 0.1/0.2 with the same root-first, one-level lifecycle and permit contract.
+  - The legacy N1-only route preserves exact argv, output hashes, v0 computation/derivation identities and cache authorization; golden
+    before/after media checks pass. Facts/Profile/Plan remain 1.0.0; the profile ID and all other accepted A1 semantics are unchanged.
+    The only facts-schema addition is the owner's optional typed carrier evidence. Renderer, probe, permit, lifecycle authority,
+    public schemas, dependencies and lockfile are unchanged. Audit adds only the new hostile test's process registration.
+  - Final evidence: A2 **66/66** (52 media + 14 pure); **22/22** reviewed in-memory code mutants killed. A1 **88/88**, B1A **87/87**,
+    B1B pure **22/22** and media **27/27**, 3D **24/24**, render pins **96/96**, editorial **54/54**, Batch 2B media **34/34**, 3E-A
+    freshness media **3/3**. Final affected audit/plan/owner rerun **72/72**. Typecheck, build, schema check (33 artifacts), workspace audit
+    (132 application files, 18 adapters, 7 test harness files) and diff check: PASS. Earlier RED/failures remain in the phase record.
+  - Scope is generated synthetic media only. No owner footage, model inference or research-media execution. PCM retime is not claimed
+    from its nondiscontinuous fixture; real-owner generalization and real derived-source end-to-end rendering remain unverified.
+  - B2-B, 3E-C and Phase 6: **NOT STARTED**. Gate 7 remains **NOT YET COMPLETE**. B2-B's intended later alpha is only D4 orientation/mirror
+    bake and HEVC 8-bit SDR to H.264, subject to separate owner review. True VFR and non-square SAR stay deferred.
+  - Details: [Batch-3E-B2-A2 record](phases/phase-5-gate-7-batch-3e-b2a2-executable-typed-remux.md). This supersedes the historical open-work
+    and stop statements below, which are preserved as the sequence of evidence and owner decisions.
+
+- B2-A2 owner clarification (2026-10-07): the display-matrix carrier conflict below is **RESOLVED**. Complete pinned observations of
+  exactly one stream matrix and an identical matrix on every decoded frame may represent one semantic transform. Both carriers remain
+  in facts; missing, different, varying, multiple or independently conflicting geometry remains refused. D4 stays execution-deferred.
+  The facts schema adds optional, fully typed carrier evidence; historical facts retain their previous behavior. Profile identity,
+  versions, plan identities and N1 are unchanged. Continuation is from the preserved unstaged work, with RED tests for this narrow rule.
+
+- Phase 5 Gate 7 Batch 3E-B2-A2 continuation (2026-10-07): **IN PROGRESS, STOPPED — 3E_B2_A2_ACCEPTED_CONTRACT_CONFLICT**.
+  - Continues from the already completed B2-A1 acceptance checkpoint `9cd339534867260ec77461776a85f7c33ab0aa75`. The owner resolved the
+    handoff condition for exactly 18 historical untracked local files; they remain untouched and excluded from the A2 change set.
+  - Fresh focused B1B media baseline: **27/27 PASS**. A2 exact-byte fact tests: **15/15 RED** on absent behavior; after partial extraction
+    implementation, **14/15 PASS**, with the D4 defer expectation failing. TypeScript compilation passes. No A2 commit or push.
+  - A generated H.264 pair differs only in two bytes of the container track matrix. The pinned single-thread ffprobe reports the vertical
+    flip both as a stream `Display Matrix` and as `3x3 displaymatrix` on every decoded frame. Full matrix and frame-carrier evidence are
+    retained. The accepted A1 evaluator returns REFUSE (`display_d4_non_identity` plus `display_matrix_unsupported`); A2 requires D4 to
+    DEFER while also requiring frame-matrix refusal. No observed evidence was omitted to manufacture DEFER. Owner reconciliation is required.
+  - The inspection function is implemented locally but is not wired into production ingest routing. The plan compiler, execution,
+    v0.2 publication/cache and owner-media integration are not implemented. Accepted A1/profile/N1 contracts and protected files are unchanged.
+  - Evidence: `.local-runs/phase5-gate7/batch3e-b2a2-20261007/` (ignored), generated synthetic media only; no owner footage, network or model.
+    Details and the exact unresolved decision: [Batch-3E-B2-A2 record](phases/phase-5-gate-7-batch-3e-b2a2-executable-typed-remux.md).
+  - B2-B, 3E-C and Phase 6: **NOT STARTED**. Gate 7 remains **NOT YET COMPLETE**. No later phase is authorized by this work.
 
 - Phase 5 Gate 7 Batch 3E-B2-A1 owner acceptance (2026-10-06, owner ruling).
   - Batch 3E-B2-A1: **OWNER-ACCEPTED** after independent owner review. Accepted SHA:

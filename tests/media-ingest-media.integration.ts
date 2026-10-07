@@ -65,7 +65,9 @@ before(async () => {
   base = await realpath(await mkdtemp(join(tmpdir(), "gate7-b1b-media-")));
   fixtures = join(base, "fixtures"); await mkdir(fixtures);
   for (const [key, spec] of Object.entries(SPECS)) {
-    const path = await generateFixture(fixtures, spec.name, spec);
+    // A2 production DIRECT is profile-controlled. Positive N1 cases explicitly declare the required limited range; the historical
+    // generator's default bytes and all refusal fixtures stay unchanged. A2 separately compares exact legacy N1 bytes/identities.
+    const path = await generateFixture(fixtures, spec.name, { ...spec, profileColor: ["video", "pcm", "aac", "other", "otherTone", "direct"].includes(key) });
     F[key] = { path, ...(await sha256File(path)) };
   }
   const video = await readFile(F.video!.path);
@@ -314,7 +316,7 @@ test("B1-22 a cache hit never re-executes the recipe and runs the full verificat
   observer.restore();
   assert.deepEqual([second.cache, second.publication], ["hit", "existing_object_reverified"]);
   assert.equal(observer.calls.filter(c => c.arguments.includes(RECIPE_MARK)).length, 0, "no recipe process on a hit");
-  assert.equal(observer.calls.filter(c => c.tool === "ffprobe").length, 2, "the source and the cached object are both probed");
+  assert.equal(observer.calls.filter(c => c.tool === "ffprobe").length, 4, "legacy probes plus fresh profile facts and packet observations of the source");
   assert.equal(observer.calls.filter(c => c.tool === "ffmpeg" && c.arguments.includes("framemd5")).length, 4, "decoded video and audio packets of both are re-measured");
   assert.deepEqual(second.derivation, first.derivation);
   assert.deepEqual(second.authorization, first.authorization);

@@ -98,7 +98,7 @@ test("B1B-S02 the adapter's static boundary: exact imports, spawn only, no listi
   assert.deepEqual(processNames, ["spawn"]);
   for (const forbidden of ["readdir", "opendir", "glob", "watch", "fetch", "exec", "execSync", "execFile", "execFileSync", "spawnSync", "fork", "Socket", "createConnection",
     "eval", "require", "rename", "copyFile", "writeFileSync"]) assert.ok(!names.has(forbidden), `the adapter names ${forbidden}`);
-  assert.equal((text.match(/\bspawn\(/g) ?? []).length, 2, "two direct spawns: one supervised measurement and the recipe");
-  assert.equal((text.match(/shell: false/g) ?? []).length, 2);
+  assert.equal((text.match(/\bspawn\(/g) ?? []).length, 3, "supervised measurement, frozen N1 recipe, and closed v1 plan execution");
+  assert.equal((text.match(/shell: false/g) ?? []).length, 3);
   assert.doesNotMatch(text, /shell: true|process\.env\[(?!"SystemRoot")|Math\.random|Date\.now|new Date\(/);
 });

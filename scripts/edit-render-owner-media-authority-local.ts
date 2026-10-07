@@ -40,7 +40,7 @@ import type { RuntimeCall, RuntimeClock } from "../packages/edit-runtime/index.j
 import { requireCall } from "../packages/edit-runtime/call.js";
 import { runtimeNow, verifyClaim } from "../packages/edit-runtime/ledger.js";
 import { FootageAuthorizationDerivedSchema } from "../packages/footage-analyzer/protocol.js";
-import { CanonicalMediaDerivationSchema } from "../packages/media-ingest/index.js";
+import { AnyCanonicalMediaDerivationSchema } from "../packages/media-ingest/index.js";
 
 const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/, MAX_LOCATION_LENGTH = 1024, WINDOWS = sep === "\\";
 function fail(code: EditRenderErrorCode, message: string): never { throw new EditRenderError(code, message); }
@@ -182,7 +182,7 @@ export class OwnerMediaLifecycleAuthority {
       return;
     }
     const lineage = entry.lineage, root = this.#entry(lineage.rootAssetId), derived = FootageAuthorizationDerivedSchema.safeParse(entry.declaration.authorization);
-    if (provenance.sourceType !== "system_canonicalized" || !derived.success || !CanonicalMediaDerivationSchema.safeParse(lineage.derivation).success
+    if (provenance.sourceType !== "system_canonicalized" || !derived.success || !AnyCanonicalMediaDerivationSchema.safeParse(lineage.derivation).success
       || root.lineage !== null || !equal(root.declaration.authorization, derived.data.derivedFrom.rootAuthorization)
       || !equal(provenance.root, { assetId: root.declaration.assetId, contentHash: root.declaration.contentHash, sizeBytes: root.declaration.sizeBytes })
       || provenance.derivationId !== lineage.derivationId || provenance.recipeId !== lineage.recipeId) {
@@ -354,7 +354,7 @@ async function createCanonical(supplied: unknown, baseDirectory: string, clock: 
       // A derivative is considered only after its root is registered and verified.
       const root = registry.get(d.rootAssetId);
       if (root === undefined || root.lineage !== null) fail("lifecycle_authority_scope_invalid", "A canonical derivative is registered only after its declared root.");
-      const authorization = FootageAuthorizationDerivedSchema.safeParse(d.authorization), derivation = CanonicalMediaDerivationSchema.safeParse(d.derivation);
+      const authorization = FootageAuthorizationDerivedSchema.safeParse(d.authorization), derivation = AnyCanonicalMediaDerivationSchema.safeParse(d.derivation);
       if (!authorization.success || !derivation.success || !equal(authorization.data.derivedFrom.rootAuthorization, root.declaration.authorization)
         || derivation.data.output.contentHash !== d.contentHash || derivation.data.output.sizeBytes !== d.sizeBytes || derivation.data.source.contentHash !== root.declaration.contentHash) {
         fail("lifecycle_authority_scope_invalid", "A declared derivative's derivation and authorization must revalidate against its registered root.");

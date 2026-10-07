@@ -1,10 +1,10 @@
 /**
- * Gate 7 Batch 3E-B1B: the one local adapter that may canonicalize media. It classifies one owner-authorized local source from a pinned
- * ffprobe of its exact verified bytes, and for NORMALIZE_N1 alone it runs exactly the accepted N1 recipe (packages/media-ingest/canonical.ts)
- * under the pinned FFmpeg, verifies the output completely and publishes it, content-addressed and without overwrite, into the private
- * canonical store `<workspace>/.local-media/canonical-v0/`.
+ * Gate 7 Batch 3E-B2-A2, extending B1B's one local adapter. Trusted held-byte observations feed CanonicalMediaProfile v1 and its planner.
+ * A legacy N1-only candidate still executes the exact accepted N1 recipe. Every other exact-remux plan is compiled here, measured against
+ * fresh output facts and by-index content digests, and published without overwrite into the same private canonical store
+ * `<workspace>/.local-media/canonical-v0/`. A deferred candidate is never re-encoded here.
  *
- * - DIRECT and REFUSE create nothing: no store, copy, transcode or remux.
+ * - Profile-controlled DIRECT, DEFER and REFUSE create nothing: no store, copy, transcode or remux.
  * - Probe-to-bytes binding. A pinned process never opens a path. Each child inherits its own fresh read-only handle, opened here,
  *   verified to be the anchor's file object (device and inode) and to hash to the exact expected bytes immediately before the spawn, and
  *   re-hashed after exit; a probe or digest of changed bytes is never evidence. One handle is never given to two children, because they
@@ -12,14 +12,14 @@
  *   before anything is returned.
  * - The runtime is only the owner-pinned build in the approved tool root, re-verified by full SHA-256 immediately before every spawn: no
  *   PATH, no shell, a minimal environment, an fd-only protocol whitelist, and an argv of fixed tokens (the recipe is the accepted template
- *   with only its descriptor and byte-bound placeholders filled). The approved tool root is every child's working directory; no argument
+ *   with only its descriptor and byte-bound placeholders filled; the plan compiler has a closed vocabulary). The approved tool root is every child's working directory; no argument
  *   names a file, so nothing is ever written there.
  * - Publication: an exclusive pending object, completely verified, sealed read-only, then hard-linked to its content name. An occupied
  *   name is trusted only after it re-reads, re-hashes and re-probes as exactly the verified bytes; it is never overwritten or repaired.
  * - The computation record (packages/edit-render/owner-media.ts) maps a computation to its verified output and names no scope. A cache hit
  *   never re-runs the recipe and repeats every verification before any trust. Cache identity is never authorization: each caller's
  *   derivation and derived authorization are built only from its own root authorization and consent.
- * No message carries a location, and raw process output is never persisted.
+ * No error message carries a location, and raw process output is never persisted.
  */
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
@@ -28,19 +28,22 @@ import { dirname, isAbsolute, join, parse as parsePath, relative, resolve, sep }
 import { fileURLToPath } from "node:url";
 import { canonicalSerialize } from "../packages/domain/serialization.js";
 import { MAX_PROBE_OUTPUT_BYTES, PINNED_MEDIA_RUNTIME, parseProbeJson, type ProbeReport } from "../packages/edit-render/index.js";
-import { CANONICAL_COMPUTATION_RECORD_IDENTITY, CANONICAL_STORE, canonicalComputationRecordName, canonicalComputationRecordOf, canonicalObjectName }
+import { CANONICAL_COMPUTATION_RECORD_IDENTITY, CANONICAL_PLAN_COMPUTATION_RECORD_IDENTITY, CANONICAL_STORE, canonicalComputationRecordName, canonicalComputationRecordOf, canonicalObjectName }
   from "../packages/edit-render/owner-media.js";
 import { checkIdentity } from "../packages/editorial/common.js";
 import { MAX_STAGED_SOURCE_BYTES, type RuntimeClock } from "../packages/edit-runtime/index.js";
 import { FootageAuthorizationRootSchema, FootageAuthorizationSchema, type FootageAuthorization, type FootageAuthorizationDerived }
   from "../packages/footage-analyzer/protocol.js";
 import { CANONICAL_TOOLCHAIN, MediaIngestError, N1_ARGV_TEMPLATE, N1_RECIPE, buildCanonicalDerivedAuthorization, buildCanonicalMediaDerivation, canonicalComputationIdOf,
-  classifyCanonicalIngest, type CanonicalClassification, type CanonicalMediaDerivation } from "../packages/media-ingest/index.js";
+  classifyCanonicalIngest, CanonicalMediaFactsSchema, type CanonicalMediaFacts, type CanonicalClassification, type CanonicalMediaDerivation } from "../packages/media-ingest/index.js";
+import { DISPLAY_MATRIX_CARRIER_OBSERVATION, type VideoStreamFacts, type StreamFacts } from "../packages/media-ingest/profile.js";
+import { CANONICAL_PLAN_TOOLCHAIN, CanonicalizationPlanSchema, PLAN_VERIFICATION_METHODS, buildCanonicalMediaPlanDerivation, buildCanonicalPlanDerivedAuthorization,
+  canonicalPlanComputationIdOf, planCanonicalizationV1, type CanonicalMediaPlanDerivation, type CanonicalizationPlan, type CanonicalPlanningResult } from "../packages/media-ingest/plan.js";
 
 export const CANONICAL_INGEST_ERROR_CODES = ["request_invalid", "authorization_invalid", "canonicalization_consent_required", "runtime_config_invalid",
   "runtime_binary_missing", "runtime_binary_mismatch", "source_location_invalid", "source_mismatch", "source_changed", "store_location_invalid", "store_unavailable",
   "process_failed", "process_timeout", "probe_invalid", "digest_invalid", "output_invalid", "verification_failed", "cache_corrupt", "publication_conflict",
-  "unexpected_failure"] as const;
+  "plan_compiler_conflict", "audio_retime_execution_conflict", "unexpected_failure"] as const;
 export type CanonicalIngestErrorCode = (typeof CANONICAL_INGEST_ERROR_CODES)[number];
 /** Every refusal of this adapter carries one owned code; no message carries a location. */
 export class CanonicalIngestError extends Error {
@@ -213,7 +216,8 @@ async function reader(anchor: Anchor, code: CanonicalIngestErrorCode): Promise<F
 async function reconfirm(anchor: Anchor, code: CanonicalIngestErrorCode): Promise<void> {
   let info;
   try { info = await lstat(anchor.path, { bigint: true }); } catch { fail(code, "A verified file disappeared."); }
-  if (info.isSymbolicLink() || !info.isFile() || info.dev !== anchor.dev || info.ino !== anchor.ino || await hashHandle(anchor.handle, anchor.sizeBytes) !== anchor.contentHash) {
+  if (info.isSymbolicLink() || !info.isFile() || info.dev !== anchor.dev || info.ino !== anchor.ino || info.size !== BigInt(anchor.sizeBytes)
+    || (await anchor.handle.stat({ bigint: true })).size !== BigInt(anchor.sizeBytes) || await hashHandle(anchor.handle, anchor.sizeBytes) !== anchor.contentHash) {
     fail(code, "A verified file changed.");
   }
 }
@@ -315,7 +319,7 @@ function requireCompleted(run: ProcessRun, what: string): void {
 
 // ---------------------------------------------------------------- one operation's private context
 export type PinnedRole = "source_probe" | "source_video_digest" | "source_audio_digest" | "canonicalize" | "output_probe" | "output_video_digest" | "output_audio_digest"
-  | "published_probe";
+  | "published_probe" | "source_facts" | "source_packets" | "source_headers" | "output_facts" | "output_packets" | "output_headers";
 export interface CanonicalIngestInstrumentation {
   /** Test-only: called after a pinned process's input handle is verified, immediately before it is spawned. It grants nothing. */
   beforeProcess?: (context: { role: PinnedRole }) => Promise<void>;
@@ -329,20 +333,315 @@ async function hook(run: (() => Promise<void>) | undefined): Promise<void> {
 }
 /** One pinned process over exactly one fresh verified handle of `subject`; the subject's bytes are checked again before the run is read. */
 async function runOver(ctx: Context, subject: Anchor, changed: CanonicalIngestErrorCode, role: PinnedRole, which: "ffmpeg" | "ffprobe", argv: readonly string[],
-  timeoutMilliseconds: number, stdoutLimit: number): Promise<ProcessRun> {
+  timeoutMilliseconds: number, stdoutLimit: number, headers?: HeaderObservation): Promise<ProcessRun> {
   const handle = await reader(subject, changed);
   try {
-    const binary = await pinned(ctx.toolRoot, which);
     await hook(ctx.hooks.beforeProcess === undefined ? undefined : () => ctx.hooks.beforeProcess!({ role }));
+    await reconfirm(subject, changed);
+    const binary = await pinned(ctx.toolRoot, which);
     const child = spawn(binary.path, [...argv], { shell: false, windowsHide: true, cwd: ctx.toolRoot, env: minimalEnvironment(), stdio: ["ignore", "pipe", "pipe", handle.fd] });
+    if (headers !== undefined) child.stderr?.on("data", (chunk: Buffer) => headers.consume(chunk));
     const run = await supervise(child, timeoutMilliseconds, stdoutLimit);
     // A measurement of changed bytes is never evidence, whatever the process reported.
     if (await hashHandle(handle, subject.sizeBytes) !== subject.contentHash) fail(changed, "Measured bytes changed while a pinned process read them.");
+    await reconfirm(subject, changed);
     return run;
   } finally { await handle.close().catch(() => undefined); }
 }
 
-// ---------------------------------------------------------------- measurements of exact bytes
+// ---------------------------------------------------------------- B2-A2 observations of exact bytes (never accepted from a caller)
+const FACT_ENTRIES = "stream=index,id,codec_type,codec_name,codec_tag_string,profile,width,height,pix_fmt,bits_per_raw_sample,field_order,has_b_frames,"
+  + "r_frame_rate,time_base,start_pts,sample_rate,channels,channel_layout,color_range,color_primaries,color_transfer,color_space:stream_side_data"
+  + ":format=format_name:frame=media_type,stream_index,pts,width,height,pix_fmt,nb_samples,color_range,color_primaries,color_transfer,color_space:frame_side_data";
+const PACKET_ENTRIES = "packet=stream_index,pts,dts,duration,size,pos,flags";
+/** B2R e14c/e14d: automatic frame threading changes HEVC side-data observations. This authority always decodes on one thread. */
+export const CANONICAL_FACT_OBSERVATION_V1 = { version: "exact_byte_facts_v1", decoderThreads: 1,
+  containerSar: "pasp_from_held_iso_bmff_track", bitstreamSar: "pinned_trace_headers_every_sps", sei: "pinned_trace_headers_exact_uuid",
+  videoTiming: "decoded_presentation_pts", audioTiming: "decoded_pts_and_sample_counts" } as const;
+type JsonObject = Record<string, unknown>;
+function objectOf(value: unknown): JsonObject {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) fail("probe_invalid", "A pinned observation is not an object.");
+  return value as JsonObject;
+}
+function objectsOf(value: unknown): JsonObject[] {
+  if (!Array.isArray(value) || value.length > 800_000) fail("probe_invalid", "A pinned observation is not a bounded table.");
+  return value.map(objectOf);
+}
+function intOf(value: unknown): number {
+  const number = typeof value === "string" && /^-?\d{1,16}$/.test(value) ? Number(value) : value;
+  if (typeof number !== "number" || !Number.isSafeInteger(number)) fail("probe_invalid", "An observation needs an exact integer.");
+  return number;
+}
+function ratioFact(value: unknown, separator = "/"): { numerator: number; denominator: number } {
+  if (typeof value !== "string") fail("probe_invalid", "An observation needs an exact ratio.");
+  const parts = value.split(separator);
+  if (parts.length !== 2) fail("probe_invalid", "An observation needs two ratio terms.");
+  const numerator = intOf(parts[0]), denominator = intOf(parts[1]);
+  if (numerator < 1 || denominator < 1) fail("probe_invalid", "An observation needs positive ratio terms.");
+  return { numerator, denominator };
+}
+const sameObserved = (a: unknown, b: unknown) => canonicalSerialize(a) === canonicalSerialize(b);
+type Sar = VideoStreamFacts["sampleAspectRatio"]["bitstream"];
+const UNSPECIFIED_SAR: Sar = { state: "unspecified" };
+// H.264/HEVC aspect_ratio_idc values; extended SAR (255) carries the two exact 16-bit terms.
+const ASPECT_RATIOS = [[0, 1], [1, 1], [12, 11], [10, 11], [16, 11], [40, 33], [24, 11], [20, 11], [32, 11], [80, 33], [18, 11],
+  [15, 11], [64, 33], [160, 99], [4, 3], [3, 2], [2, 1]] as const;
+/** Streaming parser of the pinned CBS instrument. Diagnostics are never stored; malformed, missing or inconsistent SPS evidence refuses. */
+class HeaderObservation {
+  private pending = "";
+  private total = 0;
+  private invalid = false;
+  private sps: Record<string, number> | null = null;
+  private sars: Sar[] = [];
+  private uuid: number[] | null = null;
+  readonly uuids = new Set<string>();
+  unknownSei = false;
+  private finishSps(): void {
+    const fields = this.sps; this.sps = null;
+    if (fields === null) return;
+    if (fields.vui_parameters_present_flag === 0 || (fields.vui_parameters_present_flag === 1 && fields.aspect_ratio_info_present_flag === 0)) {
+      this.sars.push(UNSPECIFIED_SAR); return;
+    }
+    if (fields.vui_parameters_present_flag !== 1 || fields.aspect_ratio_info_present_flag !== 1) { this.invalid = true; return; }
+    const idc = fields.aspect_ratio_idc;
+    if (idc === 0) { this.sars.push(UNSPECIFIED_SAR); return; }
+    const terms = idc === 255 ? [fields.sar_width, fields.sar_height] : idc === undefined ? undefined : ASPECT_RATIOS[idc];
+    if (terms === undefined || terms[0] === undefined || terms[1] === undefined || terms[0] <= 0 || terms[1] <= 0) { this.invalid = true; return; }
+    this.sars.push({ state: "declared", numerator: terms[0], denominator: terms[1] });
+    if (this.sars.length > 100_000) this.invalid = true;
+  }
+  private line(line: string): void {
+    const match = /^\[trace_headers @ [0-9A-Fa-f]+\] (.*)$/.exec(line.trimEnd());
+    if (match === null) return;
+    const text = match[1]!;
+    if (text === "Sequence Parameter Set") { this.finishSps(); this.sps = {}; return; }
+    if (/^[A-Z]/.test(text)) { this.finishSps(); if (text === "User Data Unregistered") { if (this.uuid !== null) this.invalid = true; this.uuid = []; } return; }
+    const field = /^\d+ +([a-zA-Z0-9_\[\]]+) +[01]+ += +(-?\d+)$/.exec(text);
+    if (field === null) return;
+    const name = field[1]!, value = Number(field[2]);
+    if (this.sps !== null && ["vui_parameters_present_flag", "aspect_ratio_info_present_flag", "aspect_ratio_idc", "sar_width", "sar_height"].includes(name)) {
+      if (Object.hasOwn(this.sps, name)) this.invalid = true; this.sps[name] = value;
+    }
+    const uuidIndex = /^uuid_iso_iec_11578\[(\d+)\]$/.exec(name);
+    if (uuidIndex !== null) {
+      if (this.uuid === null || Number(uuidIndex[1]) !== this.uuid.length || value < 0 || value > 255) { this.invalid = true; return; }
+      this.uuid.push(value);
+      if (this.uuid.length === 16) { this.uuids.add(Buffer.from(this.uuid).toString("hex")); this.uuid = null; }
+      if (this.uuids.size > 32) this.invalid = true;
+    }
+    if (name === "payload_type" && value !== 5) this.unknownSei = true;
+  }
+  consume(bytes: Buffer): void {
+    this.total += bytes.length;
+    if (this.total > 512 * 1024 * 1024 || this.invalid) { this.invalid = true; return; }
+    this.pending += bytes.toString("utf8");
+    let end: number;
+    while ((end = this.pending.indexOf("\n")) !== -1) { this.line(this.pending.slice(0, end)); this.pending = this.pending.slice(end + 1); }
+    if (this.pending.length > 8192) this.invalid = true;
+  }
+  finish(): Sar {
+    if (this.pending !== "") this.line(this.pending);
+    this.finishSps();
+    if (this.invalid || this.uuid !== null || this.sars.length === 0 || !this.sars.every(s => sameObserved(s, this.sars[0]))) {
+      fail("probe_invalid", "The pinned bitstream observation lacks one consistent, independently measured SAR declaration.");
+    }
+    return this.sars[0]!;
+  }
+}
+
+interface MediaBox { type: string; start: number; end: number; header: number }
+function mediaBoxes(bytes: Buffer, start: number, end: number): MediaBox[] {
+  const result: MediaBox[] = [];
+  while (start < end) {
+    if (start + 8 > end || result.length > 100_000) fail("probe_invalid", "The container box table is malformed or unbounded.");
+    const short = bytes.readUInt32BE(start), header = short === 1 ? 16 : 8;
+    if (start + header > end) fail("probe_invalid", "A container box header is truncated.");
+    const size = short === 1 ? Number(bytes.readBigUInt64BE(start + 8)) : short === 0 ? end - start : short;
+    if (!Number.isSafeInteger(size) || size < header || start + size > end) fail("probe_invalid", "A container box has invalid bounds.");
+    result.push({ type: bytes.toString("latin1", start + 4, start + 8), start, end: start + size, header }); start += size;
+  }
+  return result;
+}
+async function readRange(handle: FileHandle, position: number, size: number): Promise<Buffer> {
+  if (!Number.isSafeInteger(position) || position < 0 || !Number.isSafeInteger(size) || size < 0 || size > 64 * 1024 * 1024) fail("probe_invalid", "A container read exceeds its bound.");
+  const bytes = Buffer.alloc(size); let at = 0;
+  while (at < size) { const read = await handle.read(bytes, at, size - at, position + at); if (read.bytesRead === 0) fail("probe_invalid", "A container read is truncated."); at += read.bytesRead; }
+  return bytes;
+}
+interface ContainerVideo { trackId: number; sar: Sar; hasClap: boolean }
+/** Independent pasp observation: the actual sample entry, never ffprobe's effective winner. B2R e02/mp4.mjs establishes this structure. */
+async function containerVideoOf(subject: Anchor, changed: CanonicalIngestErrorCode): Promise<ContainerVideo[]> {
+  const handle = await reader(subject, changed);
+  try {
+    let position = 0, count = 0, moov: Buffer | null = null;
+    while (position < subject.sizeBytes) {
+      if (++count > 100_000 || position + 8 > subject.sizeBytes) fail("probe_invalid", "The container box table is malformed.");
+      const header = await readRange(handle, position, Math.min(16, subject.sizeBytes - position));
+      const short = header.readUInt32BE(0), length = short === 1 ? 16 : 8;
+      if (header.length < length) fail("probe_invalid", "The container header is truncated.");
+      const size = short === 1 ? Number(header.readBigUInt64BE(8)) : short === 0 ? subject.sizeBytes - position : short;
+      if (!Number.isSafeInteger(size) || size < length || position + size > subject.sizeBytes) fail("probe_invalid", "The container box exceeds its source.");
+      if (header.toString("latin1", 4, 8) === "moov") {
+        if (moov !== null) fail("probe_invalid", "Several movie headers are ambiguous.");
+        moov = await readRange(handle, position + length, size - length);
+      }
+      position += size;
+    }
+    if (moov === null) fail("probe_invalid", "The source has no ISO BMFF movie header.");
+    const bytes = moov, result: ContainerVideo[] = [];
+    const children = (box: MediaBox) => mediaBoxes(bytes, box.start + box.header, box.end);
+    const required = (list: MediaBox[], type: string): MediaBox => {
+      const matches = list.filter(box => box.type === type);
+      if (matches.length !== 1) fail("probe_invalid", "A movie track has an ambiguous required box."); return matches[0]!;
+    };
+    for (const trak of mediaBoxes(bytes, 0, bytes.length).filter(box => box.type === "trak")) {
+      const track = children(trak), mdia = required(track, "mdia"), media = children(mdia), hdlr = required(media, "hdlr");
+      if (bytes.toString("latin1", hdlr.start + hdlr.header + 8, hdlr.start + hdlr.header + 12) !== "vide") continue;
+      const tkhd = required(track, "tkhd"), body = tkhd.start + tkhd.header, version = bytes[body];
+      if (version !== 0 && version !== 1) fail("probe_invalid", "The track header version is unsupported.");
+      const trackId = bytes.readUInt32BE(body + (version === 1 ? 20 : 12));
+      const stsd = required(children(required(children(required(media, "minf")), "stbl")), "stsd"), sd = stsd.start + stsd.header;
+      if (bytes.readUInt32BE(sd + 4) !== 1) fail("probe_invalid", "Several video sample descriptions need separate evidence.");
+      const entries = mediaBoxes(bytes, sd + 8, stsd.end);
+      if (entries.length !== 1 || entries[0]!.end - entries[0]!.start < 86) fail("probe_invalid", "The video sample entry is malformed.");
+      const entry = entries[0]!, kids = mediaBoxes(bytes, entry.start + entry.header + 78, entry.end), pasps = kids.filter(box => box.type === "pasp");
+      if (pasps.length > 1) fail("probe_invalid", "Several container SAR declarations are ambiguous.");
+      let sar: Sar = UNSPECIFIED_SAR;
+      if (pasps.length === 1) {
+        const pasp = pasps[0]!, at = pasp.start + pasp.header;
+        if (pasp.end - at !== 8) fail("probe_invalid", "The container SAR declaration is malformed.");
+        const numerator = bytes.readUInt32BE(at), denominator = bytes.readUInt32BE(at + 4);
+        if (numerator === 0 || denominator === 0) fail("probe_invalid", "The container SAR declaration has a zero term.");
+        sar = { state: "declared", numerator, denominator };
+      }
+      result.push({ trackId, sar, hasClap: kids.some(box => box.type === "clap") });
+    }
+    if (await hashHandle(handle, subject.sizeBytes) !== subject.contentHash) fail(changed, "The container changed during its observation.");
+    await reconfirm(subject, changed); return result;
+  } finally { await handle.close().catch(() => undefined); }
+}
+interface PacketObservation { streamIndex: number; pts: number; dts: number; duration: number; position: number; size: number }
+interface FreshFacts { facts: CanonicalMediaFacts; packets: PacketObservation[] }
+async function factsOf(ctx: Context, subject: Anchor, changed: CanonicalIngestErrorCode, output: boolean): Promise<FreshFacts> {
+  const prefix = output ? "output" : "source";
+  const query = (entries: string) => ["-hide_banner", "-loglevel", "error", "-threads", "1", "-protocol_whitelist", "fd", "-f", "mov", "-fd", "3",
+    "-show_entries", entries, "-of", "json=compact=1", "-i", "fd:"];
+  const decoded = await runOver(ctx, subject, changed, `${prefix}_facts`, "ffprobe", query(FACT_ENTRIES), HARD.probeTimeoutMilliseconds, MAX_PROBE_OUTPUT_BYTES);
+  requireCompleted(decoded, "facts observation");
+  let raw: JsonObject;
+  try { raw = objectOf(JSON.parse(decoded.stdout.toString("utf8"))); } catch { fail("probe_invalid", "The pinned facts observation is malformed."); }
+  const streams = objectsOf(raw.streams), frames = objectsOf(raw.frames).filter(frame => frame.media_type === "video" || frame.media_type === "audio");
+  const container = await containerVideoOf(subject, changed);
+  const packetRun = await runOver(ctx, subject, changed, `${prefix}_packets`, "ffprobe", query(PACKET_ENTRIES), HARD.probeTimeoutMilliseconds, MAX_PROBE_OUTPUT_BYTES);
+  requireCompleted(packetRun, "packet observation");
+  let rawPackets: JsonObject[];
+  try { rawPackets = objectsOf(objectOf(JSON.parse(packetRun.stdout.toString("utf8"))).packets); } catch { fail("probe_invalid", "The pinned packet observation is malformed."); }
+  const avIndexes = new Set(streams.filter(s => s.codec_type === "video" || s.codec_type === "audio").map(s => intOf(s.index)));
+  const packets: PacketObservation[] = rawPackets.filter(p => avIndexes.has(intOf(p.stream_index))).map(p => ({ streamIndex: intOf(p.stream_index), pts: intOf(p.pts),
+    dts: intOf(p.dts), duration: intOf(p.duration), position: intOf(p.pos), size: intOf(p.size) }));
+  if (packets.some(p => p.position < 0 || p.size <= 0 || p.position + p.size > subject.sizeBytes)) fail("probe_invalid", "A packet lies outside the observed source.");
+  const observed: StreamFacts[] = [];
+  const colorOf = (r: JsonObject): VideoStreamFacts["color"] => {
+    const label = (v: unknown) => v === undefined || v === "unknown" || v === "unspecified" ? null : typeof v === "string" ? v : fail("probe_invalid", "A colour field is malformed.");
+    const range = label(r.color_range);
+    if (range !== null && range !== "tv" && range !== "pc") fail("probe_invalid", "A colour range is not recognized.");
+    return { range, primaries: label(r.color_primaries), transfer: label(r.color_transfer), matrix: label(r.color_space) };
+  };
+  for (const stream of streams) {
+    const index = intOf(stream.index), decodedFrames = frames.filter(frame => intOf(frame.stream_index) === index);
+    if (stream.codec_type === "video") {
+      if (stream.codec_name !== "h264" && stream.codec_name !== "hevc") fail("probe_invalid", "The video codec has no supported exact-byte bitstream observer.");
+      const header = new HeaderObservation();
+      const run = await runOver(ctx, subject, changed, `${prefix}_headers`, "ffmpeg", ["-hide_banner", "-nostdin", "-nostats", "-loglevel", "info", "-copyts", ...FD_INPUT,
+        "-map", `0:${index}`, "-c", "copy", "-bsf:v", "trace_headers", "-f", "null", "-protocol_whitelist", "fd", "-fd", "1", "fd:"],
+      HARD.probeTimeoutMilliseconds, HARD.maxRecipeStdoutBytes, header);
+      requireCompleted(run, "bitstream observation");
+      const bitstream = header.finish();
+      if (typeof stream.id !== "string" || !/^0x[0-9a-fA-F]+$/.test(stream.id)) fail("probe_invalid", "The stream has no exact container track identity.");
+      const entries = container.filter(entry => entry.trackId === Number.parseInt(stream.id as string, 16));
+      if (entries.length !== 1) fail("probe_invalid", "The video does not join exactly one container track.");
+      const entry = entries[0]!, sideData: VideoStreamFacts["sideData"] = [], streamSide = stream.side_data_list === undefined ? [] : objectsOf(stream.side_data_list);
+      let displayMatrix: VideoStreamFacts["displayMatrix"] = { state: "absent" }, frameCropping: VideoStreamFacts["frameCropping"] = { state: "absent" };
+      const matrixCarriers = { observation: DISPLAY_MATRIX_CARRIER_OBSERVATION, stream: [] as number[][], frames: decodedFrames.map(() => [] as number[][]) };
+      let matrixSeen = false, cropSeen = false, userDataSeen = false;
+      const addSide = (data: JsonObject, carrier: "frame" | "stream", frameIndex?: number) => {
+        const type = data.side_data_type;
+        if (type === "Display Matrix" || type === "3x3 displaymatrix") {
+          const lines = typeof data.displaymatrix === "string" ? data.displaymatrix.trim().split(/\r?\n/) : [];
+          const parsed = lines.map(line => /^\s*\d{8}:\s+(-?\d+)\s+(-?\d+)\s+(-?\d+)\s*$/.exec(line));
+          if (parsed.length !== 3 || parsed.some(line => line === null)) fail("probe_invalid", "A matrix carrier cannot be read completely.");
+          const coefficients = parsed.flatMap(line => line!.slice(1).map(Number));
+          if (carrier === "stream") {
+            if (matrixSeen) fail("probe_invalid", "Several display matrices are ambiguous."); matrixSeen = true;
+            matrixCarriers.stream.push(coefficients); displayMatrix = { state: "present", coefficients }; return;
+          }
+          matrixCarriers.frames[frameIndex!]!.push(coefficients);
+          sideData.push({ carrier, kind: "display_matrix", seiUuid: null }); return;
+        }
+        if (carrier === "stream" && type === "Frame Cropping") {
+          if (cropSeen) fail("probe_invalid", "Several clean apertures are ambiguous."); cropSeen = true;
+          frameCropping = { state: "present", top: intOf(data.crop_top), bottom: intOf(data.crop_bottom), left: intOf(data.crop_left), right: intOf(data.crop_right) }; return;
+        }
+        if (type === "H.26[45] User Data Unregistered SEI message") {
+          userDataSeen = true;
+          if (header.uuids.size === 0) sideData.push({ carrier, kind: "unknown", seiUuid: null });
+          for (const seiUuid of header.uuids) sideData.push({ carrier, kind: "user_data_unregistered_sei", seiUuid }); return;
+        }
+        const kinds: Record<string, VideoStreamFacts["sideData"][number]["kind"]> = { "Display Matrix": "display_matrix", "3x3 displaymatrix": "display_matrix", "Mastering display metadata": "mastering_display_metadata",
+          "Content light level metadata": "content_light_level", "ICC profile": "icc_profile", "Spherical Mapping": "spherical_mapping", "Stereo 3D": "stereo_3d" };
+        sideData.push({ carrier, kind: typeof type === "string" && Object.hasOwn(kinds, type) ? kinds[type]! : "unknown", seiUuid: null });
+      };
+      streamSide.forEach(side => addSide(side, "stream"));
+      decodedFrames.forEach((frame, frameIndex) => {
+        if (frame.side_data_list !== undefined) objectsOf(frame.side_data_list).forEach(side => addSide(side, "frame", frameIndex));
+      });
+      if (entry.hasClap !== cropSeen) fail("probe_invalid", "The container clean aperture and decoder cropping evidence disagree.");
+      if ((header.uuids.size > 0 && !userDataSeen) || header.unknownSei) sideData.push({ carrier: "frame", kind: "unknown", seiUuid: null });
+      const color = colorOf(stream);
+      if (!decodedFrames.every(frame => sameObserved(colorOf(frame), color) && frame.pix_fmt === stream.pix_fmt)) fail("probe_invalid", "Decoded colour or pixel format changes within the source.");
+      const decodedSizes = new Map(decodedFrames.map(frame => { const size = { width: intOf(frame.width), height: intOf(frame.height) }; return [canonicalSerialize(size), size]; }));
+      // B2R CR01: ffprobe's decoder reports the uncropped frame; FFmpeg applies the container clean aperture at its decoded output.
+      // Observe that output independently. Rotation stays disabled so no display matrix is mistaken for encoded geometry.
+      if (cropSeen) {
+        const cropped = await runOver(ctx, subject, changed, output ? "output_video_digest" : "source_video_digest", "ffmpeg",
+          ["-hide_banner", "-nostdin", "-nostats", "-loglevel", "error", "-threads", "1", "-noautorotate", ...FD_INPUT, "-map", `0:${index}`,
+            "-fps_mode", "passthrough", "-enc_time_base:v", "demux", ...LISTING_TAIL], HARD.digestTimeoutMilliseconds, HARD.maxListingBytes);
+        requireCompleted(cropped, "decoded crop observation");
+        const listing = cropped.stdout.toString("utf8"); parseListing(listing, "video");
+        const dimensions = /^#dimensions 0: (\d+)x(\d+)$/m.exec(listing);
+        if (dimensions === null) fail("probe_invalid", "The cropped decoded dimensions are missing.");
+        const size = { width: Number(dimensions[1]), height: Number(dimensions[2]) };
+        decodedSizes.clear(); decodedSizes.set(canonicalSerialize(size), size);
+      }
+      const timeBase = ratioFact(stream.time_base);
+      if (timeBase.numerator !== 1) fail("probe_invalid", "The stream time base is not an ISO BMFF timescale.");
+      const pixelFormat = typeof stream.pix_fmt === "string" ? stream.pix_fmt : fail("probe_invalid", "The decoded pixel format is missing.");
+      const depth = /p(9|10|12|14|16)(le|be)$/.exec(pixelFormat);
+      const bitDepth = stream.bits_per_raw_sample === undefined ? depth === null ? 8 : Number(depth[1]) : intOf(stream.bits_per_raw_sample);
+      const value = { kind: "video", index, codec: stream.codec_name, pixelFormat, bitDepth, fieldOrder: stream.field_order ?? "unknown",
+        geometry: { declared: { width: intOf(stream.width), height: intOf(stream.height) }, decoded: [...decodedSizes.values()] },
+        sampleAspectRatio: { container: entry.sar, bitstream }, displayMatrix, frameCropping, color,
+        ...(matrixSeen || matrixCarriers.frames.some(frame => frame.length > 0) ? { displayMatrixCarriers: matrixCarriers } : {}),
+        sideData: [...new Map(sideData.map(side => [canonicalSerialize(side), side])).entries()].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([, side]) => side),
+        timeBase, declaredFrameRate: ratioFact(stream.r_frame_rate), decodeReordering: packets.some(p => p.streamIndex === index && p.pts !== p.dts),
+        presentationTimestamps: decodedFrames.map(frame => intOf(frame.pts)) };
+      observed.push(value as VideoStreamFacts);
+    } else if (stream.codec_type === "audio") {
+      const timeBase = ratioFact(stream.time_base);
+      if (timeBase.numerator !== 1) fail("probe_invalid", "The audio time base is not an ISO BMFF timescale.");
+      observed.push({ kind: "audio", index, codec: stream.codec_name === "pcm_s16le" ? "pcm_s16le" : stream.codec_name === "aac" ? stream.profile === "LC" ? "aac_lc" : "aac_other" : "other",
+        sampleRateHz: intOf(stream.sample_rate), channels: intOf(stream.channels), channelLayout: stream.channel_layout === "mono" ? "mono" : stream.channel_layout === "stereo" ? "stereo" : "other",
+        timeBase: { numerator: 1, denominator: timeBase.denominator }, frames: decodedFrames.map(frame => ({ pts: intOf(frame.pts), samples: intOf(frame.nb_samples) })) });
+    } else if (stream.codec_type === "data" && stream.codec_tag_string === "tmcd") observed.push({ kind: "timecode", index, codec: "tmcd" });
+    else if (stream.codec_type === "subtitle") observed.push({ kind: "subtitle", index, codec: stream.codec_name === "mov_text" ? "mov_text" : "other" });
+    else observed.push({ kind: stream.codec_type === "attachment" ? "attachment" : "data", index });
+  }
+  const parsed = CanonicalMediaFactsSchema.safeParse({ factsType: "CanonicalMediaFacts", factsVersion: "1.0.0", container: "iso_bmff", streams: observed });
+  if (!parsed.success) fail("probe_invalid", "The measured exact-byte facts do not satisfy the frozen facts contract.");
+  await reconfirm(subject, changed); return { facts: parsed.data, packets };
+}
+
+// ---------------------------------------------------------------- measurements of exact bytes (accepted N1 methods)
 interface Probed { text: string; rawDigest: string; probe: unknown; facts: unknown }
 function splitProbe(text: string): Probed | null {
   let raw: unknown;
@@ -487,10 +786,12 @@ async function readRecord(store: Store, computationId: string): Promise<StoredRe
     let text: string, value: unknown;
     try { text = new TextDecoder("utf-8", { fatal: true }).decode(bytes); value = JSON.parse(text); } catch { fail("cache_corrupt", "A computation record is not JSON."); }
     if (`${canonicalSerialize(value)}\n` !== text) fail("cache_corrupt", "A computation record is not stored exactly as published.");
-    const record = value as { artifactType?: unknown; computationId?: unknown; output?: { contentHash?: unknown; sizeBytes?: unknown } };
-    if (record.artifactType !== "CanonicalComputationRecord" || record.computationId !== computationId || !checkIdentity(record, "recordId", CANONICAL_COMPUTATION_RECORD_IDENTITY)
+    const record = value as { artifactType?: unknown; artifactVersion?: unknown; computationId?: unknown; output?: { contentHash?: unknown; sizeBytes?: unknown } };
+    const domain = record.artifactVersion === "0.2.0" ? CANONICAL_PLAN_COMPUTATION_RECORD_IDENTITY : CANONICAL_COMPUTATION_RECORD_IDENTITY;
+    if (record.artifactType !== "CanonicalComputationRecord" || record.computationId !== computationId || !checkIdentity(record, "recordId", domain)
       || typeof record.output?.contentHash !== "string" || !SHA256.test(record.output.contentHash) || !Number.isSafeInteger(record.output.sizeBytes)
       || (record.output.sizeBytes as number) <= 0) fail("cache_corrupt", "A computation record is not this computation's identified record.");
+    await reconfirm(anchor, "cache_corrupt");
     return { bytes: text, outputHash: record.output.contentHash, outputSize: record.output.sizeBytes as number };
   } finally { await anchor.handle.close(); }
 }
@@ -519,7 +820,7 @@ async function publishRecord(store: Store, name: string, bytes: string): Promise
 export interface CanonicalIngestRequest {
   /** The authorized source's absolute local path: execution-only, never part of an identity. */
   sourcePath: string;
-  /** Its AuthorizedFootage record; NORMALIZE_N1 additionally needs a 1.1.0 root that carries the owner's canonicalization consent. */
+  /** Its AuthorizedFootage record; every canonicalization needs a 1.1.0 root that carries the owner's canonicalization consent. */
   rootAuthorization: unknown;
   /** The approved pinned distribution directory. */
   toolRoot: string;
@@ -537,7 +838,9 @@ export interface SourceIdentity { assetId: string; contentHash: string; sizeByte
 export interface CanonicalIngestEvidence { sourceProbeDigest: string; outputProbeDigest: string; decodedVideoDigest: string; audioPacketDigest: string | null;
   frameCount: number; frameTableId: string; exactTiming: "identical" }
 export type CanonicalIngestResult =
-  | { outcome: "DIRECT" | "REFUSE"; source: SourceIdentity; classification: CanonicalClassification }
+  | { outcome: "DIRECT" | "DEFER" | "REFUSE"; source: SourceIdentity; classification: CanonicalClassification; planning?: CanonicalPlanningResult }
+  | { outcome: "PLAN"; source: SourceIdentity; planning: CanonicalPlanningResult; computationId: string; derivation: CanonicalMediaPlanDerivation;
+    authorization: FootageAuthorizationDerived; output: SourceIdentity; publication: "published_by_this_operation" | "existing_object_reverified"; cache: "miss" | "hit" }
   | { outcome: "NORMALIZE_N1"; source: SourceIdentity; classification: CanonicalClassification; computationId: string; derivation: CanonicalMediaDerivation;
     authorization: FootageAuthorizationDerived; output: SourceIdentity; publication: "published_by_this_operation" | "existing_object_reverified"; cache: "miss" | "hit";
     evidence: CanonicalIngestEvidence };
@@ -546,6 +849,8 @@ interface Read { sourcePath: unknown; authorization: FootageAuthorization; toolR
   hooks: CanonicalIngestInstrumentation }
 function readRequest(input: unknown): Read {
   if (input === null || typeof input !== "object") fail("request_invalid", "A canonicalization request is required.");
+  const keys = ["sourcePath", "rootAuthorization", "toolRoot", "workspaceRoot", "clock", "allowedPurposes", "limits", "instrumentation"];
+  if (!Reflect.ownKeys(input).every(k => typeof k === "string" && keys.includes(k))) fail("request_invalid", "Only source, authorization and bounded runtime inputs are accepted.");
   // Every caller-owned field is read exactly once, here, before any await.
   const r = input as Partial<Record<keyof CanonicalIngestRequest, unknown>>;
   const clock = r.clock as { now?: unknown } | null | undefined, now = clock === null || typeof clock !== "object" ? undefined : clock.now;
@@ -596,15 +901,216 @@ function readRequest(input: unknown): Read {
 }
 
 // ---------------------------------------------------------------- the operation
+/** Read-only source inspection through the same held-byte boundary as execution. Facts and commands are never request inputs. */
+export async function inspectCanonicalLocalMedia(input: CanonicalIngestRequest): Promise<{ source: SourceIdentity; facts: CanonicalMediaFacts }> {
+  const request = readRequest(input), root = request.authorization, toolRoot = await approvedRoot(request.toolRoot);
+  const ctx: Context = { toolRoot, hooks: request.hooks };
+  const source = await openAnchor(await exactLocation(request.sourcePath, "source_location_invalid"), "source_location_invalid", MAX_STAGED_SOURCE_BYTES);
+  try {
+    if (source.contentHash !== root.contentHash || source.sizeBytes !== root.sizeBytes) fail("source_mismatch", "The source's bytes are not the authorized bytes.");
+    const measured = await factsOf(ctx, source, "source_changed", false);
+    await reconfirm(source, "source_changed");
+    return { source: { assetId: `asset_${source.contentHash}`, contentHash: source.contentHash, sizeBytes: source.sizeBytes }, facts: measured.facts };
+  } catch (error) {
+    if (error instanceof CanonicalIngestError) throw error;
+    throw new CanonicalIngestError("probe_invalid", "The exact-byte observations could not be established.");
+  } finally { await source.handle.close().catch(() => undefined); }
+}
 function n1Argv(maxOutputBytes: number): string[] {
   const fill: Record<string, string> = { "{input_fd}": "3", "{output_fd}": "4", "{max_output_bytes}": String(maxOutputBytes) };
   return N1_ARGV_TEMPLATE.map(token => (Object.hasOwn(fill, token) ? fill[token]! : token));
 }
+
+// ---------------------------------------------------------------- the closed v1 plan compiler and measured verification
+/** B2R e03c requires -copyts; e03/e11 establish setts. A2 generated proofs add prescale and explicit audio packet durations.
+ * This function is private. Its only call uses fresh held-byte observations and the plan independently derived from them. */
+function planArgv(measured: FreshFacts, supplied: CanonicalizationPlan, maxOutputBytes: number): string[] {
+  const plan = CanonicalizationPlanSchema.parse(supplied), expected = planCanonicalizationV1(measured.facts).plan;
+  if (expected === null || !sameObserved(plan, expected)) fail("plan_compiler_conflict", "Only the exact ordered plan derived from these bytes can execute.");
+  const v = measured.facts.streams.find((s): s is VideoStreamFacts => s.kind === "video")!;
+  const a = measured.facts.streams.find(s => s.kind === "audio");
+  const rebase = plan.operations.find(o => o.op === "REBASE_TIMELINE_ZERO"), snap = plan.operations.find(o => o.op === "SNAP_VIDEO_TIMESTAMPS");
+  const declares = plan.operations.some(o => o.op === "DECLARE_SQUARE_SAMPLE_ASPECT"), retime = plan.operations.some(o => o.op === "RETIME_AUDIO_CONTIGUOUS");
+  const offset = (index: number) => rebase?.offsets.find(o => o.streamIndex === index)?.offsetTicks ?? 0;
+  const videoFilters: string[] = [], audioFilters: string[] = [];
+  // Subtract in the original integer time base before any expansion: a large exact t0 must not be multiplied into an inexact double.
+  if (rebase !== undefined) videoFilters.push(`setts=pts=PTS-${offset(v.index)}:dts=DTS-${offset(v.index)}`);
+  if (declares) videoFilters.push("h264_metadata=sample_aspect_ratio=1/1");
+  const scale = snap?.outputTimeBase.denominator ?? v.timeBase.denominator;
+  if (snap !== undefined) {
+    const period = snap.gridPeriodTicks;
+    // The source PTS is within P/4 of exactly slot i. Rounding after exact integer rescaling therefore maps it to that slot, including B-frames.
+    videoFilters.push(`setts=time_base=1/${scale}:prescale=1:pts=round(PTS/${period})*${period}:dts=round(DTS/${period})*${period}:duration=${period}`);
+  }
+  if (a !== undefined && (retime || rebase !== undefined)) {
+    const packets = measured.packets.filter(p => p.streamIndex === a.index), frames = new Map(a.frames.map(f => [f.pts, f.samples]));
+    const full = a.frames.reduce((n, f) => Math.max(n, f.samples), 0);
+    const samples = packets.map(p => {
+      if (a.codec === "pcm_s16le") {
+        const count = p.size / (2 * a.channels);
+        if (!Number.isSafeInteger(count) || count <= 0 || (frames.has(p.pts) && frames.get(p.pts) !== count)) {
+          fail("audio_retime_execution_conflict", "PCM packet sample counts do not match the decoded mapping.");
+        }
+        return count;
+      }
+      const observed = frames.get(p.pts);
+      if (observed !== undefined) return observed;
+      // AAC preroll remains a packet at its original negative instant; it is never counted as a presented frame.
+      if (p.pts < a.frames[0]!.pts && p.duration === full) return full;
+      return fail("audio_retime_execution_conflict", "An AAC packet has no exact decoded sample mapping.");
+    });
+    if (packets.length === 0) fail("audio_retime_execution_conflict", "An audio plan has no retained packets.");
+    const runs: { start: number; samples: number }[] = [];
+    samples.forEach((count, index) => { if (index === 0 || count !== samples[index - 1]) runs.push({ start: index, samples: count }); });
+    // Bounded balanced expression over measured duration runs; cumulative output uses the previous measured packet duration.
+    const duration = (lo: number, hi: number): string => {
+      if (lo + 1 === hi) return String(runs[lo]!.samples);
+      const mid = Math.floor((lo + hi) / 2);
+      return `if(lt(N\\,${runs[mid]!.start})\\,${duration(lo, mid)}\\,${duration(mid, hi)})`;
+    };
+    const start = packets[0]!.pts - offset(a.index), startDts = packets[0]!.dts - offset(a.index);
+    const pts = retime ? `if(eq(N\\,0)\\,${start}\\,PREV_OUTPTS+PREV_OUTDURATION)` : `PTS-${offset(a.index)}`;
+    const dts = retime ? `if(eq(N\\,0)\\,${startDts}\\,PREV_OUTDTS+PREV_OUTDURATION)` : `DTS-${offset(a.index)}`;
+    audioFilters.push(`setts=pts=${pts}:dts=${dts}:duration=${duration(0, runs.length)}`);
+  }
+  // The pinned MP4 muxer drops mono PCM's layout declaration. MOV retains it, within the same accepted ISO BMFF family (A2-E16).
+  const argv = ["-hide_banner", "-nostdin", "-nostats", "-loglevel", "error", "-copyts", ...FD_INPUT,
+    "-map", `0:${plan.streams.videoIndex}`, ...(plan.streams.audioIndex === null ? [] : ["-map", `0:${plan.streams.audioIndex}`]), "-c", "copy",
+    ...(videoFilters.length === 0 ? [] : ["-bsf:v", videoFilters.join(",")]), ...(audioFilters.length === 0 ? [] : ["-bsf:a", audioFilters.join(",")]),
+    "-video_track_timescale", String(scale), "-avoid_negative_ts", "disabled", "-fps_mode:v", "passthrough", "-map_metadata", "-1", "-map_chapters", "-1",
+    "-fflags", "+bitexact", "-fs", String(maxOutputBytes), "-protocol_whitelist", "fd", "-f", a?.codec === "pcm_s16le" ? "mov" : "mp4", "-fd", "4", "fd:"];
+  if (argv.join(" ").length > 24_000) fail("plan_compiler_conflict", "The measured plan cannot fit the bounded single invocation.");
+  return argv;
+}
+interface PlanMeasurements { decodedDigest: string; videoPackets: string; audioPackets: string | null }
+/** Positions come from a pinned probe of the held bytes. Digest every compressed payload by packet index, excluding timestamps. */
+async function packetContentDigest(subject: Anchor, observed: FreshFacts, index: number, changed: CanonicalIngestErrorCode): Promise<string> {
+  const handle = await reader(subject, changed), stream = observed.facts.streams[index]!;
+  const method = stream.kind === "video" ? PLAN_VERIFICATION_METHODS.videoPackets : PLAN_VERIFICATION_METHODS.audioPackets;
+  const rows: { index: number; size: number; md5: string }[] = [], buffer = Buffer.alloc(1024 * 1024);
+  try {
+    for (const packet of observed.packets.filter(p => p.streamIndex === index)) {
+      const digest = createHash("md5"); let at = 0;
+      while (at < packet.size) {
+        const count = Math.min(buffer.length, packet.size - at), read = await handle.read(buffer, 0, count, packet.position + at);
+        if (read.bytesRead !== count) fail(changed, "A retained packet could not be read whole.");
+        digest.update(buffer.subarray(0, count)); at += count;
+      }
+      rows.push({ index: rows.length, size: packet.size, md5: digest.digest("hex") });
+    }
+    if (rows.length === 0) fail("digest_invalid", "A retained stream has no packet payloads.");
+    if (await hashHandle(handle, subject.sizeBytes) !== subject.contentHash) fail(changed, "The packet bytes changed while measured.");
+    await reconfirm(subject, changed);
+    return createHash("sha256").update(canonicalSerialize({ method, codec: "codec" in stream ? stream.codec : null, count: rows.length, rows })).digest("hex");
+  } finally { await handle.close(); }
+}
+async function measurePlan(ctx: Context, subject: Anchor, observed: FreshFacts, changed: CanonicalIngestErrorCode, output: boolean): Promise<PlanMeasurements> {
+  const v = observed.facts.streams.find((s): s is VideoStreamFacts => s.kind === "video")!, a = observed.facts.streams.find(s => s.kind === "audio");
+  const run = await runOver(ctx, subject, changed, output ? "output_video_digest" : "source_video_digest", "ffmpeg",
+    ["-hide_banner", "-nostdin", "-nostats", "-loglevel", "error", "-threads", "1", "-noautorotate", ...FD_INPUT, "-map", `0:${v.index}`,
+      "-fps_mode", "passthrough", "-enc_time_base:v", "demux", ...LISTING_TAIL], HARD.digestTimeoutMilliseconds, HARD.maxListingBytes);
+  requireCompleted(run, "decoded frame content observation");
+  const text = run.stdout.toString("utf8"); parseListing(text, "video");
+  const size = v.geometry.decoded[0]!;
+  if (!text.split("\n").includes(`#dimensions 0: ${size.width}x${size.height}`)) fail("verification_failed", "The decoded listing geometry differs from its fresh facts.");
+  const rows = text.trimEnd().split("\n").filter(line => !line.startsWith("#")).map((line, index) => {
+    const fields = line.split(",").map(field => field.trim()); return { index, size: Number(fields[4]), md5: fields[5]! };
+  });
+  if (rows.length !== v.presentationTimestamps.length) fail("verification_failed", "The decoded content listing does not cover exactly the presented frames.");
+  const decodedDigest = createHash("sha256").update(canonicalSerialize({ method: PLAN_VERIFICATION_METHODS.decodedFrames, codec: "rawvideo",
+    pixelFormat: v.pixelFormat, bitDepth: v.bitDepth, geometry: v.geometry.decoded, count: rows.length, rows })).digest("hex");
+  return { decodedDigest, videoPackets: await packetContentDigest(subject, observed, v.index, changed),
+    audioPackets: a === undefined ? null : await packetContentDigest(subject, observed, a.index, changed) };
+}
+/** Execute, measure, publish and reverify a plan in the same no-overwrite canonical store used by N1. */
+async function executePlan(ctx: Context, request: Read, source: Anchor, observed: FreshFacts, planning: CanonicalPlanningResult): Promise<Extract<CanonicalIngestResult, { outcome: "PLAN" }>> {
+  const consenting = FootageAuthorizationRootSchema.safeParse(request.authorization);
+  if (!consenting.success) fail("canonicalization_consent_required", "Canonicalization needs an AuthorizedFootage 1.1.0 root with the owner's canonicalization consent.");
+  const identity = { assetId: `asset_${source.contentHash}`, contentHash: source.contentHash, sizeBytes: source.sizeBytes }, plan = planning.plan!;
+  const bound = request.maxOutputBytes ?? Math.min(2 * source.sizeBytes + 1_048_576, MAX_STAGED_SOURCE_BYTES);
+  const argv = planArgv(observed, plan, bound), store = await openStore(request.workspaceRoot, source.path);
+  const computationId = canonicalPlanComputationIdOf({ source: identity, plan, toolchain: CANONICAL_PLAN_TOOLCHAIN });
+  const sourceMeasured = await measurePlan(ctx, source, observed, "source_changed", false), record = await readRecord(store, computationId);
+  const verify = async (subject: Anchor, code: CanonicalIngestErrorCode): Promise<CanonicalMediaPlanDerivation> => {
+    try {
+      const fresh = await factsOf(ctx, subject, code, true);
+      if (planCanonicalizationV1(fresh.facts).outcome !== "DIRECT") fail(code, "The output does not conform to CanonicalMediaProfile v1.");
+      const measured = await measurePlan(ctx, subject, fresh, code, true), declares = plan.operations.some(o => o.op === "DECLARE_SQUARE_SAMPLE_ASPECT");
+      const derivation = buildCanonicalMediaPlanDerivation({ rootAuthorization: consenting.data, source: { facts: observed.facts }, plan,
+        output: { contentHash: subject.contentHash, sizeBytes: subject.sizeBytes, facts: fresh.facts,
+          decodedFrames: { sourceDigest: sourceMeasured.decodedDigest, outputDigest: measured.decodedDigest },
+          videoPackets: declares ? null : { sourceDigest: sourceMeasured.videoPackets, outputDigest: measured.videoPackets },
+          audioPackets: sourceMeasured.audioPackets === null || measured.audioPackets === null ? null : { sourceDigest: sourceMeasured.audioPackets, outputDigest: measured.audioPackets } } });
+      await reconfirm(subject, code); await reconfirm(source, "source_changed"); return derivation;
+    } catch (error) {
+      if (error instanceof CanonicalIngestError && (error.code === "source_changed" || error.code === "process_timeout" || error.code === "process_failed")) throw error;
+      fail(code, "The measured output fails exact profile, payload or temporal verification.");
+    }
+  };
+  let pending: FileHandle | null = null, pendingPath: string | null = null;
+  let derivation: CanonicalMediaPlanDerivation, publication: "published_by_this_operation" | "existing_object_reverified", cache: "miss" | "hit";
+  try {
+    if (record !== undefined) {
+      // Missing or altered bytes under an existing trusted record are corruption, never a reason to repair in place.
+      const cached = await openAnchor(join(store.objects, canonicalObjectName(record.outputHash)), "cache_corrupt", MAX_STAGED_SOURCE_BYTES);
+      try {
+        if (cached.contentHash !== record.outputHash || cached.sizeBytes !== record.outputSize) fail("cache_corrupt", "A cached object differs from its recorded identity.");
+        derivation = await verify(cached, "cache_corrupt");
+        if (canonicalComputationRecordOf(derivation).bytes !== record.bytes) fail("cache_corrupt", "The computation record differs from the freshly verified derivation.");
+        if ((await readRecord(store, computationId))?.bytes !== record.bytes) fail("cache_corrupt", "The computation record changed during cache verification.");
+        await reconfirm(cached, "cache_corrupt");
+      } finally { await cached.handle.close(); }
+      cache = "hit"; publication = "existing_object_reverified";
+    } else {
+      cache = "miss"; pendingPath = join(store.pending, `${randomBytes(16).toString("hex")}.mp4`); pending = await open(pendingPath, "wx+");
+      const initial = await pending.stat({ bigint: true }), input = await reader(source, "source_changed");
+      let run: ProcessRun;
+      try {
+        await hook(ctx.hooks.beforeProcess === undefined ? undefined : () => ctx.hooks.beforeProcess!({ role: "canonicalize" }));
+        await reconfirm(source, "source_changed");
+        const binary = await pinned(ctx.toolRoot, "ffmpeg");
+        const child = spawn(binary.path, argv, { shell: false, windowsHide: true, cwd: ctx.toolRoot, env: minimalEnvironment(),
+          stdio: ["ignore", "pipe", "pipe", input.fd, pending.fd] });
+        run = await supervise(child, request.canonicalizationTimeout, HARD.maxRecipeStdoutBytes);
+        if (await hashHandle(input, source.sizeBytes) !== source.contentHash) fail("source_changed", "The source changed during plan execution.");
+      } finally { await input.close(); }
+      requireCompleted(run, "plan canonicalization"); await reconfirm(source, "source_changed");
+      const written = Number((await pending.stat({ bigint: true })).size);
+      if (written === 0 || written > bound) fail("output_invalid", "The pending output is empty or exceeds its byte bound.");
+      const outputHash = await hashHandle(pending, written);
+      const subject: Anchor = { path: pendingPath, handle: pending, dev: initial.dev, ino: initial.ino, sizeBytes: written, contentHash: outputHash };
+      await reconfirm(subject, "output_invalid"); derivation = await verify(subject, "verification_failed");
+      await pending.chmod(0o444); await pending.sync(); await reconfirm(subject, "output_invalid");
+      await hook(ctx.hooks.beforePublication); await reconfirm(source, "source_changed"); await reconfirm(subject, "output_invalid");
+      const final = join(store.objects, canonicalObjectName(outputHash));
+      try { await link(pendingPath, final); publication = "published_by_this_operation"; } catch (error) {
+        if ((error as { code?: string }).code !== "EEXIST") fail("store_unavailable", "No-overwrite publication is unavailable.");
+        publication = "existing_object_reverified";
+      }
+      const winner = await openAnchor(final, "publication_conflict", MAX_STAGED_SOURCE_BYTES);
+      try {
+        if (winner.contentHash !== outputHash || winner.sizeBytes !== written || (publication === "published_by_this_operation"
+          && (winner.dev !== initial.dev || winner.ino !== initial.ino))) fail("publication_conflict", "The canonical content name holds other bytes.");
+        const freshDerivation = await verify(winner, "publication_conflict");
+        if (!sameObserved(freshDerivation, derivation)) fail("publication_conflict", "The winning object differs from the verified pending derivation.");
+        const computed = canonicalComputationRecordOf(freshDerivation);
+        await publishRecord(store, computed.name, computed.bytes); await reconfirm(winner, "publication_conflict");
+        const publishedRecord = await readRecord(store, computationId);
+        if (publishedRecord?.bytes !== computed.bytes) fail("publication_conflict", "The winning computation record does not match the verified object.");
+      } finally { await winner.handle.close(); }
+    }
+    await reconfirm(source, "source_changed");
+    const authorization = buildCanonicalPlanDerivedAuthorization({ derivation, dateAdded: request.dateAdded,
+      ...(request.allowedPurposes === undefined ? {} : { allowedPurposes: request.allowedPurposes }) });
+    return { outcome: "PLAN", source: identity, planning, computationId, derivation, authorization,
+      output: { assetId: derivation.output.assetId, contentHash: derivation.output.contentHash, sizeBytes: derivation.output.sizeBytes }, publication, cache };
+  } finally { if (pending !== null) await pending.close().catch(() => undefined); if (pendingPath !== null) await unlink(pendingPath).catch(() => undefined); }
+}
 const classifyProbe = (probed: Probed | null) => classifyCanonicalIngest(probed === null ? { probe: null, facts: null } : { probe: probed.probe, facts: probed.facts });
 /**
- * Classifies one authorized local source from a pinned probe of its exact verified bytes. DIRECT and REFUSE return at once and create
- * nothing. NORMALIZE_N1 runs the accepted recipe (or reuses an existing verified result of exactly this computation), verifies the output
- * completely against the source, publishes it without overwrite, and returns this root's derivation and derived authorization.
+ * Profile-controlled ingest of one authorized exact source. The trusted planner selects DIRECT, DEFER, REFUSE or a closed remux plan.
+ * The one-operation plan uses legacy N1 exactly when the frozen classifier also qualifies it. The N1 block below preserves its accepted
+ * recipe, identities, cache records and authorization. Other plans use measured 0.2.0 derivations in the same store.
  */
 export async function canonicalizeLocalMedia(input: CanonicalIngestRequest): Promise<CanonicalIngestResult> {
   const request = readRequest(input), root = request.authorization;
@@ -620,9 +1126,19 @@ export async function canonicalizeLocalMedia(input: CanonicalIngestRequest): Pro
     const identity: SourceIdentity = { assetId: `asset_${source.contentHash}`, contentHash: source.contentHash, sizeBytes: source.sizeBytes };
     const sourceProbe = await probeOf(ctx, source, { changed: "source_changed", invalid: "probe_invalid" }, "source_probe");
     const classification = classifyProbe(sourceProbe);
-    if (classification.outcome !== "NORMALIZE_N1") {
+    if (sourceProbe === null) {
+      await reconfirm(source, "source_changed"); return { outcome: "REFUSE", source: identity, classification, planning: planCanonicalizationV1(null) };
+    }
+    let observed: FreshFacts;
+    try { observed = await factsOf(ctx, source, "source_changed", false); } catch (error) {
+      if (!(error instanceof CanonicalIngestError) || error.code !== "probe_invalid") throw error;
       await reconfirm(source, "source_changed");
-      return { outcome: classification.outcome, source: identity, classification };
+      return { outcome: "REFUSE", source: identity, classification, planning: planCanonicalizationV1(null) };
+    }
+    const planning = planCanonicalizationV1(observed.facts);
+    if (planning.outcome !== "PLAN") { await reconfirm(source, "source_changed"); return { outcome: planning.outcome, source: identity, classification, planning }; }
+    if (!(classification.outcome === "NORMALIZE_N1" && planning.plan!.operations.length === 1 && planning.plan!.operations[0]!.op === "DECLARE_SQUARE_SAMPLE_ASPECT")) {
+      return await executePlan(ctx, request, source, observed, planning);
     }
     if (sourceProbe === null) fail("probe_invalid", "A classified source has a probe.");
     // Only a 1.1.0 root that carries the owner's explicit canonicalization consent is ever canonicalized.

@@ -36,6 +36,7 @@ import { requireValidated, type ValidatedExecutionDag } from "../edit-runtime/va
 import { FootageAnalysisSchema, FootageAuthorizationDerivedSchema, FootageAuthorizationSchema, FootageAuthorizationV1Schema, FootageManifestSchema,
   type FootageAuthorization, type FootageAuthorizationDerived, type FootageAuthorizationRoot, type FootageAuthorizationV1 } from "../footage-analyzer/protocol.js";
 import { CanonicalMediaDerivationSchema, type CanonicalMediaDerivation } from "../media-ingest/canonical.js";
+import { AnyCanonicalMediaDerivationSchema, CanonicalMediaPlanDerivationSchema, type CanonicalMediaPlanDerivation } from "../media-ingest/plan.js";
 import { CheckTimingSchema, EDIT_RENDER_VERSION, MAX_RENDER_SOURCES, ORDERED_CHECK, RenderImplementationSchema, RENDER_IMPLEMENTATION, SessionProofSchema, check, envelope,
   header, orderedCheck, parse, refuse, sha256, type CheckTiming, type SessionProof } from "./common.js";
 import { ClaimBindingSchema, claimBinding, stagedFor } from "./records.js";
@@ -233,7 +234,8 @@ export const AnyOwnerRenderAuthorizationSchema = z.union([OwnerRenderAuthorizati
 
 export const OWNER_MEDIA_CANONICAL_REGISTRATION_VERSION = "0.2.0" as const;
 const OwnerMediaCanonicalDerivativeSchema = z.strictObject({ entryId: IdSchema, rootEntryId: IdSchema, authorization: FootageAuthorizationDerivedSchema,
-  derivation: CanonicalMediaDerivationSchema });
+  derivation: AnyCanonicalMediaDerivationSchema });
+const recipeIdOf = (d: CanonicalMediaDerivation | CanonicalMediaPlanDerivation): string => d.artifactVersion === "0.1.0" ? d.recipe.recipeId : d.plan.planId;
 const readAny = (value: unknown): FootageAuthorization | null => { const result = FootageAuthorizationSchema.safeParse(value); return result.success ? result.data : null; };
 /**
  * OwnerMediaRegistration 0.2.0: the owner's declared originals (1.0.0 or 1.1.0 root authorizations) and their declared canonical
@@ -268,7 +270,7 @@ export const OwnerMediaCanonicalRegistrationSchema = z.strictObject({
       if (s.assetId !== `asset_${root.contentHash}` || s.contentHash !== root.contentHash || s.sizeBytes !== root.sizeBytes || !equal(s.rootAuthorization, root)) {
         issue("The derivation's source is exactly the declared root's bytes, asset and authorization.");
       }
-      const pair = canonicalSerialize([declared.rootEntryId, derivation.recipe.recipeId]);
+      const pair = canonicalSerialize([declared.rootEntryId, recipeIdOf(derivation)]);
       if (rootRecipes.has(pair)) issue("A declared root has at most one derivative per recipe.");
       rootRecipes.add(pair);
     }
@@ -276,7 +278,7 @@ export const OwnerMediaCanonicalRegistrationSchema = z.strictObject({
     if (o.contentHash !== b.contentHash || o.sizeBytes !== b.sizeBytes || o.assetId !== `asset_${b.contentHash}`) {
       issue("The derivation's output is exactly the declared derivative's bytes and asset.");
     }
-    if (b.derivedFrom.derivationId !== derivation.derivationId || b.derivedFrom.recipeId !== derivation.recipe.recipeId) {
+    if (b.derivedFrom.derivationId !== derivation.derivationId || b.derivedFrom.recipeId !== recipeIdOf(derivation)) {
       issue("A derivative's lineage names exactly its derivation and recipe.");
     }
     if (b.creatorId !== value.footage.creatorId || b.projectId !== value.footage.projectId || derivation.scope.creatorId !== value.footage.creatorId
@@ -290,7 +292,7 @@ export type OwnerMediaCanonicalRegistration = z.infer<typeof OwnerMediaCanonical
 export interface OwnerMediaOriginalDeclaration { entryId: string; assetId: string; contentHash: string; sizeBytes: number; path: string;
   authorization: FootageAuthorizationV1 | FootageAuthorizationRoot }
 export interface OwnerMediaCanonicalDerivative { entryId: string; assetId: string; contentHash: string; sizeBytes: number; rootEntryId: string; rootAssetId: string;
-  derivationId: string; computationId: string; recipeId: string; authorization: FootageAuthorizationDerived; derivation: CanonicalMediaDerivation }
+  derivationId: string; computationId: string; recipeId: string; authorization: FootageAuthorizationDerived; derivation: CanonicalMediaDerivation | CanonicalMediaPlanDerivation }
 export interface OwnerMediaRenderScope { statement: string; assetIds: string[] }
 /**
  * The validated declarations of either registration version, in canonical asset order. A 0.1.0 registration reads exactly as
@@ -318,7 +320,7 @@ export function ownerMediaCanonicalDeclarations(input: unknown): { registrationD
     check(root !== undefined, "lifecycle_authority_scope_invalid", "A canonical derivative is declared only beside its declared root source.");
     return { entryId: d.entryId, assetId: `asset_${d.authorization.contentHash}`, contentHash: d.authorization.contentHash, sizeBytes: d.authorization.sizeBytes,
       rootEntryId: d.rootEntryId, rootAssetId: root.assetId, derivationId: d.derivation.derivationId, computationId: d.derivation.computationId,
-      recipeId: d.derivation.recipe.recipeId, authorization: d.authorization, derivation: d.derivation };
+      recipeId: recipeIdOf(d.derivation), authorization: d.authorization, derivation: d.derivation };
   }).sort((a, b) => compareText(a.assetId, b.assetId));
   const registrationDigest = sha256(canonicalSerialize({ artifactVersion: OWNER_MEDIA_CANONICAL_REGISTRATION_VERSION, renderAuthorization: registration.renderAuthorization,
     creatorId: registration.footage.creatorId, projectId: registration.footage.projectId,
@@ -393,6 +395,7 @@ export function canonicalComputationRecordName(computationId: string): string {
   return `${sha256(computationId)}.json`;
 }
 export const CANONICAL_COMPUTATION_RECORD_IDENTITY = "canonical_computation_record_v0" as const;
+export const CANONICAL_PLAN_COMPUTATION_RECORD_IDENTITY = "canonical_computation_record_v1" as const;
 /**
  * The canonical store's internal record of one verified computation: exactly the scope-free part of a derivation (the computation, the
  * source bytes, the classification, the recipe, the toolchain and the verified output). It names no creator, project, root authorization,
@@ -401,6 +404,15 @@ export const CANONICAL_COMPUTATION_RECORD_IDENTITY = "canonical_computation_reco
  * derivations of one computation, whatever their scope, have exactly one record.
  */
 export function canonicalComputationRecordOf(input: unknown): { name: string; bytes: string; record: Record<string, unknown> } {
+  if (typeof input === "object" && input !== null && (input as { artifactVersion?: unknown }).artifactVersion === "0.2.0") {
+    const d = parse(CanonicalMediaPlanDerivationSchema, input, "lifecycle_authority_scope_invalid"), s = d.source;
+    const record = identify(CANONICAL_PLAN_COMPUTATION_RECORD_IDENTITY, "recordId", { artifactType: "CanonicalComputationRecord", artifactVersion: "0.2.0",
+      stability: "internal_pre_stable", computationId: d.computationId, source: { assetId: s.assetId, contentHash: s.contentHash, sizeBytes: s.sizeBytes,
+        factsDigest: s.factsDigest, evaluation: s.evaluation }, plan: d.plan, toolchain: d.toolchain, output: d.output });
+    const bytes = `${canonicalSerialize(record)}\n`;
+    check(new TextEncoder().encode(bytes).length <= CANONICAL_STORE.maxRecordBytes, "limit_exceeded", "A computation record exceeds its bound.");
+    return { name: canonicalComputationRecordName(d.computationId), bytes, record };
+  }
   const derivation = parse(CanonicalMediaDerivationSchema, input, "lifecycle_authority_scope_invalid");
   const { computationId, source, classification, recipe, toolchain, output } = derivation;
   const record = identify(CANONICAL_COMPUTATION_RECORD_IDENTITY, "recordId", { artifactType: "CanonicalComputationRecord", artifactVersion: "0.1.0",

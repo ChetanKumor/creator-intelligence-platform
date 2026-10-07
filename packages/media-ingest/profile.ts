@@ -34,7 +34,8 @@ export const X264_ENCODER_INFO_SEI_UUID = "dc45e9bde6d948b7962cd820d923eeef" as 
 export const X265_ENCODER_INFO_SEI_UUID = "2ca2de09b51747dbbb55a4fe7fc2fc4e" as const;
 /**
  * The closed side-data vocabulary of the facts. A stream's display matrix and its container clean aperture are their own facts and never
- * side-data entries; a frame-carried display matrix (an orientation SEI) is one. Anything the adapter cannot name is `unknown`.
+ * side-data entries; a frame-carried display matrix is one. It may be independent orientation or pinned decoder propagation of the
+ * stream matrix. Both carriers remain observed; only complete coefficient evidence can establish propagation. Unknown stays `unknown`.
  */
 export const SIDE_DATA_KINDS = ["user_data_unregistered_sei", "display_matrix", "mastering_display_metadata", "content_light_level", "hdr_dynamic_metadata",
   "dolby_vision", "icc_profile", "spherical_mapping", "stereo_3d", "unknown"] as const;
@@ -55,6 +56,13 @@ const SarDeclarationSchema = z.discriminatedUnion("state", [z.strictObject({ sta
 /** FFmpeg's composed display matrix, [a b u; c d v; x y w] in 16.16 (a b c d x y) and 2.30 (u v w) fixed point, or one it could not read. */
 const DisplayMatrixFactSchema = z.discriminatedUnion("state", [z.strictObject({ state: z.literal("absent") }),
   z.strictObject({ state: z.literal("present"), coefficients: z.array(Int32).length(9) }), z.strictObject({ state: z.literal("unparsed") })]);
+/** Owner's A2 carrier clarification: preserve each observation, including missing/multiple matrices. No trusted propagation flag.
+ * Array position binds a carrier to its decoded presentation-frame index. Absent on historical facts: the old refusal still applies.
+ * The named method is empirically pinned by the generated container-only mutation in the A2 phase record. */
+export const DISPLAY_MATRIX_CARRIER_OBSERVATION = "ffprobe_9_0_1_threads_1_matrix_carriers_v1" as const;
+const MatrixCarrierSchema = z.array(z.array(Int32).length(9)).max(16);
+const DisplayMatrixCarriersSchema = z.strictObject({ observation: z.literal(DISPLAY_MATRIX_CARRIER_OBSERVATION),
+  stream: MatrixCarrierSchema, frames: z.array(MatrixCarrierSchema).max(MAX_FACT_ENTRIES) });
 /** The container clean aperture (ffprobe's stream side data "Frame Cropping"): B2R e04 CR01 decodes 300x170 while the stream says 320x180. */
 const FrameCroppingFactSchema = z.discriminatedUnion("state", [z.strictObject({ state: z.literal("absent") }),
   z.strictObject({ state: z.literal("present"), top: NonNegativeSafeInt, bottom: NonNegativeSafeInt, left: NonNegativeSafeInt, right: NonNegativeSafeInt })]);
@@ -73,6 +81,7 @@ const VideoStreamFactsSchema = z.strictObject({
   geometry: z.strictObject({ declared: SizeSchema, decoded: z.array(SizeSchema).min(1).max(16) }),
   sampleAspectRatio: z.strictObject({ container: SarDeclarationSchema, bitstream: SarDeclarationSchema }),
   displayMatrix: DisplayMatrixFactSchema, frameCropping: FrameCroppingFactSchema, color: ColorFactsSchema,
+  displayMatrixCarriers: DisplayMatrixCarriersSchema.optional(),
   sideData: z.array(SideDataFactSchema).max(32),
   timeBase: FactsTimeBaseSchema, declaredFrameRate: RatioSchema, decodeReordering: z.boolean(),
   /** Every decoded frame's presentation timestamp, in presentation order, in the stream's time base. */
@@ -100,6 +109,8 @@ export const CanonicalMediaFactsSchema = z.strictObject({
     const sizes = s.geometry.decoded.map(size => canonicalSerialize(size)), entries = s.sideData.map(entry => canonicalSerialize(entry));
     if (new Set(sizes).size !== sizes.length) issue("Each decoded frame size is listed once.");
     if (!entries.every((entry, i) => i === 0 || entries[i - 1]! < entry)) issue("Side-data entries are distinct and in canonical order.");
+    if (s.displayMatrixCarriers !== undefined && s.displayMatrixCarriers.frames.some(frame => frame.length > 0)
+      && !s.sideData.some(entry => entry.kind === "display_matrix")) issue("Observed frame matrices must also retain their side-data carrier classification.");
   }
 });
 export type CanonicalMediaFacts = z.infer<typeof CanonicalMediaFactsSchema>;
@@ -385,6 +396,16 @@ const isDroppable = (s: StreamFacts): boolean => CANONICAL_REMUX_ENVELOPE_V1.dro
 const sideDataAllowed = (codec: string, entry: { carrier: string; kind: string; seiUuid: string | null }): boolean =>
   PROFILE.sideData.informational.some(i => i.codec === codec && i.carrier === entry.carrier && i.kind === entry.kind && i.seiUuid === entry.seiUuid);
 
+/** A repeated evidence carrier is not a second transform. Every condition is checked; independent frame transforms stay refused. */
+function propagatedStreamMatrix(v: VideoStreamFacts): boolean {
+  const evidence = v.displayMatrixCarriers, matrix = v.displayMatrix;
+  if (evidence === undefined || matrix.state !== "present" || evidence.stream.length !== 1 || v.presentationTimestamps.length === 0
+    || evidence.frames.length !== v.presentationTimestamps.length || v.frameCropping.state !== "absent") return false;
+  const equal = (m: readonly number[]) => m.every((coefficient, index) => coefficient === matrix.coefficients[index]);
+  return equal(evidence.stream[0]!) && evidence.frames.every(frame => frame.length === 1 && equal(frame[0]!))
+    && v.sideData.every(entry => entry.kind === "display_matrix" || sideDataAllowed(v.codec, entry));
+}
+
 function videoFindings(v: VideoStreamFacts, timeline: VideoTimeline | null, add: (code: FindingCode) => void): void {
   const color = v.color, sdrDescription = [color.primaries, color.transfer, color.matrix].every(value => value === null || value === "bt709");
   if (v.codec === "hevc") {
@@ -432,7 +453,7 @@ function videoFindings(v: VideoStreamFacts, timeline: VideoTimeline | null, add:
     else if (HDR_SIDE_DATA.includes(entry.kind)) add("hdr_side_data_present");
     else if (entry.kind === "icc_profile") add("icc_profile_present");
     else if (entry.kind === "spherical_mapping" || entry.kind === "stereo_3d") add("spatial_side_data_unsupported");
-    else if (entry.kind === "display_matrix") add("display_matrix_unsupported");
+    else if (entry.kind === "display_matrix") { if (!propagatedStreamMatrix(v)) add("display_matrix_unsupported"); }
     else add("unknown_side_data");
   }
   const n = v.presentationTimestamps.length;

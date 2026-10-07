@@ -491,22 +491,22 @@ test("B2A1-D12 the v0 identity domains and every N1 identity stay exactly as acc
 });
 
 // ================================================================ COMPATIBILITY
-test("B2A1-C01 the accepted B1 classifier is unchanged and remains the production path", () => {
+test("B2A1-C01 the accepted B1 classifier is unchanged and remains the legacy N1 classifier", () => {
   const pins = { n1: "b561768ad23c50fbf23996a284785f85630a450110b1bb56b80989c2c178c09a", direct: "1dcd3e37f3549c0c24a0d7865930b6f57d645513445fefb515a906b3bc9c6464",
     refused: "cbc7b00f5e28fc5d7d97e751c19342f0a9b89c353071a63fe7cd3236b0aa188d" };
   assert.deepEqual({ n1: sha(canonicalSerialize(classify(probeOf({ sar: null })))), direct: sha(canonicalSerialize(classify(probeOf({ sar: "1:1" })))),
     refused: sha(canonicalSerialize(classify(probeOf({ sar: "4:3" })))) }, pins, "baseline 01a58d8 classifications");
-  // The same x264-SEI shape: B1 refuses it for N1, the new planner (not wired) would plan it. Neither changes the other.
+  // The same x264-SEI shape: B1 refuses it for N1; the profile planner may plan it. Neither changes the other.
   assert.equal(classify(probeOf({ sar: null, frameSideData: [{ side_data_type: "H.26[45] User Data Unregistered SEI message" }] })).reasonCode, "frame_side_data_present");
 });
 
-test("B2A1-C02 the owner-media pure contract is unchanged: 0.1.0 derivations register, 0.2.0 ones are not yet wired", () => {
+test("B2A1-C02 original 0.1.0 registration remains compatible beside A2's authorized 0.2.0 registration", () => {
   const accepted = registrationV2();
   assert.ok(ownerMedia.OwnerMediaCanonicalRegistrationSchema.safeParse(accepted).success);
   const planBased = planChain(ownerN1Like());
   const authorization = ingest.buildCanonicalPlanDerivedAuthorization({ derivation: planBased.derivation, dateAdded: DAY2 }) as unknown as Json;
   const registration = registrationV2({ derivatives: [derivative("clip_a_canonical", "clip_a", { authorization, derivation: planBased.derivation })] });
-  assert.equal(ownerMedia.OwnerMediaCanonicalRegistrationSchema.safeParse(registration).success, false, "B2-A2 decides when the registry accepts 0.2.0");
+  assert.equal(ownerMedia.OwnerMediaCanonicalRegistrationSchema.safeParse(registration).success, true, "B2-A2 now wires the accepted plan derivation");
 });
 
 const PINNED_FILES: [string, string][] = [
@@ -520,12 +520,10 @@ const PINNED_FILES: [string, string][] = [
   ["packages/edit-render/authorize.ts", "c57accc5ff585ab85f833942b2a017c05ba0c903b24877d4e017905390da37ca"],
   ["packages/edit-render/records.ts", "f3b717e49bf83645573d0d96334212ea613d48c9634e9eaff93532c8bf8eac2f"],
   ["packages/edit-render/common.ts", "b449777d5bf9800ae109e8f2a3185128691d724e5eeefa1747b31316f097e549"],
-  ["packages/edit-render/owner-media.ts", "c7dae3aba73ba660d59f9707b0ff9a8ab6487b4ece928dcd1791fd5d18fbdaff"],
   ["packages/media-ingest/canonical.ts", "f7b2cae9410625c426bd579ae43d93228eb0adbd053459221ba14320d8cc0332"],
-  ["scripts/media-ingest-local.ts", "1f8a833ec745aad1399182f96ed501c1d324cea2f5a6b59637f99ffafec6d2c1"],
-  ["scripts/edit-render-owner-media-authority-local.ts", "a1d0ebf485d5663119ce9c049ee76991a36c74c114e001681af4824cc6886993"],
   ["scripts/edit-render-local.ts", "57e4d4159520acdb9e9955a565303f42bf6fa38f1eea631b8b0eeb2a61e42b7b"],
-  ["scripts/audit-workspace.mjs", "8f8d12c04c1791fab02fe674cd3bbdaf26aa43508449e3f2da72665560c3418b"],
+  // A2: the only audit delta registers its hostile-child test harness; production capabilities remain identical.
+  ["scripts/audit-workspace.mjs", "d2d48aefacca80874310814f412657f22f3605a277b1db64a09c85a2b7ff3a74"],
   ["package.json", "4789fe849b56e800b402bbbe2a6a67871e7ee398fecd4132f11248cad1269084"],
   ["package-lock.json", "96a41979781463cb304934b47bb0de6685af01c953eef0618467a0e590059691"],
 ];
@@ -547,9 +545,10 @@ test("B2A1-C07 renderer admission, the permit, the 60 s evidence policy and the 
   assert.equal(ownerMedia.OWNER_MEDIA_AUTHORITY_DIGEST, "0cd89b68e42aca92acdfba826dff4c1dfe471134506712f20188343cec0a2f37");
   assert.equal(sha(canonicalSerialize(ownerMedia.CANONICAL_STORE)), "2e8f117c41883b1b40aaa71731e70b7ed8edd5116ef871ca3f32fcfb60bbf2dc");
 });
-test("B2A1-C08 the runtime adapters, the owner-media contract and the accepted canonical contract are unchanged", () => {
-  for (const path of ["scripts/media-ingest-local.ts", "scripts/edit-render-owner-media-authority-local.ts", "scripts/edit-render-local.ts", "scripts/audit-workspace.mjs",
-    "packages/edit-render/owner-media.ts", "packages/media-ingest/canonical.ts"]) pinned(path);
+test("B2A1-C08 protected rendering, N1 and the audited boundary stay pinned during A2 integration", () => {
+  // A2 explicitly authorizes the ingest and owner-media adapters. Their A1 'not yet wired' source pins are historical phase evidence;
+  // the protected renderer and exact N1 contract retain their original byte pins. A2's execution and registry suites cover the integration.
+  for (const path of ["scripts/edit-render-local.ts", "scripts/audit-workspace.mjs", "packages/media-ingest/canonical.ts"]) pinned(path);
 });
 test("B2A1-C09 dependencies and the lockfile are unchanged", () => { pinned("package.json"); pinned("package-lock.json"); });
 
