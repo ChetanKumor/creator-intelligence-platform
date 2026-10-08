@@ -1,8 +1,23 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B1 (IMPLEMENTED; OWNER REVIEW PENDING; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B1 (OWNER-ACCEPTED; B2-B2 authorized; Gate 7 not yet complete)
 
 Last updated: 2026-10-08
 
 ## Current ruling
+
+- 3E-B2-B1 owner acceptance (2026-10-08): **3E-B2-B1 OWNER-ACCEPTED** at
+  `059754f47fb83ac1936824c4d9cfa7b725ea232b`.
+  - Accepted scope: `CanonicalReencodePlan 1.0.0`, the pure `CanonicalMediaDerivation 0.3.0` contract, the fixed QP-zero lossless
+    encode profile, all seven mathematical D4 transformations, HEVC identity and HEVC+D4 exact Y/U/V sample preservation, the
+    independent Y/U/V reference, generated-media tests and bounded performance evidence.
+  - Limitations remain: no production execution, owner-footage proof, cross-hardware determinism, long-duration capacity proof,
+    hardware-decoder compatibility proof or new PCM-retiming proof. This documentation-only checkpoint records the owner's ruling;
+    it adds no execution or verification claim and preserves the historical evidence below.
+  - The owner authorizes bounded **3E-B2-B2** production integration in the existing canonical-ingest authority. B2-B2 is
+    **NOT STARTED** at this acceptance checkpoint. Frozen identities, zero generational visual loss, immutable source bytes and
+    existing execution/lifecycle/freshness authority remain controlling. Chroma, container and compiler preconditions must be
+    reconciled before implementation; any accepted-contract conflict returns to owner review.
+  - 3E-C and Phase 6 remain **NOT STARTED** and are not authorized. Gate 7 remains **NOT YET COMPLETE**.
+  - Details: [B2-B1 owner acceptance](phases/phase-5-gate-7-batch-3e-b2b1-lossless-canonical-reencode.md#owner-acceptance-2026-10-08).
 
 - Phase 5 Gate 7 Batch **3E-B2-B1** (2026-10-08): **IMPLEMENTED; OWNER REVIEW PENDING**. Lossless feasibility and pure additive contract gates pass.
   - Baseline `871cd69301e60e46ebfc64ffc44baef7067fd8e9`; A2 owner-acceptance docs committed/pushed first as

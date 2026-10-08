@@ -1,5 +1,8 @@
 # Phase 5 / Gate 7 / Batch 3E-B2-B1 — lossless canonical re-encode contract
 
+**Current status (2026-10-08): 3E-B2-B1 OWNER-ACCEPTED at `059754f47fb83ac1936824c4d9cfa7b725ea232b`.**
+See the owner-acceptance checkpoint below. Earlier status, failures, receipts and limitations are preserved as history.
+
 Date: 2026-10-08. Status: **IMPLEMENTED; OWNER REVIEW PENDING**. Required regression and staged review gates pass.
 Scope: pure additive contracts, independent sample verification, generated-media research. **No production re-encode execution.**
 No owner footage, network research, model inference, dependency change, delivery-quality compromise or later phase work.
@@ -338,3 +341,34 @@ The image-quality policy is fully specified: zero Y/U/V error and exact expected
 capacity thresholds, long-form/owner-footage generalization and production cache/lifecycle execution remain future evidence, not B1 claims.
 
 3E-C: **NOT STARTED**. Phase 6: **NOT STARTED**. Gate 7: **NOT YET COMPLETE**. No merge to main.
+
+## Owner acceptance (2026-10-08)
+
+The owner independently reviewed Batch 3E-B2-B1 and ruled: **3E-B2-B1 OWNER-ACCEPTED**.
+Accepted implementation commit: `059754f47fb83ac1936824c4d9cfa7b725ea232b`
+(`feat(gate7): define lossless canonical reencode contract`).
+
+Accepted scope:
+
+- `CanonicalReencodePlan 1.0.0` and the pure `CanonicalMediaDerivation 0.3.0` contract.
+- Fixed QP-zero lossless profile
+  `canonical_lossless_encode_profile_v1_b5a0d8d303c8f62a0d44fecc65b07221fedb1e4ae74d84a4dba66c4bb62a1dc4`.
+- All seven mathematical D4 transformations, HEVC identity lossless transcoding, and HEVC+D4 exact decoded Y/U/V sample preservation.
+- Independent Y/U/V mathematical reference, generated-media tests and the bounded performance evidence above.
+
+This is a documentation-only owner-acceptance checkpoint. No production, test, schema, dependency, lockfile or media bytes change;
+no verification gate is rerun or newly claimed by this checkpoint. The historical evidence remains unchanged.
+
+Accepted limitations remain: **no production execution yet; no owner-footage proof; no cross-hardware determinism; no long-duration
+capacity proof; no hardware-decoder compatibility proof; no new PCM-retiming proof**. Exact sample equality does not resolve every
+chroma-siting interpretation; B2-B2 must reconcile that production precondition within the frozen contracts or stop for owner review.
+
+In the same ruling the owner authorizes the bounded **3E-B2-B2** implementation session: integrate the accepted fixed lossless class
+inside the existing production canonical-ingest authority, with fresh bounded exact-sample verification, versioned publication/cache,
+derived authorization and one-level owner-media lifecycle, and generated-media renderer proof. Accepted contracts and old identities
+remain frozen. No lossy canonical encoding or source-byte modification is authorized.
+
+The earlier `IMPLEMENTED; OWNER REVIEW PENDING` status and the B2-B2 authorization statements in §10 describe their historical
+checkpoints and are superseded by this ruling. B2-B2 is **AUTHORIZED, NOT STARTED** at this acceptance checkpoint.
+
+3E-C: **NOT STARTED, NOT AUTHORIZED**. Phase 6: **NOT STARTED, NOT AUTHORIZED**. Gate 7: **NOT YET COMPLETE**. No merge to main.
