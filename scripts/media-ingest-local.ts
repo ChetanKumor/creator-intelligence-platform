@@ -2075,6 +2075,8 @@ async function executeLosslessStore(state: LosslessSourceContext, planning: Cano
       fail(cache === "hit" ? "cache_corrupt" : "publication_conflict", "The computation record changed before return.");
     await reconfirm(source, "source_changed"); await reconfirm(output, cache === "hit" ? "cache_corrupt" : "publication_conflict");
     losslessRemainingTime(ctx, request.canonicalizationTimeout);
+    if (output.sizeBytes > (request.maxOutputBytes ?? CANONICAL_LOSSLESS_RUNTIME_BOUNDS.defaultOutputBytes))
+      fail("output_invalid", "The verified lossless output exceeds this request's exact byte budget.");
     return { outcome: "PUBLISHED_VERIFIED_NOT_AUTHORIZED", renderAuthority: "not_registered", source: anchorIdentity(source), output: anchorIdentity(output),
       planning, chromaPlanning, computationId, derivation: verified.derivation, record: verified.projected.record, resources: verified.resources, publication, cache };
   };

@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { before, after, test } from "node:test";
 import fs from "node:fs/promises";
+import { fstatSync, ftruncateSync, writeSync } from "node:fs";
 import childProcess from "node:child_process";
 import { syncBuiltinESMExports } from "node:module";
 import { join } from "node:path";
@@ -288,4 +289,84 @@ for (const offset of [8, 16]) test("EF-CACHE-ftyp-high-bit-" + offset + ": full 
     fileTypeBoxDigest: createHash("sha256").update(bytes.subarray(0, bytes.readUInt32BE(0))).digest("hex") };
   const r = compactLosslessComputationRecordOf(d, format), object = join(f.paths.objects, canonicalObjectName(r.record.output.contentHash));
   await fs.writeFile(object, bytes, { flag: "wx" }); await fs.writeFile(f.record, r.bytes); await corruptRefusal({ ...f, object });
+});
+
+// Owner-review RED: budgets constrain each request, independently of the scope-free computation identity.
+let budgetFixture: Promise<{ request: local.CanonicalIngestRequest; paths: ReturnType<typeof layout>; object: string; record: string;
+  published: Published; objectBytes: Buffer; recordBytes: Buffer }> | undefined;
+function previouslyPublishedBudgetFixture() {
+  return budgetFixture ??= (async () => {
+    const request = await emptyRequest("budget-boundary"), published = await local.canonicalizeLocalMedia(request) as unknown as Published;
+    assert.equal(published.outcome, "PUBLISHED_VERIFIED_NOT_AUTHORIZED"); assert.equal(published.cache, "miss");
+    const paths = layout(request.workspaceRoot), object = join(paths.objects, canonicalObjectName(published.output.contentHash)),
+      record = join(paths.computations, canonicalComputationRecordName(published.computationId));
+    const objectBytes = await fs.readFile(object), recordBytes = await fs.readFile(record);
+    assert.equal(objectBytes.length, published.output.sizeBytes); assert.equal(published.computationId, basic.record.computationId);
+    return { request, paths, object, record, published, objectBytes, recordBytes };
+  })();
+}
+for (const budgetCase of ["N-1", "N", "N+1", "omitted"] as const)
+test("EF-CACHE-output-budget-" + budgetCase + ": a valid prior publication obeys this request's byte budget", async t => {
+  const f = await previouslyPublishedBudgetFixture(), n = f.objectBytes.length,
+    maxOutputBytes = budgetCase === "omitted" ? undefined : n + (budgetCase === "N-1" ? -1 : budgetCase === "N+1" ? 1 : 0);
+  assert.ok(n > 1 && n < local.CANONICAL_LOSSLESS_RUNTIME_BOUNDS.defaultOutputBytes);
+  const roles: string[] = []; let result: Published | undefined, refusal: local.CanonicalIngestError | undefined;
+  try { result = await local.canonicalizeLocalMedia({ ...f.request, ...(maxOutputBytes === undefined ? {} : { limits: { maxOutputBytes } }),
+    instrumentation: { beforeProcess: async e => { roles.push(e.role); } } }) as unknown as Published; }
+  catch (e) { if (!(e instanceof local.CanonicalIngestError)) throw e; refusal = e; }
+  const observed = { case: "output-budget-" + budgetCase, sizeBytes: n, maxOutputBytes: maxOutputBytes ?? "omitted",
+    outcome: result?.outcome ?? refusal?.code, computationId: result?.computationId ?? f.published.computationId, encodes: roles.filter(x => x === "canonicalize").length };
+  receipt.push(observed); t.diagnostic(JSON.stringify(observed));
+  assert.equal(observed.encodes, 0); assert.deepEqual(await fs.readFile(f.object), f.objectBytes); assert.deepEqual(await fs.readFile(f.record), f.recordBytes);
+  assert.deepEqual(await fs.readdir(f.paths.pending), []); assert.equal(JSON.parse(f.recordBytes.toString("utf8")).computationId, f.published.computationId);
+  assert.ok(roles.includes("source_video_digest") && roles.includes("output_video_digest"));
+  assert.ok(roles.includes("source_headers") && roles.includes("output_headers"));
+  if (budgetCase === "N-1") assert.equal(refusal?.code, "output_invalid", "A fully valid cache hit must refuse the narrower request budget.");
+  else { assert.equal(refusal, undefined); assert.equal(result?.cache, "hit"); assert.equal(result?.computationId, f.published.computationId);
+    assert.equal(result?.output.sizeBytes, n); assert.deepEqual(result?.record, f.published.record); }
+});
+
+async function boundedFileIdentity(path: string) {
+  const { createHash } = await import("node:crypto"), handle = await fs.open(path, "r"), digest = createHash("sha256"), buffer = Buffer.alloc(65536);
+  try { const stat = await handle.stat({ bigint: true }); let position = 0;
+    for (;;) { const { bytesRead } = await handle.read(buffer, 0, buffer.length, position); if (!bytesRead) break;
+      digest.update(buffer.subarray(0, bytesRead)); position += bytesRead; }
+    assert.equal(BigInt(position), stat.size); return { contentHash: digest.digest("hex"), sizeBytes: position, dev: stat.dev, ino: stat.ino };
+  } finally { await handle.close(); }
+}
+test("EF-CACHE-output-budget-default: omitted limit refuses valid bytes above the accepted default", async t => {
+  const request = await emptyRequest("budget-default"), n = local.CANONICAL_LOSSLESS_RUNTIME_BOUNDS.defaultOutputBytes + 1;
+  const original = childProcess.spawn; let padded = false;
+  // Generated container-size fixture only: append an inert top-level BMFF free box after the real encoder closes.
+  // The real held temporary and both complete production verifications still measure every resulting byte and media invariant.
+  childProcess.spawn = ((file: string, args: readonly string[], options: childProcess.SpawnOptions) => {
+    const child = original(file, args, options);
+    if (args.includes("libx264") && args.includes("-qp")) child.on("close", code => {
+      assert.equal(code, 0); assert.ok(Array.isArray(options.stdio)); const fd = options.stdio[4]; assert.equal(typeof fd, "number");
+      const position = fstatSync(fd as number).size, header = Buffer.alloc(8); assert.ok(n - position >= 8);
+      header.writeUInt32BE(n - position, 0); header.write("free", 4, "ascii"); assert.equal(writeSync(fd as number, header, 0, 8, position), 8);
+      ftruncateSync(fd as number, n); padded = true;
+    });
+    return child;
+  }) as typeof original; syncBuiltinESMExports();
+  let published: Published;
+  try { published = await local.canonicalizeLocalMedia({ ...request, limits: { maxOutputBytes: n } }) as unknown as Published; }
+  finally { childProcess.spawn = original; syncBuiltinESMExports(); }
+  assert.equal(padded, true); assert.equal(published.cache, "miss"); assert.equal(published.output.sizeBytes, n);
+  const paths = layout(request.workspaceRoot), object = join(paths.objects, canonicalObjectName(published.output.contentHash)),
+    record = join(paths.computations, canonicalComputationRecordName(published.computationId)), before = await boundedFileIdentity(object), recordBytes = await fs.readFile(record);
+  assert.equal(before.contentHash, published.output.contentHash); assert.equal(before.sizeBytes, n);
+  for (const maxOutputBytes of [n, undefined]) {
+    const roles: string[] = []; let result: Published | undefined, refusal: local.CanonicalIngestError | undefined;
+    try { result = await local.canonicalizeLocalMedia({ ...request, ...(maxOutputBytes === undefined ? {} : { limits: { maxOutputBytes } }),
+      instrumentation: { beforeProcess: async e => { roles.push(e.role); } } }) as unknown as Published; }
+    catch (e) { if (!(e instanceof local.CanonicalIngestError)) throw e; refusal = e; }
+    const observed = { case: "output-budget-default", sizeBytes: n, maxOutputBytes: maxOutputBytes ?? "omitted", outcome: result?.outcome ?? refusal?.code,
+      computationId: result?.computationId ?? published.computationId, encodes: roles.filter(x => x === "canonicalize").length };
+    receipt.push(observed); t.diagnostic(JSON.stringify(observed)); assert.equal(observed.encodes, 0);
+    assert.deepEqual(await boundedFileIdentity(object), before); assert.deepEqual(await fs.readFile(record), recordBytes); assert.deepEqual(await fs.readdir(paths.pending), []);
+    assert.ok(roles.includes("source_video_digest") && roles.includes("output_video_digest")); assert.ok(roles.includes("source_headers") && roles.includes("output_headers"));
+    if (maxOutputBytes === undefined) assert.equal(refusal?.code, "output_invalid", "Omission must enforce the accepted default, even on a valid larger cached object.");
+    else { assert.equal(refusal, undefined); assert.equal(result?.cache, "hit"); assert.equal(result?.computationId, published.computationId); assert.deepEqual(result?.record, published.record); }
+  }
 });

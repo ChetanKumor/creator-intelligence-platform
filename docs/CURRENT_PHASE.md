@@ -1,8 +1,37 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (C–D OWNER-ACCEPTED; E–F IMPLEMENTED FOR OWNER REVIEW; Gate 7 incomplete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (C–D OWNER-ACCEPTED; E–F OWNER-REVIEW BUDGET REPAIR IMPLEMENTED; Gate 7 incomplete)
 
 Last updated: 2026-10-08
 
 ## Current ruling
+
+- Phase 5 Gate 7 Batch **3E-B2-B2 E–F owner-review budget repair** (2026-10-08): **REPAIR IMPLEMENTED; ALL AFFECTED GATES PASS; OWNER ACCEPTANCE PENDING**.
+  - Base `2fec4adc658005237eb4cb34fc01376b0c3d53ee` incorrectly returns valid cached outputs above explicit and omitted/default
+    budgets. Both executable counterexamples remain preserved. The shared trusted `finish` now applies the encoder's same snapshotted
+    effective byte limit after complete fresh verification, with existing `output_invalid` refusal for valid over-budget bytes.
+  - Focused RED **3 PASS / 2 FAIL** becomes **5/5 GREEN**: N−1 refuses; N and N+1 succeed; omission succeeds below 256 MiB and
+    refuses above it. No hit starts an encoder or changes cached bytes/records/computation identity. The above-default case is an actual
+    fully verified generated BMFF file with inert `free`-box padding, not a long-video or RSS claim.
+  - Fresh full gates: **812 pure + 97 E–F generated-media + 304 legacy generated-media PASS**, zero failures/skips.
+    Typecheck, clean build, all **33** schema artifacts and workspace audit PASS. Exactly two production lines and appended tests;
+    all frozen contracts/dependencies/authority code, 18 historical files and 42 original E–F evidence files remain unchanged.
+  - Only the requested repair commit/push on the existing phase branch is authorized. **E–F are not owner-accepted.**
+    **G–I, owner footage, derived registration/lifecycle/render authority, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED.**
+    B2-B2 and Gate 7 remain incomplete; main is unchanged.
+  - Details: [Budget repair final gates](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#owner-review-budget-repair-final-gates-2026-10-08).
+
+## Preserved owner-review budget-repair-in-progress ruling
+
+- Phase 5 Gate 7 Batch **3E-B2-B2 E–F owner-review repair** (2026-10-08): **OUTPUT-BUDGET FINDING CONFIRMED; REPAIR UNDER VERIFICATION**.
+  - The owner has **not accepted E–F**. At base `2fec4adc658005237eb4cb34fc01376b0c3d53ee`, a valid 30,563-byte cache hit
+    incorrectly succeeds with a 30,562-byte request limit; a fully verified 268,435,457-byte generated BMFF object also incorrectly
+    succeeds with the limit omitted despite the accepted 268,435,456-byte default. Both RED cases start zero encoders and preserve storage.
+  - A two-line check in the shared trusted store `finish` boundary now enforces the snapshotted effective byte budget after complete
+    verification/reconfirmation, using existing `output_invalid` refusal. Frozen computation/record identities and corruption handling stay unchanged.
+  - Focused GREEN and every affected regression/audit must pass before a repair commit. Original RED and prior receipts remain preserved.
+    **G–I, owner footage, derived registration/lifecycle/render authority, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED.**
+  - Details: [Owner-review budget repair](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#owner-review-repair--request-output-byte-budget-2026-10-08).
+
+## Preserved E–F implementation-for-review ruling
 
 - Phase 5 Gate 7 Batch **3E-B2-B2 Checkpoints E–F** (2026-10-08): **IMPLEMENTED FOR OWNER REVIEW; FINAL GATES PASS**.
   - The existing read-once/held-source ingest adapter now routes only bounded original Profile v1 DEFER candidates through fresh
