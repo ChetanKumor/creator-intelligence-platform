@@ -659,3 +659,23 @@ Code publication is limited to `feat(gate7): implement chroma-gated lossless com
 Final code HEAD/local/tracking/live reconciliation is recorded in the code-publication receipt and owner report; no merge.
 
 **3E-B2-B2 CHECKPOINTS C–D IMPLEMENTED — FOR OWNER REVIEW. STOP before E–I.**
+
+## Checkpoints C–D owner acceptance (2026-10-08)
+
+**C–D OWNER-ACCEPTED** at `96871381464eb6bc5064153faa724bf7a898f245`.
+The owner reviewed and accepted the chroma-gated fixed lossless compiler and bounded streaming exact-pixel verifier within
+the generated-media scope and limitations recorded above. This docs-only ruling introduces no new verification claim and
+preserves every earlier STOP, RED receipt, failed gate and later correction.
+
+Fresh E0 baseline: local/tracking/live phase HEAD all equal the accepted SHA; local/tracking/live main remain
+`4f85b559c7eff2c24e221011f3ee1dd1466a111d`; 15 ahead / 0 behind main, clean tracked worktree/index, diff check PASS.
+GitHub's independent commit comparison also reports identical phase HEAD and 15 ahead / 0 behind main.
+All 18 historical untracked artifacts are snapshotted by exact SHA-256/size in the ignored
+`.local-runs/phase5-gate7/batch3e-b2b2-ef-20261008/00-baseline.json`, alongside 402 tracked paths and 40 authoritative references.
+The default command runner failed before process creation (`helper_unknown_error: setup refresh had errors`);
+the separately auto-reviewed outside-sandbox read-only runner succeeded. No blocked test command was bypassed.
+
+Only **E–F** are authorized, **NOT STARTED** at this acceptance checkpoint: trusted routing and freshly verified canonical
+publication/cache returning a distinct non-authorizing result. No FootageAuthorizationDerived, owner registration, render permit
+or lifecycle integration may be issued. **G–I, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED.** B2-B2 and Gate 7 remain
+incomplete. Publication is limited to the existing phase branch; main is not merged or modified.

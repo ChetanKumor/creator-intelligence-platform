@@ -1,8 +1,21 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (CHECKPOINT B OWNER-ACCEPTED; C–D IMPLEMENTED FOR OWNER REVIEW; Gate 7 incomplete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (C–D OWNER-ACCEPTED; E–F AUTHORIZED, NOT STARTED; Gate 7 incomplete)
 
 Last updated: 2026-10-08
 
 ## Current ruling
+
+- Phase 5 Gate 7 Batch **3E-B2-B2 Checkpoints C–D owner acceptance** (2026-10-08):
+  **C–D OWNER-ACCEPTED** at `96871381464eb6bc5064153faa724bf7a898f245`.
+  - The owner accepts the fixed chroma-gated lossless compiler and bounded streaming exact-pixel verifier within their recorded
+    generated-media scope and limitations. This separate docs-only checkpoint records the ruling; it adds no media proof.
+  - Only **Checkpoints E–F** are now authorized: trusted ingest routing and freshly verified, non-authorizing publication/cache.
+    E–F are **NOT STARTED** at this checkpoint. G–I, derived authorization/lifecycle, render integration, owner footage,
+    3E-C and Phase 6 remain **NOT STARTED, NOT AUTHORIZED**. B2-B2 and Gate 7 remain incomplete.
+  - The original STOP, RED and correction evidence below and in the phase record remains unchanged. No dependency, frozen
+    identity, encoder profile, renderer, execution permit, root lifecycle or main-branch change is authorized.
+  - Details: [C–D owner acceptance](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#checkpoints-cd-owner-acceptance-2026-10-08).
+
+## Preserved C–D implementation ruling
 
 - Phase 5 Gate 7 Batch **3E-B2-B2 Checkpoints C–D** (2026-10-08):
   **FIXED LOSSLESS COMPILER AND STREAMING EXACT-PIXEL VERIFIER IMPLEMENTED; OWNER REVIEW PENDING. STOP before E–I.**
