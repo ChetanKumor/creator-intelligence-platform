@@ -219,3 +219,11 @@ export async function declareGeneratedAvCenter(source: string, output: string, c
       "-avoid_negative_ts", "disabled", "-map_metadata", "-1", ...(timecode ? ["-timecode", "00:00:00:00"] : []), "-fflags", "+bitexact", "-f", mux]);
   return output;
 }
+
+/** E–F generated cache counterexample only: change range interpretation by stream copy, preserving every compressed picture. */
+export async function declareGeneratedFullRange(source: string, output: string): Promise<string> {
+  await pinnedRun("ffmpeg", source, output, ["-copyts", "-threads", "1", "-noautorotate"],
+    ["-map", "0:v:0", "-c:v", "copy", "-bsf:v", "h264_metadata=video_full_range_flag=1", "-color_range", "pc",
+      "-map_metadata", "-1", "-fflags", "+bitexact", "-f", "mp4"]);
+  return output;
+}

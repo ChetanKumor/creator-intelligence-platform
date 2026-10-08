@@ -11,6 +11,7 @@ import { patchPlanFixture, appendChromaFixtureBox } from "./support/canonical-pl
 import { sha256File } from "./support/canonical-media-fixtures.js";
 import { PINNED_TOOL_ROOT } from "./support/edit-render-media.js";
 import { D4_ELEMENTS, verifyExactPixels } from "./support/canonical-pixel-reference.js";
+import { cdBase } from "./support/canonical-lossless-cd.js";
 const api=local as unknown as {inspectCanonicalChromaLocalMedia(input:unknown):Promise<{facts:CanonicalMediaFacts;observation:CanonicalChromaObservation;planning:ChromaPlanningResult;admission:unknown}>;
   canonicalChromaPlanOf(handle:unknown):ChromaSafeReencodePlan};
 let base="";const seeds:Record<string,string>={},receipt:unknown[]=[];
@@ -83,7 +84,9 @@ test("CH-MEDIA-trust: caller evidence/argv injection and counterfeit handle refu
     await assert.rejects(()=>api.inspectCanonicalChromaLocalMedia({...req,[field]:{}}),/Only source, authorization and bounded runtime inputs are accepted/);
   const valid=await observe(seeds["hevc-center"]!);for(const fake of [valid.planning.plan,{...valid.admission as object},Object.create(Object.getPrototypeOf(valid.admission))])
     assert.throws(()=>api.canonicalChromaPlanOf(fake),/trusted_chroma_admission_required/);
-  assert.equal((await local.canonicalizeLocalMedia(req)).outcome,"DEFER");
+  // E–F enables the accepted center-only route in a separate, bounded store workspace.
+  const routed=await local.canonicalizeLocalMedia({...req,workspaceRoot:await cdBase("ef-ch-compat-")});
+  assert.equal(routed.outcome,"PUBLISHED_VERIFIED_NOT_AUTHORIZED");assert.equal("authorization" in routed,false);
   await assert.rejects(()=>local.canonicalizeLocalMedia({...req,plan:planCanonicalReencode(valid.facts).plan} as unknown as local.CanonicalIngestRequest),
     /Only source, authorization and bounded runtime inputs are accepted/);
   assert.throws(()=>new local.CanonicalChromaAdmissionHandle(Symbol("forged"),valid.planning.plan!),/trusted_chroma_admission_required/);

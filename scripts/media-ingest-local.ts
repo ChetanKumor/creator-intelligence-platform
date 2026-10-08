@@ -340,9 +340,10 @@ async function runOver(ctx: Context, subject: Anchor, changed: CanonicalIngestEr
     await hook(ctx.hooks.beforeProcess === undefined ? undefined : () => ctx.hooks.beforeProcess!({ role }));
     await reconfirm(subject, changed);
     const binary = await pinned(ctx.toolRoot, which);
+    const boundedTimeout = losslessRemainingTime(ctx, timeoutMilliseconds);
     const child = spawn(binary.path, [...argv], { shell: false, windowsHide: true, cwd: ctx.toolRoot, env: minimalEnvironment(), stdio: ["ignore", "pipe", "pipe", handle.fd] });
     if (headers !== undefined) child.stderr?.on("data", (chunk: Buffer) => headers.consume(chunk));
-    const run = await supervise(child, timeoutMilliseconds, stdoutLimit);
+    const run = await supervise(child, boundedTimeout, stdoutLimit);
     // A measurement of changed bytes is never evidence, whatever the process reported.
     if (await hashHandle(handle, subject.sizeBytes) !== subject.contentHash) fail(changed, "Measured bytes changed while a pinned process read them.");
     await reconfirm(subject, changed);
@@ -774,9 +775,9 @@ async function openStore(workspaceRoot: unknown, sourcePath: string): Promise<St
   return { objects: await ownedDirectory(current, CANONICAL_STORE.objects), computations: await ownedDirectory(current, CANONICAL_STORE.computations),
     pending: await ownedDirectory(current, CANONICAL_STORE.pending) };
 }
-interface StoredRecord { bytes: string; outputHash: string; outputSize: number }
+interface StoredRecord { bytes: string; outputHash: string; outputSize: number; physical?: { dev: bigint; ino: bigint } }
 /** The computation's record exactly as published, or undefined when absent; anything else is a corrupt cache. */
-async function readRecord(store: Store, computationId: string): Promise<StoredRecord | undefined> {
+async function readRecord(store: Store, computationId: string, losslessPlan?: ChromaSafeReencodePlan): Promise<StoredRecord | undefined> {
   const path = join(store.computations, canonicalComputationRecordName(computationId));
   try { await lstat(path); } catch (error) { if ((error as { code?: string }).code === "ENOENT") return undefined; fail("store_unavailable", "A computation record could not be read."); }
   const anchor = await openAnchor(path, "cache_corrupt", CANONICAL_STORE.maxRecordBytes);
@@ -786,7 +787,14 @@ async function readRecord(store: Store, computationId: string): Promise<StoredRe
     if (bytesRead !== anchor.sizeBytes) fail("cache_corrupt", "A computation record could not be read whole.");
     let text: string, value: unknown;
     try { text = new TextDecoder("utf-8", { fatal: true }).decode(bytes); value = JSON.parse(text); } catch { fail("cache_corrupt", "A computation record is not JSON."); }
-    if (`${canonicalSerialize(value)}\n` !== text) fail("cache_corrupt", "A computation record is not stored exactly as published.");
+    if (losslessPlan === undefined && `${canonicalSerialize(value)}\n` !== text) fail("cache_corrupt", "A computation record is not stored exactly as published.");
+    if (losslessPlan !== undefined) {
+      let compact: CanonicalLosslessComputationRecord;
+      try { compact = parseLosslessComputationRecordBytes(text, losslessPlan); } catch { fail("cache_corrupt", "The compact lossless computation record is incompatible."); }
+      if (compact.computationId !== computationId) fail("cache_corrupt", "The lossless record belongs to another computation.");
+      await reconfirm(anchor, "cache_corrupt");
+      return { bytes: text, outputHash: compact.output.contentHash, outputSize: compact.output.sizeBytes, physical: { dev: anchor.dev, ino: anchor.ino } };
+    }
     const record = value as { artifactType?: unknown; artifactVersion?: unknown; computationId?: unknown; output?: { contentHash?: unknown; sizeBytes?: unknown } };
     const domain = record.artifactVersion === "0.2.0" ? CANONICAL_PLAN_COMPUTATION_RECORD_IDENTITY : CANONICAL_COMPUTATION_RECORD_IDENTITY;
     if (record.artifactType !== "CanonicalComputationRecord" || record.computationId !== computationId || !checkIdentity(record, "recordId", domain)
@@ -800,7 +808,8 @@ async function exists(path: string): Promise<boolean> {
   try { await lstat(path); return true; } catch (error) { if ((error as { code?: string }).code === "ENOENT") return false; fail("store_unavailable", "A store name could not be read."); }
 }
 /** No-overwrite publication of complete, synced bytes; an existing record must hold exactly these bytes. */
-async function publishRecord(store: Store, name: string, bytes: string): Promise<void> {
+async function publishRecord(store: Store, name: string, bytes: string, heldLossless = false): Promise<void> {
+  if (heldLossless) return publishHeldLosslessRecord(store, name, bytes);
   const pending = join(store.pending, `${randomBytes(16).toString("hex")}.pending`), final = join(store.computations, name);
   try {
     const handle = await open(pending, "wx");
@@ -839,7 +848,9 @@ export interface SourceIdentity { assetId: string; contentHash: string; sizeByte
 export interface CanonicalIngestEvidence { sourceProbeDigest: string; outputProbeDigest: string; decodedVideoDigest: string; audioPacketDigest: string | null;
   frameCount: number; frameTableId: string; exactTiming: "identical" }
 export type CanonicalIngestResult =
-  | { outcome: "DIRECT" | "DEFER" | "REFUSE"; source: SourceIdentity; classification: CanonicalClassification; planning?: CanonicalPlanningResult }
+  | CanonicalLosslessPublishedResult
+  | { outcome: "DIRECT" | "DEFER" | "REFUSE"; source: SourceIdentity; classification: CanonicalClassification; planning?: CanonicalPlanningResult;
+    chromaPlanning?: ChromaPlanningResult; deferredReason?: "pcm_retime_unproved" }
   | { outcome: "PLAN"; source: SourceIdentity; planning: CanonicalPlanningResult; computationId: string; derivation: CanonicalMediaPlanDerivation;
     authorization: FootageAuthorizationDerived; output: SourceIdentity; publication: "published_by_this_operation" | "existing_object_reverified"; cache: "miss" | "hit" }
   | { outcome: "NORMALIZE_N1"; source: SourceIdentity; classification: CanonicalClassification; computationId: string; derivation: CanonicalMediaDerivation;
@@ -1137,6 +1148,7 @@ export async function canonicalizeLocalMedia(input: CanonicalIngestRequest): Pro
       return { outcome: "REFUSE", source: identity, classification, planning: planCanonicalizationV1(null) };
     }
     const planning = planCanonicalizationV1(observed.facts);
+    if (planning.outcome === "DEFER") return await routeChromaSafeLossless(ctx, request, source, observed, classification, planning);
     if (planning.outcome !== "PLAN") { await reconfirm(source, "source_changed"); return { outcome: planning.outcome, source: identity, classification, planning }; }
     if (!(classification.outcome === "NORMALIZE_N1" && planning.plan!.operations.length === 1 && planning.plan!.operations[0]!.op === "DECLARE_SQUARE_SAMPLE_ASPECT")) {
       return await executePlan(ctx, request, source, observed, planning);
@@ -1585,7 +1597,10 @@ async function superviseLosslessEncode(child: LosslessManagedChild, pending: Fil
 export async function withCanonicalLosslessTemporary<T>(input: CanonicalIngestRequest, admission: unknown,
   visitor: (handle: CanonicalLosslessTemporaryHandle) => Promise<T>): Promise<T> {
   if (typeof visitor !== "function") fail("request_invalid", "A scoped temporary visitor is required.");
-  return withLosslessSource(input, admission, async state => {
+  return withLosslessSource(input, admission, state => withTrustedLosslessTemporary(state, visitor));
+}
+/** Private seam: the public route retains its own snapshotted request and original held source. */
+async function withTrustedLosslessTemporary<T>(state: LosslessSourceContext, visitor: (handle: CanonicalLosslessTemporaryHandle) => Promise<T>, strictCleanup = false): Promise<T> {
     const { source, request, measured, plan, ctx } = state;
     const workspace = await exactLocation(request.workspaceRoot, "store_location_invalid");
     if (!(await lstat(workspace)).isDirectory() || workspace.length > MAX_WORKSPACE_PATH_LENGTH) fail("store_location_invalid", "A bounded real temporary workspace is required.");
@@ -1610,9 +1625,10 @@ export async function withCanonicalLosslessTemporary<T>(input: CanonicalIngestRe
         await hook(ctx.hooks.beforeProcess === undefined ? undefined : () => ctx.hooks.beforeProcess!({ role: "canonicalize" }));
         await reconfirm(source, "source_changed");
         const binary = await pinned(ctx.toolRoot, "ffmpeg");
+        const boundedEncodeTimeout = losslessRemainingTime(ctx, request.canonicalizationTimeout);
         const child = spawn(binary.path, argv, { shell: false, windowsHide: true, cwd: ctx.toolRoot, env: minimalEnvironment(),
           stdio: ["ignore", "pipe", "pipe", inputReader.fd, pending.fd] });
-        run = await superviseLosslessEncode(child, pending, request.canonicalizationTimeout, bound);
+        run = await superviseLosslessEncode(child, pending, boundedEncodeTimeout, bound);
         if (await hashHandle(inputReader, source.sizeBytes) !== source.contentHash) fail("source_changed", "The source changed during lossless encoding.");
       } finally { await inputReader.close().catch(() => undefined); }
       requireCompleted(run, "lossless encoding");
@@ -1633,16 +1649,17 @@ export async function withCanonicalLosslessTemporary<T>(input: CanonicalIngestRe
         if (scoped?.prepublication) LOSSLESS_PREPUBLICATIONS.delete(scoped.prepublication);
         LOSSLESS_TEMPORARIES.delete(handle);
       }
-      if (pending) await pending.close().catch(() => undefined);
+      if (pending) await pending.close().catch(() => { if (strictCleanup) fail("store_unavailable", "The owned temporary handle could not be closed."); });
       // Never remove a replacement object or recurse over owner data.
+      if (strictCleanup) await assertNoLinks(directory, "output_invalid");
       const named = await lstat(outputPath, { bigint: true }).catch(() => null);
       if (named && exclusiveOutputIdentity && named.dev === exclusiveOutputIdentity.dev && named.ino === exclusiveOutputIdentity.ino && !named.isSymbolicLink()) await unlink(outputPath);
       else if (named) fail("output_invalid", "A replacement temporary cannot be removed or trusted.");
       const namedDirectory = await lstat(directory, { bigint: true }).catch(() => null);
       if (namedDirectory && namedDirectory.dev === directoryIdentity.dev && namedDirectory.ino === directoryIdentity.ino && !namedDirectory.isSymbolicLink())
-        await removeLosslessDirectory(directory).catch(() => undefined);
+        await removeLosslessDirectory(directory).catch(() => { if (strictCleanup) fail("store_unavailable", "The owned temporary directory could not be removed."); });
+      else if (strictCleanup && namedDirectory) fail("output_invalid", "A replacement temporary directory cannot be removed.");
     }
-  });
 }
 
  // ---------------------------------------------------------------- C–D paired decoder verification: three full-frame slots, backpressured pipes, terminal close required
@@ -1813,7 +1830,7 @@ const losslessDecoderArgv = (videoIndex: number): string[] => [
 ];
 /** Each decoder has its own freshly re-hashed read-only reader AND independent full executable verification.
  * The shared deadline begins before both readers/pins/hooks, never resets for the slower companion. */
-async function losslessHeldPixels(state: LosslessTemporaryState): Promise<CanonicalLosslessStreamingResult> {
+async function losslessHeldPixels(state: LosslessHeldVerificationContext): Promise<CanonicalLosslessStreamingResult> {
   const { source, output, ctx, request, plan } = state, start = performance.now();
   const sourceReader = await reader(source, "source_changed"); let outputReader: FileHandle | null = null;
   let sourceChild: LosslessManagedChild | null = null, paired = false;
@@ -1825,7 +1842,7 @@ async function losslessHeldPixels(state: LosslessTemporaryState): Promise<Canoni
     await hook(ctx.hooks.beforeProcess === undefined ? undefined : () => ctx.hooks.beforeProcess!({ role: "output_video_digest" }));
     await reconfirm(output, "output_invalid"); await reconfirm(source, "source_changed");
     const outputBinary = await pinned(ctx.toolRoot, "ffmpeg");
-    const remaining = Math.floor(request.canonicalizationTimeout - (performance.now() - start));
+    const remaining = Math.floor(losslessRemainingTime(ctx, request.canonicalizationTimeout - (performance.now() - start)));
     if (remaining < 1) fail("process_timeout", "The complete exact verification expired before decoder spawn.");
     const spawnDecoder = (binary: VerifiedBinary, videoIndex: number, descriptor: number) => spawn(binary.path, losslessDecoderArgv(videoIndex), {
       shell: false, windowsHide: true, cwd: ctx.toolRoot, env: minimalEnvironment(), stdio: ["ignore", "pipe", "pipe", descriptor] });
@@ -1876,9 +1893,19 @@ export async function canonicalLosslessPrepublicationOf(handle: unknown): Promis
  * Frozen 0.3/0.4 builders replay all geometry, signaling, carrier, timing/audio and identity checks before minting a scoped proof. */
 export async function verifyCanonicalLosslessTemporary(handle: unknown): Promise<CanonicalLosslessPrepublicationHandle> {
   if (arguments.length !== 1) fail("request_invalid", "caller_evidence_refused: no supplied facts, digests or options are verification.");
-  const state = losslessTemporaryState(handle), start = performance.now(), { source, output, ctx, plan } = state;
+  const state = losslessTemporaryState(handle), start = performance.now();
   if (state.verificationStarted) fail("request_invalid", "one_verification_per_temporary: concurrent or repeated proof construction exceeds the scoped resource policy.");
   state.verificationStarted = true;
+  const verified = await verifyLosslessHeldObjects(state);
+  const prepublication = new CanonicalLosslessPrepublicationHandle(LOSSLESS_PREPUBLICATION_CONSTRUCTION, handle as CanonicalLosslessTemporaryHandle, {
+    state: "VERIFIED_PREPUBLICATION", derivation: verified.derivation, resources: verified.resources, encoderArgv: [...state.argv],
+    encoderElapsedMilliseconds: state.elapsedMilliseconds, elapsedMilliseconds: performance.now() - start });
+  state.prepublication = prepublication; return prepublication;
+}
+interface LosslessHeldVerificationContext extends LosslessSourceContext { output: Anchor }
+/** Private shared verifier. Cached outputs are held store objects, never encoder temporaries or caller-supplied proof. */
+async function verifyLosslessHeldObjects(state: LosslessHeldVerificationContext): Promise<{ derivation: ChromaSafeDerivation; resources: CanonicalLosslessStreamingResources }> {
+  const { source, output, ctx, plan } = state;
   await reconfirm(source, "source_changed"); await reconfirm(output, "output_invalid");
   const freshSource = await factsOf(ctx, source, "source_changed", false); losslessMeasuredBounds(freshSource);
   const freshSourceChroma = await losslessChromaOf(ctx, source, freshSource, false);
@@ -1907,8 +1934,186 @@ export async function verifyCanonicalLosslessTemporary(handle: unknown): Promise
     derivation = buildChromaSafeDerivation({ sampleDerivation, plan, outputChroma });
   } catch { fail("verification_failed", "Exact sample/timing/audio/profile and explicit center output verification did not all pass."); }
   await reconfirm(source, "source_changed"); await reconfirm(output, "output_invalid");
-  const prepublication = new CanonicalLosslessPrepublicationHandle(LOSSLESS_PREPUBLICATION_CONSTRUCTION, handle as CanonicalLosslessTemporaryHandle, {
-    state: "VERIFIED_PREPUBLICATION", derivation, resources: exact.resources, encoderArgv: [...state.argv],
-    encoderElapsedMilliseconds: state.elapsedMilliseconds, elapsedMilliseconds: performance.now() - start });
-  state.prepublication = prepublication; return prepublication;
+  return { derivation, resources: exact.resources };
+}
+
+// ---------------------------------------------------------------- B2-B2 E–F trusted routing/publication/cache. No owner-media or render authority.
+import { planCanonicalReencode } from "../packages/media-ingest/reencode.js";
+import { chromaSafeComputationIdOf } from "../packages/media-ingest/chroma.js";
+import { CANONICAL_LOSSLESS_RECORD_MAX_BYTES, CanonicalLosslessOutputFormatSchema, compactLosslessComputationRecordOf, parseLosslessComputationRecordBytes,
+  type CanonicalLosslessComputationRecord, type CanonicalLosslessOutputFormat } from "../packages/media-ingest/lossless-record.js";
+export interface CanonicalLosslessPublishedResult {
+  outcome: "PUBLISHED_VERIFIED_NOT_AUTHORIZED"; renderAuthority: "not_registered";
+  source: SourceIdentity; output: SourceIdentity; planning: CanonicalPlanningResult; chromaPlanning: ChromaPlanningResult;
+  computationId: string; derivation: ChromaSafeDerivation; record: CanonicalLosslessComputationRecord;
+  publication: "published_by_this_operation" | "existing_object_reverified"; cache: "miss" | "hit";
+  resources: CanonicalLosslessStreamingResources;
+}
+const LOSSLESS_DEADLINES = new WeakMap<Context, number>();
+function losslessRemainingTime(ctx: Context, limit: number): number {
+  const deadline = LOSSLESS_DEADLINES.get(ctx), remaining = deadline === undefined ? limit : Math.min(limit, Math.floor(deadline - performance.now()));
+  if (remaining < 1) fail("process_timeout", "The complete bounded lossless operation expired.");
+  return remaining;
+}
+type StoreDirectoryIdentity = { path: string; dev: bigint; ino: bigint };
+const LOSSLESS_STORES = new WeakMap<Store, StoreDirectoryIdentity[]>();
+async function holdLosslessStore(store: Store): Promise<void> {
+  const paths = [dirname(dirname(store.objects)), dirname(store.objects), store.objects, store.computations, store.pending], identities: StoreDirectoryIdentity[] = [];
+  for (const path of paths) {
+    await exactLocation(path, "store_location_invalid"); const s = await lstat(path, { bigint: true });
+    if (!s.isDirectory()) fail("store_location_invalid", "The held store requires real directories.");
+    identities.push({ path, dev: s.dev, ino: s.ino });
+  }
+  LOSSLESS_STORES.set(store, identities);
+}
+async function reconfirmLosslessStore(store: Store): Promise<void> {
+  const identities = LOSSLESS_STORES.get(store);
+  if (!identities) fail("store_location_invalid", "An internally held canonical store is required.");
+  for (const d of identities) {
+    await exactLocation(d.path, "store_location_invalid"); const s = await lstat(d.path, { bigint: true });
+    if (!s.isDirectory() || s.dev !== d.dev || s.ino !== d.ino) fail("store_location_invalid", "A verified store directory was replaced.");
+  }
+}
+/** ftyp is measured from held payload bytes; the frozen .mp4 object suffix is never the container observation. */
+async function losslessOutputFormatOf(ctx: Context, output: Anchor): Promise<CanonicalLosslessOutputFormat> {
+  const handle = await reader(output, "output_invalid"); let box: Buffer;
+  try {
+    const header = await readRange(handle, 0, 8), length = header.readUInt32BE(0);
+    if (header.toString("latin1", 4, 8) !== "ftyp" || length < 20 || length > 80 || (length - 16) % 4 !== 0)
+      fail("verification_failed", "The fixed output requires one bounded leading BMFF file-type box.");
+    box = await readRange(handle, 0, length); await reconfirm(output, "output_invalid");
+  } finally { await handle.close(); }
+  const majorBrand = box.toString("latin1", 8, 12), compatibleBrands: string[] = [];
+  for (let i = 16; i < box.length; i += 4) compatibleBrands.push(box.toString("latin1", i, i + 4));
+  const run = await runOver(ctx, output, "output_invalid", "output_facts", "ffprobe", ["-hide_banner", "-loglevel", "error", "-threads", "1",
+    "-protocol_whitelist", "fd", "-f", "mov", "-fd", "3", "-show_entries", "stream=index,codec_type,codec_name,profile,pix_fmt", "-of", "json=compact=1", "-i", "fd:"],
+    HARD.probeTimeoutMilliseconds, MAX_PROBE_OUTPUT_BYTES);
+  requireCompleted(run, "output container/encoding verification");
+  const videos = objectsOf(objectOf(JSON.parse(run.stdout.toString("utf8"))).streams).filter(s => s.codec_type === "video");
+  const v = videos[0];
+  if (videos.length !== 1 || v?.index !== 0) fail("verification_failed", "The fixed lossless output requires exactly its first video stream.");
+  try { return CanonicalLosslessOutputFormatSchema.parse({ family: "iso_bmff", format: majorBrand === "qt  " ? "mov" : "mp4", majorBrand, compatibleBrands,
+    fileTypeBoxDigest: createHash("sha256").update(box).digest("hex"), video: { codec: v.codec_name, profile: v.profile, pixelFormat: v.pix_fmt } }); }
+  catch { fail("verification_failed", "The actual container and fixed H.264 profile are incompatible."); }
+}
+/** Narrow extension of the existing record publication helper: exclusive held inode, sync, no overwrite and precise cleanup. */
+async function publishHeldLosslessRecord(store: Store, name: string, bytes: string): Promise<void> {
+  if (Buffer.byteLength(bytes, "utf8") > CANONICAL_STORE.maxRecordBytes || CANONICAL_LOSSLESS_RECORD_MAX_BYTES !== CANONICAL_STORE.maxRecordBytes)
+    fail("publication_conflict", "The unchanged computation-record byte bound is mandatory.");
+  await reconfirmLosslessStore(store);
+  const path = join(store.pending, randomBytes(16).toString("hex") + ".pending"), destination = join(store.computations, name);
+  let pending: FileHandle | null = null, identity: { dev: bigint; ino: bigint } | null = null;
+  try {
+    pending = await open(path, "wx+"); const initial = await pending.stat({ bigint: true }); identity = { dev: initial.dev, ino: initial.ino };
+    await pending.writeFile(bytes); await pending.sync();
+    const subject: Anchor = { path, handle: pending, ...identity, sizeBytes: Buffer.byteLength(bytes), contentHash: createHash("sha256").update(bytes).digest("hex") };
+    await reconfirm(subject, "publication_conflict"); await reconfirmLosslessStore(store);
+    let linked = false;
+    try { await link(path, destination); linked = true; } catch (e) {
+      if ((e as { code?: string }).code !== "EEXIST") fail("store_unavailable", "No-overwrite record publication failed.");
+    }
+    const winner = await openAnchor(destination, "publication_conflict", CANONICAL_STORE.maxRecordBytes);
+    try {
+      if (winner.contentHash !== subject.contentHash || winner.sizeBytes !== subject.sizeBytes || (linked && (winner.dev !== subject.dev || winner.ino !== subject.ino)))
+        fail("publication_conflict", "The computation-record winner differs in bytes or physical identity.");
+      await reconfirm(subject, "publication_conflict"); await reconfirm(winner, "publication_conflict"); await reconfirmLosslessStore(store);
+    } finally { await winner.handle.close(); }
+  } catch (e) { if (e instanceof CanonicalIngestError) throw e; fail("store_unavailable", "The held computation-record publication stopped."); }
+  finally {
+    if (pending) await pending.close();
+    await reconfirmLosslessStore(store);
+    const named = await lstat(path, { bigint: true }).catch((e: { code?: string }) => { if (e.code === "ENOENT") return null; fail("store_unavailable", "Owned pending cleanup could not inspect its name."); });
+    if (named) {
+      if (!identity || named.isSymbolicLink() || named.dev !== identity.dev || named.ino !== identity.ino) fail("publication_conflict", "A replacement pending object cannot be removed.");
+      await unlink(path).catch(() => fail("store_unavailable", "Owned pending cleanup failed."));
+    }
+  }
+}
+async function routeChromaSafeLossless(ctx: Context, request: Read, source: Anchor, measured: FreshFacts,
+  classification: CanonicalClassification, planning: CanonicalPlanningResult): Promise<CanonicalIngestResult> {
+  const base = { source: anchorIdentity(source), classification, planning };
+  // Only the accepted B2-B1 bounded cases can cross this seam. All original v1 findings are retained in `planning`.
+  const sample = planCanonicalReencode(measured.facts);
+  if (sample.outcome !== "PLAN") { await reconfirm(source, "source_changed"); return { ...base, outcome: sample.outcome === "REFUSE" ? "REFUSE" : "DEFER" }; }
+  if (!FootageAuthorizationRootSchema.safeParse(request.authorization).success) fail("canonicalization_consent_required", "Lossless routing requires the consenting original root.");
+  const routed: Context = { ...ctx }; LOSSLESS_DEADLINES.set(routed, performance.now() + request.canonicalizationTimeout);
+  losslessMeasuredBounds(measured);
+  const chroma = await losslessChromaOf(routed, source, measured, false), chromaPlanning = planChromaSafeReencode({ source: base.source, sourceFacts: measured.facts, sourceChroma: chroma });
+  if (chromaPlanning.outcome !== "PLAN" || !chromaPlanning.plan) {
+    await reconfirm(source, "source_changed"); return { ...base, chromaPlanning, outcome: chromaPlanning.outcome === "REFUSE" ? "REFUSE" : "DEFER" };
+  }
+  if (measured.facts.streams.some(s => s.kind === "audio" && s.codec === "pcm_s16le") && chromaPlanning.plan.samplePlan.operations.some(o => o.op === "RETIME_AUDIO_CONTIGUOUS")) {
+    await reconfirm(source, "source_changed"); return { ...base, chromaPlanning, outcome: "DEFER", deferredReason: "pcm_retime_unproved" };
+  }
+  await reconfirm(source, "source_changed");
+  return executeLosslessStore({ ctx: routed, request, source, measured, plan: chromaPlanning.plan }, planning, chromaPlanning);
+}
+async function executeLosslessStore(state: LosslessSourceContext, planning: CanonicalPlanningResult, chromaPlanning: ChromaPlanningResult): Promise<CanonicalLosslessPublishedResult> {
+  const { source, ctx, request, plan } = state, computationId = chromaSafeComputationIdOf({ plan });
+  const store = await openStore(request.workspaceRoot, source.path); await holdLosslessStore(store);
+  const record = await readRecord(store, computationId, plan);
+  const verify = async (output: Anchor, code: "cache_corrupt" | "publication_conflict") => {
+    try {
+      await reconfirmLosslessStore(store);
+      const outputFormat = await losslessOutputFormatOf(ctx, output);
+      const preflight = await factsOf(ctx, output, "output_invalid", true); losslessMeasuredBounds(preflight);
+      if (planCanonicalizationV1(preflight.facts).outcome !== "DIRECT") fail(code, "The actual stored output does not conform to Profile v1.");
+      const proof = await verifyLosslessHeldObjects({ ...state, output });
+      const projected = compactLosslessComputationRecordOf(proof.derivation, outputFormat);
+      await reconfirm(source, "source_changed"); await reconfirm(output, code); await reconfirmLosslessStore(store);
+      return { ...proof, projected };
+    } catch (e) {
+      if (e instanceof CanonicalIngestError && ["source_changed", "process_failed", "process_timeout", "runtime_binary_mismatch", "store_location_invalid", "request_invalid"].includes(e.code)) throw e;
+      fail(code, "Fresh complete source/output media verification failed.");
+    }
+  };
+  const finish = async (output: Anchor, verified: Awaited<ReturnType<typeof verify>>, stored: StoredRecord,
+    cache: "miss" | "hit", publication: CanonicalLosslessPublishedResult["publication"]): Promise<CanonicalLosslessPublishedResult> => {
+    await hook(ctx.hooks.beforePublication); await reconfirmLosslessStore(store); await assertNoLinks(source.path, "source_changed");
+    const finalRecord = await readRecord(store, computationId, plan);
+    if (finalRecord?.bytes !== stored.bytes || finalRecord.physical?.dev !== stored.physical?.dev || finalRecord.physical?.ino !== stored.physical?.ino)
+      fail(cache === "hit" ? "cache_corrupt" : "publication_conflict", "The computation record changed before return.");
+    await reconfirm(source, "source_changed"); await reconfirm(output, cache === "hit" ? "cache_corrupt" : "publication_conflict");
+    losslessRemainingTime(ctx, request.canonicalizationTimeout);
+    return { outcome: "PUBLISHED_VERIFIED_NOT_AUTHORIZED", renderAuthority: "not_registered", source: anchorIdentity(source), output: anchorIdentity(output),
+      planning, chromaPlanning, computationId, derivation: verified.derivation, record: verified.projected.record, resources: verified.resources, publication, cache };
+  };
+  if (record) {
+    const output = await openAnchor(join(store.objects, canonicalObjectName(record.outputHash)), "cache_corrupt", MAX_STAGED_SOURCE_BYTES);
+    try {
+      if (output.contentHash !== record.outputHash || output.sizeBytes !== record.outputSize) fail("cache_corrupt", "Cached bytes differ from the recorded identity.");
+      const verified = await verify(output, "cache_corrupt");
+      if (verified.projected.bytes !== record.bytes) fail("cache_corrupt", "The compact record differs from fresh complete media proof.");
+      return await finish(output, verified, record, "hit", "existing_object_reverified");
+    } finally { await output.handle.close(); }
+  }
+  return withTrustedLosslessTemporary(state, async temporary => {
+    const witness = await verifyCanonicalLosslessTemporary(temporary), held = losslessTemporaryState(temporary);
+    let live = LOSSLESS_PREPUBLICATIONS.get(witness);
+    if (!live || live.temporary !== temporary) fail("publication_conflict", "Publication requires its active held prepublication capability.");
+    const expected = compactLosslessComputationRecordOf(live.proof.derivation, await losslessOutputFormatOf(ctx, held.output));
+    await held.output.handle.chmod(0o444); await held.output.handle.sync();
+    await hook(ctx.hooks.beforePublication); await reconfirmLosslessStore(store); await reconfirm(source, "source_changed"); await reconfirm(held.output, "output_invalid");
+    await assertNoLinks(held.output.path, "output_invalid");
+    if (!LOSSLESS_PREPUBLICATIONS.has(witness)) fail("publication_conflict", "The live temporary verification scope expired.");
+    const destination = join(store.objects, canonicalObjectName(held.output.contentHash)); let publication: CanonicalLosslessPublishedResult["publication"];
+    try { await link(held.output.path, destination); publication = "published_by_this_operation"; } catch (e) {
+      if ((e as { code?: string }).code !== "EEXIST") fail("store_unavailable", "No-overwrite canonical publication failed.");
+      publication = "existing_object_reverified";
+    }
+    // No detached proof authorizes a store object. Release the temporary's large proof; freshly verify the actual winning object.
+    LOSSLESS_PREPUBLICATIONS.delete(witness); held.prepublication = null; live = undefined;
+    const output = await openAnchor(destination, "publication_conflict", MAX_STAGED_SOURCE_BYTES);
+    try {
+      if (output.contentHash !== held.output.contentHash || output.sizeBytes !== held.output.sizeBytes ||
+        (publication === "published_by_this_operation" && (output.dev !== held.output.dev || output.ino !== held.output.ino))) fail("publication_conflict", "The content-addressed winner differs in bytes or inode.");
+      const verified = await verify(output, "publication_conflict");
+      if (verified.projected.bytes !== expected.bytes) fail("publication_conflict", "Published bytes do not reproduce the complete temporary computation.");
+      await hook(ctx.hooks.beforePublication); await reconfirmLosslessStore(store); await reconfirm(source, "source_changed"); await reconfirm(output, "publication_conflict");
+      await publishRecord(store, canonicalComputationRecordName(computationId), verified.projected.bytes, true);
+      const stored = await readRecord(store, computationId, plan);
+      if (!stored || stored.bytes !== verified.projected.bytes) fail("publication_conflict", "The computation publication differs from fresh media proof.");
+      return await finish(output, verified, stored, "miss", publication);
+    } finally { await output.handle.close(); }
+  }, true);
 }

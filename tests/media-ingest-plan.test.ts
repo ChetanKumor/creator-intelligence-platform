@@ -550,7 +550,9 @@ test("B2A1-C08 protected rendering, N1 and the audited boundary stay pinned duri
   // the protected renderer and exact N1 contract retain their original byte pins. A2's execution and registry suites cover the integration.
   for (const path of ["scripts/edit-render-local.ts", "packages/media-ingest/canonical.ts"]) pinned(path);
   // B2-B1 explicitly authorizes this single generated-research process registration. Reverse only that addition and retain the old pin.
-  const audit = readFileSync("scripts/audit-workspace.mjs", "utf8");
+  // E–F grants one additional hostile generated-media process harness; all old auditor bytes stay pinned after this exact delta.
+  const audit = readFileSync("scripts/audit-workspace.mjs", "utf8").replace('"tests/media-ingest-plan-trust-media.integration.ts", "tests/media-ingest-lossless-cache-media.integration.ts",',
+    '"tests/media-ingest-plan-trust-media.integration.ts",');
   const registration = /,\r?\n  "tests\/support\/canonical-reencode-media\.ts"/g;
   assert.equal([...audit.matchAll(registration)].length, 1);
   assert.equal(sha(audit.replace(registration, "")), "d2d48aefacca80874310814f412657f22f3605a277b1db64a09c85a2b7ff3a74");

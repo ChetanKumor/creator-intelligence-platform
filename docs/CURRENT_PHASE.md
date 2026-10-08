@@ -1,8 +1,41 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (C–D OWNER-ACCEPTED; E–F AUTHORIZED, NOT STARTED; Gate 7 incomplete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (C–D OWNER-ACCEPTED; E–F IMPLEMENTED FOR OWNER REVIEW; Gate 7 incomplete)
 
 Last updated: 2026-10-08
 
 ## Current ruling
+
+- Phase 5 Gate 7 Batch **3E-B2-B2 Checkpoints E–F** (2026-10-08): **IMPLEMENTED FOR OWNER REVIEW; FINAL GATES PASS**.
+  - The existing read-once/held-source ingest adapter now routes only bounded original Profile v1 DEFER candidates through fresh
+    explicit-center chroma admission, the unchanged Plan 1.1.0/QP-zero compiler and the reused complete C–D verifier. DIRECT,
+    N1, exact remux and unsupported refusal/defer semantics remain compatible with accepted evidence and identities.
+  - Objects and compact scope-free 0.4 records use the existing canonical-v0 store and no-overwrite conventions. Cache hits
+    start no encoder and freshly rebuild source/output sample, chroma, codec/container/profile, timing/audio and 0.3/0.4 proofs.
+    The distinct `PUBLISHED_VERIFIED_NOT_AUTHORIZED` result issues no derived authorization or render permit.
+  - Final clean runs: **812 pure + 92 E–F generated-media + 304 legacy generated-media tests PASS**; affected legacy rerun
+    **47/47 PASS**. Both original independent hostile RED instruments pass after minimal corrections. Typecheck, clean build,
+    all 33 schema artifacts, workspace/process audit, frozen dependencies/contracts and all 18 historical hashes PASS.
+  - The original failures, private-draft chronology, deep-JSON and complete-proof high-bit container counterexamples remain
+    preserved. Compact 2,000-frame structural proof is 4,076 bytes versus 651,154-byte full evidence; store bound stays 262,144.
+    Real generated MOV/PCM miss/hit is truthful under the frozen .mp4 namespace; PCM RETIME, combined peak RSS, long-video
+    operational capacity, hardware playback and cross-machine byte determinism remain unproved.
+  - Publication is limited to the existing phase branch for owner review. **E–F are not owner-accepted by this report.**
+    **G–I, derived registration/lifecycle/render handoff, owner footage, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED.**
+    B2-B2 and Gate 7 remain incomplete; no main merge, new dependency or model inference.
+  - Details: [E–F final gates](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#ef-final-gates-2026-10-08).
+
+## Preserved E–F verification-in-progress ruling
+
+- Phase 5 Gate 7 Batch **3E-B2-B2 Checkpoints E–F** (2026-10-08): **IMPLEMENTATION UNDER VERIFICATION; NO FEATURE COMMIT YET**.
+  - C–D acceptance is separately committed/pushed as `ad5d8fe688c46ad2376789626bfd939a1415f075`; accepted C–D implementation
+    remains `96871381464eb6bc5064153faa724bf7a898f245`. E–F reuses the held store and streaming verifier, adds a compact strict
+    scope-free 0.4 computation record and a `PUBLISHED_VERIFIED_NOT_AUTHORIZED` result; no new derived authorization is issued.
+  - Initial main gates: 88 E–F generated-media tests PASS; 304 legacy generated-media tests PASS; broad pure gate 810/812 PASS.
+    Two pure failures and two later hostile RED findings are preserved and require corrections/reverification before publication.
+    Neither preparation nor these partial passing results close E–F, B2-B2 or Gate 7.
+  - G–I, derived registration/lifecycle and renderer handoff, owner footage, 3E-C and Phase 6 remain **NOT STARTED, NOT AUTHORIZED**.
+  - Details: [E–F execution evidence](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#ef-e0-reuse-decision-2026-10-08).
+
+## Preserved C–D owner-acceptance ruling
 
 - Phase 5 Gate 7 Batch **3E-B2-B2 Checkpoints C–D owner acceptance** (2026-10-08):
   **C–D OWNER-ACCEPTED** at `96871381464eb6bc5064153faa724bf7a898f245`.

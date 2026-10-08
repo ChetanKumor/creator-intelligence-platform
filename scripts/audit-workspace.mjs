@@ -82,7 +82,7 @@ const adapterPolicy = {
 };
 // Test harness files that start processes (fixture generation with the pinned tool, or running this audit in a fixture).
 const testProcessFiles = new Set(["tests/workspace-boundary.test.ts", "tests/reference-media.integration.ts", "tests/support/footage-media.ts", "tests/support/edit-render-media.ts",
-  "tests/edit-render-audit.test.ts", "tests/support/canonical-media-fixtures.ts", "tests/media-ingest-plan-trust-media.integration.ts",
+  "tests/edit-render-audit.test.ts", "tests/support/canonical-media-fixtures.ts", "tests/media-ingest-plan-trust-media.integration.ts", "tests/media-ingest-lossless-cache-media.integration.ts",
   "tests/support/canonical-reencode-media.ts"]);
 const processModules = new Set(["node:child_process", "child_process"]);
 const legacyProcessNames = new Set(["spawn", "execFile"]), strictProcessNames = new Set(["spawn"]);

@@ -679,3 +679,219 @@ Only **E–F** are authorized, **NOT STARTED** at this acceptance checkpoint: tr
 publication/cache returning a distinct non-authorizing result. No FootageAuthorizationDerived, owner registration, render permit
 or lifecycle integration may be issued. **G–I, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED.** B2-B2 and Gate 7 remain
 incomplete. Publication is limited to the existing phase branch; main is not merged or modified.
+
+## E–F E0 reuse decision (2026-10-08)
+
+E–F implementation baseline is the separate acceptance-doc commit `ad5d8fe688c46ad2376789626bfd939a1415f075`;
+the accepted implementation base is `96871381464eb6bc5064153faa724bf7a898f245`. Local/tracking/live acceptance HEAD agree,
+main is unchanged, and the phase branch is now 16 ahead / 0 behind. This section is preliminary engineering evidence, not a passed gate.
+
+Actual external source inspection (read-only; nothing is installed or vendored):
+
+- [npm/cacache](https://github.com/npm/cacache): `lib/content/write.js`, `lib/content/read.js`, `lib/entry-index.js`, `package.json`,
+  `LICENSE.md`; live main `6e8eb4d7e82694149c34fbb0fbe5441628fc1703`. Writes use `wx`, streaming integrity/size checks and
+  `moveFile` with overwrite disabled. A per-process map coalesces destination moves; it is not cross-process media verification.
+  Reads check SRI/size; the convenience read still concatenates large content. The index appends checksum-prefixed entries, skips
+  damaged entries and permits replacement during compaction. These index semantics do not satisfy our corruption-refusal contract.
+  ISC; inspected package 21.0.1 has ten direct runtime dependencies and disables Windows CI in template configuration. No maintained
+  package's generic cache API can replace our held inode, authorization and full media checks.
+- [OCI distribution-spec](https://github.com/opencontainers/distribution-spec): `spec.md`, `LICENSE`; live main
+  `97274622c11112caa21efb8c52acca3c6b8fa7f1`. Useful features are digest-identified blobs, client byte verification, explicit media
+  types and publishing blobs before the manifest. This is an HTTP protocol specification, not a secure local-file implementation;
+  referenced blobs may be rejected when absent and subject references have separate ordering rules. Apache-2.0; no runtime dependency
+  is needed to reuse the publication ordering concept.
+- [Bazel remote-apis](https://github.com/bazelbuild/remote-apis): `README.md`,
+  `build/bazel/remote/execution/v2/remote_execution.proto`, `LICENSE`; live main `6def1c5d27a527c400875c24ae8b1a160145d7e1`.
+  The ActionCache and ContentAddressableStorage services separate a computation result from its digest/size blobs. The protocol requires
+  servers to reject wrong digest/size uploads and clients to verify downloaded content. It does not assert media equivalence or owner
+  authority; adopting the RPC stack would add irrelevant transport/protobuf dependencies. Apache-2.0. Live refs demonstrate accessible
+  upstream snapshots; no independent maintenance or security audit of these projects is claimed.
+
+| Requirement | Existing reusable implementation | Missing delta | New dependency needed? |
+| --- | --- | --- | --- |
+| Trusted routing | Profile v1 / ingest planner / read-once request | Bounded chroma branch over the existing anchor | No |
+| Source authorization | Consenting root / held byte anchor | No bypass; use private snapshotted context | No |
+| Exact encoding | C–D compiler and scoped executor | Extract private trusted source seam | No |
+| Full sample verification | C–D paired streaming verifier | Private shared held-output core for cached bytes | No |
+| No-overwrite store | A2/N1 objects/computations/pending layout | Held publication for new variant and precise pending cleanup | No |
+| Computation record | Pure identified deterministic records | Compact strict 0.4 projection with a new record domain | No |
+| Cache verification | A2/N1 corruption refusal / remeasurement | Rebuild complete 0.3/0.4 proof and compare projection | No |
+| Lifecycle | Existing owner-media authority | Deferred to G, no changes | Out of scope |
+
+Decision: reuse the existing store and C–D math/process supervision. Add only the missing compact contract, private held-byte seams,
+typed non-authorizing result and routing/publication verification. No dependency or lockfile change. The old record helper's broad
+best-effort unlink is not sufficient for E–F hostile pending replacement; any new record writer must retain the exclusive inode and
+refuse cleanup failure. Existing N1/0.2 record domains and behavior remain frozen.
+
+Container review: the frozen object function declares SHA-256 naming and returns `.mp4`; it does not encode a payload-format identity.
+All accepted trusted readers use held descriptors with the pinned `mov` demuxer (ISO BMFF family), not filename-extension selection.
+The fixed compiler deliberately emits MOV for PCM. E–F must separately measure the actual `ftyp` box and H.264 codec/profile,
+retain truthful MOV/MP4 identity in the compact record, and verify real generated MOV under the frozen `.mp4` namespace. No future
+derived-source reader is authorized here; G must use the measured payload identity rather than the suffix. New PCM RETIME remains deferred.
+
+## E–F implementation and verification ledger (2026-10-08)
+
+**Status at this entry: UNDER VERIFICATION, NO FEATURE COMMIT.** Only E–F are authorized.
+Evidence prefix `E = .local-runs/phase5-gate7/batch3e-b2b2-ef-20261008/` is ignored; every original receipt remains in place.
+The C–D accepted SHA is `96871381464eb6bc5064153faa724bf7a898f245`; the separate pushed acceptance-doc/E–F baseline SHA is
+`ad5d8fe688c46ad2376789626bfd939a1415f075`. No main merge or later-phase implementation.
+
+### Reused seams, precedence and authority
+
+The ordinary `canonicalizeLocalMedia` still snapshots caller fields once, holds the original source anchor and derives fresh Profile v1
+facts. DIRECT, REFUSE, legacy N1 and every exact-remux PLAN retain their accepted branches. Only DEFER reaches the existing B2-B1
+bounded planner, then fresh center-only chroma admission and Plan 1.1.0. Unsupported original findings remain in the returned original
+planning evaluation. Missing/default/left/other unproved siting defers; conflicting/unsupported carriers refuse. PCM RETIME explicitly
+defers. No smaller model, new codec setting, pixel conversion, chroma relocation or audio encoder is selected by production.
+
+A private source seam extracts the accepted scoped encoder body; it receives the already snapshotted request, original held source,
+pinned context and freshly observed plan. It does not call multiple public helpers with the caller's request. A private held-source/
+held-output core is extracted from C–D verification. Temporary verification still has its one-attempt guard and expiring witness;
+stored-object verification never constructs an encoder temporary or accepts a caller proof. Pixel math, decoder argv, ordered digest
+wire, source-prefix semantics, encoder argv/profile and original record identities stay unchanged.
+
+The new result is the disjoint typed `PUBLISHED_VERIFIED_NOT_AUTHORIZED`, with `renderAuthority: not_registered`, identities, complete
+fresh 0.3/0.4 structural evidence, compact record, cache/publication state and bounded verifier resource telemetry. It contains no
+authorization, output path or filesystem handle. No existing application consumer outside tests calls this ingest entry point.
+Owner-media registration, permit, renderer, execution claims and root-first lifecycle files are unchanged; G must establish authority.
+
+### Compact immutable commitment, not cached proof
+
+`packages/media-ingest/lossless-record.ts` adds pure `CanonicalLosslessComputationRecord` **0.4.0**, record identity domain
+`canonical_lossless_computation_record_v1`. The computation remains the frozen **canonical_media_computation_v3**. The projection binds:
+source hash/size/asset, facts digest and chroma-observation ID; full fresh-plan ID/version and fixed encode-profile/verification-policy IDs;
+fixed 0.4 toolchain; actual output hash/size/asset; measured ftyp format, major/compatible brands and complete box hash; actual H.264
+High 4:4:4 Predictive/yuv420p signaling; output facts/profile-evaluation commitments; complete ordered source/expected/output sequence
+digests, geometry/transform/count/index mapping and mandatory zero per-plane/total/maximum error; exact video/audio timelines, copied
+audio packet commitments, and the unchanged chroma-verification method/policy/positions/source-output observation IDs.
+
+Strict schemas and exact canonical UTF-8 LF serialization reject missing/extra/rehashed incompatible fields. A fresh full Plan 1.1.0
+is required to validate source/plan/computation joins. Output commitments only become acceptable when fresh held media independently
+reproduces the whole projection. Creator/project/root authorization/paths/clock/derivation IDs are absent from the store value.
+Each requesting root independently reestablishes authorization and consent; its complete derivation retains only its own lineage.
+
+`35-record-size-proof.json` reuses the existing pure test fixture: **synthetic structural evidence only**. At 3 frames, full derivation
+19,121 bytes versus compact record 4,073 bytes; at 2,000 frames, full derivation **651,154 bytes** versus compact record **4,076 bytes**.
+The hard **262,144-byte** store limit is unchanged. Frame lists remain complete in fresh derivation evidence; the store retains their
+ordered sequence commitments rather than truncating them. The compact shape has no frame/fact/chroma-row arrays; its only array is
+at most sixteen four-byte compatible brands. Every record write/read also enforces the original hard byte bound.
+
+### Cache and publication trust
+
+Hit: fresh original root/consent and hash/size/inode; fresh facts/chroma and rebuilt plan/computation; strict compact record; exact held
+content-addressed object hash/size/type; fresh raw ftyp/encoding/profile preflight; shared C–D full source/output Y/U/V decoder verification;
+fresh complete source/output facts, every chroma carrier/frame, video PTS and audio payload/timing; rebuilt request-specific 0.3/0.4 evidence;
+exact projected-record equality; then re-read the record, check its physical identity/bytes, reconfirm source/output/store and return the
+non-authorizing snapshot. A valid hit starts **no encoder**. Stored frame digests/facts/authorization are never verification inputs.
+
+Miss: accepted encoder into exclusive scoped bytes; full C–D verification; active private prepublication entry bound to that very temporary;
+source/output/name reconfirmation; seal/sync; no-overwrite hard link; open the real winner and check expected bytes/size plus exact inode
+when linked by this operation; independently repeat full media proof; compare compact projections; publish the compact record via the
+existing helper's narrow held-inode extension; final object/source/store/record reconfirmation. Publication happens inside the callback
+with the original handles alive. No detached JSON authorizes a link. The large temporary proof entry/reference is released after linking,
+before winner verification; its capability is invalidated at closure. Read-only mode and SHA-256 names are never treated as immutability.
+
+The existing objects/computations/pending layout and names remain. Store directories are identified and reconfirmed with traversal/link/
+junction refusal. The added record writer uses wx+, sync, exact held inode/hash/length and no-overwrite linking, verifies a concurrent winner
+and only unlinks its own still-identical pending inode. Cleanup failure/replacement refuses. Canonical objects/records are never repaired,
+overwritten or garbage-collected. A missing object under an existing record is cache corruption. Compatible orphan objects are adopted
+only after a new trusted encode and complete winner verification. Interruption after the object/before the record leaves a non-authorizing
+orphan; these are separate operations, never claimed to be an atomic transaction or a new power-loss durability guarantee.
+
+MOV/PCM: real generated MOV/PCM is published under the frozen SHA-256 `.mp4` object name and successfully reverified on a hit.
+The record truthfully says MOV/`qt  `; readers use pinned fd-only ISO BMFF detection/demuxing, not the suffix. No namespace/accepted
+identity changes, PCM retiming, hardware playback proof or future derived-source reader integration.
+
+### Original RED, intermediate failures and corrections
+
+- `01-e1-build.log`: one test-only TS property-inference failure, corrected in `02-e1-build-corrected.log` without production changes.
+- `03-e1-routing-red.log`: **18 failures / 16 passes**, missing ordinary eligible route/publication/consent behavior on accepted code.
+- `05-f1-record-red.log`: **24/24 failures** on the absent compact contract.
+- `06-routing-record-build.log` compiles a private integration draft, not a passed routing/publication gate. The draft is retained as
+  `07-private-runtime-draft.ts`; accepted runtime bytes were restored for baseline cache/publication RED. This chronology is explicit:
+  the draft was prepared before that RED, while no draft media operation or publication was executed. Final-result routing and store
+  tests share implementation dependencies; there is no intermediate result falsely claiming publication.
+- `09-f3-f4-baseline-red.log`: cache/publication cases reject the absent behavior; 24 record tests also expose a synthetic fixture's
+  extra output-identity fields. Those fixture failures are not counted as media-integrity findings. Correct fixture projection and the
+  missing-record-ID test calibration give `11-f2-record-green.log`: **24/24 PASS**. Wrong-range/444 fixture construction is separated
+  from canonical encoding so production conversion guards remain unchanged.
+- `13-first-integration.log`: **75/78 PASS**. Retained failures: range conversion blocked at the canonical encoder (replace with a
+  generated stream-copy range counterexample); test expected process_failed while shared EOF/verification refusal mapped to cache_corrupt
+  (both refusal paths require all real child closes); case-sensitive derived-authorization error-message assertion (use owned error code).
+- `14-corrected-build.log` / `16-typecheck.log`: test-only omitted-close wrapper event-spread typing failure; corrected in
+  `19-corrected-supervision-build.log`. `20-affected-pure-corrected.log`: **147/147 PASS**.
+- `21-final-ef-media.log`: **88/88 PASS**, no skips/failures. Includes direct/remux precedence, fourteen D4 cases, real output-oracle
+  comparison, hits without encoder, per-request scope, plane/chroma/profile/PTS/audio attacks, wrong/missing/link-aliased objects,
+  record races, identical concurrent computations, occupied destinations, record collision, owned pending replacement/cleanup refusal,
+  permission/space syscall faults, source/temporary replacement, junction escape, interrupted object-before-record, orphan adoption,
+  actual child failure/missing-close and deadline-before-spawn, plus genuine MOV/PCM miss/hit.
+- `22-final-pure-regressions.log`: **810/812 PASS**, two failures preserved. The runtime-state assertion requires a temp root outside
+  the repository; the first invocation set TMP inside it. The rerun uses canonical Windows Temp/ci-ef-20261008, without changing that
+  test or production path rules. A1's audit source pin needs the exact one new E–F harness registration removed before the old hash
+  comparison; the original expected digest remains. `23-final-legacy-media.log`: **304/304 PASS**, no failures/skips, including C–D
+  93, legacy 208 and three synthetic revision-freshness cases. No owner-footage runner or model is executed.
+- Independent later hostile review: `25-deep-record-red.log` proves bounded JSON can overflow recursive canonical serialization and
+  yield unexpected_failure. The new 0.4 branch now strict-parses before canonical serialization; the old record branch is unchanged.
+- `27-ftyp-brand-red.log` is a **real generated-media complete-proof counterexample**: flip the brand's high bit, independently rebuild
+  valid 0.3/0.4 samples/chroma/timing evidence and an exact rehashed compact record. ASCII decoding masks the bit, mislabels raw bytes as
+  isom and incorrectly accepts the hit. Preserve the fixture and refusal assertion. Latin-1 byte-preserving reads followed by strict
+  ASCII-brand validation fix this implementation defect without changing any accepted identity/profile/namespace.
+- `30-hostile-corrections-green.log`: the **same two original instruments PASS 2/2** after those minimal fixes. Permanent cache tests
+  include deep JSON and independently reconstructed high-bit major/compatible-brand records; all-five timing/audio repair publication
+  and cache reconstruction are added to the ordinary-route gate. Final reruns below must close these changes before commit.
+
+### Bounds and remaining authority
+
+All accepted C–D size/count/frame/queue/digest/diagnostic/facts/chroma/packet/termination limits remain. New limits are a leading ftyp box
+of at most 80 bytes, at most sixteen compatible brands and five identified store directories; pending allocations are one scoped encoded
+temporary plus one bounded computation-record pending file. Only paired pixel comparison has two simultaneous children per operation;
+all additional observers are sequential. No extra decoder or compressed-video accumulation. After original legacy measurement, the new
+lossless branch has a single monotonic request deadline (at most 1,800,000 ms), checked before every child spawn and before returning,
+in addition to the existing per-query/supervision/grace bounds. Caller clock and authorization are read once, never reused from a cache.
+
+The 57,636,864-byte figure remains the accepted per-verification pixel/digest/queue/read bound, not total RSS. Bounded schema/table clones,
+parent/child native memory, kernel buffers and request-retained snapshots are additional. Combined peak RSS, long-video operational
+capacity, hardware/browser playback and cross-machine encoded-byte reproducibility remain unproved. These are preserved C–D limits.
+No new external dependency, package/lockfile change, owner-media lifecycle/permit change, owner footage or model inference.
+G–I, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED; B2-B2/Gate 7 remain incomplete.
+
+## E–F final gates (2026-10-08)
+
+**E–F IMPLEMENTED FOR OWNER REVIEW. All final implementation gates PASS; no owner acceptance of E–F/B2-B2/Gate 7 is implied.**
+
+| Gate / receipt under E | Final outcome |
+| --- | --- |
+| `30-hostile-corrections-green.log` | Same original deep-JSON and complete-proof high-bit brand instruments: 2/2 PASS |
+| `31-final-corrected-ef-media.log` | 92/92 PASS, zero failures/skips; full route, cache, publication, compound timing/audio and raw-brand regressions |
+| `32-final-corrected-pure.log` | 812/812 PASS, zero failures/skips; full affected contract/authority/render/workspace gate, two isolated file workers |
+| `23-final-legacy-media.log` | 304/304 PASS, zero failures/skips, retained full C–D/legacy/freshness run |
+| `37-final-affected-legacy-recheck.log` | 47/47 PASS on corrected code: N1 goldens, exact remux and C–D complete verifier |
+| `33-final-typecheck.log` | Exact `npm.cmd run typecheck`, exit 0 |
+| `39-clean-build-schemas.log` | Exact `npm.cmd run schemas:check`, fresh clean TypeScript build and all 33 unchanged artifacts, exit 0 |
+| `38-final-workspace-audit.log` | 136 application TS files / 18 adapters / 9 exact process harness registrations, exit 0 |
+| `35-record-size-proof.json` | 2,000-frame synthetic full evidence 651,154 bytes; compact record 4,076 bytes; original limit 262,144 |
+| `36-preservation-review.json` | All 18 historical hash/size pairs, 39 unchanged authoritative references, exact phase-history prefix and dependencies PASS |
+
+**1,208 distinct tests** in the clean pure/E–F/legacy gate inventory (812 + 92 + 304). The 47-test recheck, byte-size fixture's
+24-test rerun and two hostile instrument reruns overlap or strengthen these gates and are not added to that distinct count.
+The earlier 810/812 run remains a failed receipt. Its environment assertion and exact auditor-accounting defect are resolved by the
+clean full rerun, not by weakening a test, changing production path limits or regenerating an old expected hash.
+Actual host Node is 24.15.0; both complete executable SHA-256 values exactly match the owner-pinned C–D hashes.
+
+Final review covers the new pure record, request/held-object integration, real and hostile fixtures, exact inverse source-prefix
+accounting, the single process-test registration and these phase documents. Original Facts/Profile/Plan/Reencode/Chroma/Pixels,
+toolchain/encoder/digest semantics, package/lockfile, schemas, renderer/permits and owner-media authority/lifecycle remain frozen.
+The final source/staged/publication receipt will record only explicitly staged E–F paths, all historical hashes and local/tracking/live
+HEAD equality. Main remains `4f85b559c7eff2c24e221011f3ee1dd1466a111d`; only the existing phase branch may be pushed.
+No generated media or ignored receipt enters Git. No owner footage is decoded and no pretrained model is loaded.
+
+Known limits remain conservative explicit-center eligibility, fixed software QP-zero profile, generated-footage scope, unmeasured
+combined parent/native peak RSS, unproved long-video operational capacity/hardware playback/cross-machine byte reproducibility,
+and no new PCM RETIME. Real power-loss durability/atomic object-plus-record transaction is not claimed. Permission/quota/cleanup
+syscall refusals are controlled fault injections; decoder and metadata/sample counterexamples use actual pinned subprocesses.
+Malformed records and missing/tampered/incompatible objects refuse without repair; orphan objects remain non-authorizing and are not
+garbage-collected. The result proves the held bytes at verification time, never ongoing file immutability or execution authority.
+
+Remaining **G–I**: separately authorize derived FootageAuthorization/lifecycle registration for 0.4; generated registered-source
+renderer/QC handoff; then full affected batch closure/owner review. None is started or authorized here. Owner footage/3E-C and
+Phase 6 require separate authorization. **B2-B2 and Gate 7 remain incomplete. STOP after E–F phase-branch publication.**

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { acceptedIngestPrefixText } from "./support/canonical-lossless-ef-preservation.js";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import * as reencode from "../packages/media-ingest/reencode.js";
@@ -188,6 +189,7 @@ test("B1-C-frozen: accepted N1, Profile v1, Plan v1, 0.2 derivation and executio
   for(const [path,digest] of Object.entries(pins)) {
     let text=readFileSync(path,"utf8");
     if(path==="scripts/media-ingest-local.ts") {
+      text=acceptedIngestPrefixText(text);
       // Owner-authorized Checkpoint B: exactly one import plus an appended observer. Every accepted runtime byte remains pinned.
       const marker="// ---------------------------------------------------------------- B2-B2 chroma-only observation/admission (no encode/publication/cache/lifecycle)";
       assert.equal(text.split(marker).length,2);

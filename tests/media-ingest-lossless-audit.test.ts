@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { acceptedIngestPrefixText } from "./support/canonical-lossless-ef-preservation.js";
 const pins = [
   {
     "path": "package-lock.json",
@@ -65,7 +66,9 @@ const pins = [
     "sha256": "31939aa36472d43152761fbe817eeb555a75e8c0bc2d47c8831f0dd1fd9184a4"
   }
 ];
-for (const p of pins) test("CD-AUDIT-frozen " + p.path, () => { const b=readFileSync(p.path); assert.equal(b.length,p.bytes); assert.equal(createHash("sha256").update(b).digest("hex"),p.sha256); });
+for (const p of pins) test("CD-AUDIT-frozen " + p.path, () => { let b=readFileSync(p.path);
+  if(p.path==="scripts/audit-workspace.mjs") b=Buffer.from(b.toString("utf8").replace('"tests/media-ingest-plan-trust-media.integration.ts", "tests/media-ingest-lossless-cache-media.integration.ts",','"tests/media-ingest-plan-trust-media.integration.ts",'));
+  assert.equal(b.length,p.bytes); assert.equal(createHash("sha256").update(b).digest("hex"),p.sha256); });
 const additions = [
   {
     "path": "scripts/media-ingest-local.ts",
@@ -83,4 +86,6 @@ const additions = [
     "sha256": "916f6beeeda54063c6f0ae1278806e5c8829dc1e4632d5a895c8d7d1ddd316fa"
   }
 ];
-for (const p of additions) test("CD-AUDIT-exact-accepted-prefix " + p.path, () => { const b=readFileSync(p.path); assert.ok(b.length>p.bytes); assert.equal(createHash("sha256").update(b.subarray(0,p.bytes)).digest("hex"),p.sha256); });
+for (const p of additions) test("CD-AUDIT-exact-accepted-prefix " + p.path, () => { let b=readFileSync(p.path);
+  if(p.path==="scripts/media-ingest-local.ts") b=Buffer.from(acceptedIngestPrefixText(b.toString("utf8")));
+  assert.ok(b.length>p.bytes); assert.equal(createHash("sha256").update(b.subarray(0,p.bytes)).digest("hex"),p.sha256); });

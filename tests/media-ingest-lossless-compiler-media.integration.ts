@@ -70,5 +70,8 @@ test("CD-COMPILER-source-change: admission cannot detach from current authorized
 });
 test("CD-COMPILER-no-store: compilation creates no canonical media/store/computation", async () => {
   available(); await assert.rejects(() => stat(join(base, ".local-media")), (e: unknown) => (e as { code?: string }).code === "ENOENT");
-  const req = await cdRequest(seeds.hevc!, base); assert.equal((await local.canonicalizeLocalMedia(req)).outcome, "DEFER");
+  // E–F deliberately enables ordinary ingest; read-only compilation above still creates no store.
+  const req = await cdRequest(seeds.hevc!, await cdBase("ef-cd-compat-"));
+  const routed = await local.canonicalizeLocalMedia(req); assert.equal(routed.outcome, "PUBLISHED_VERIFIED_NOT_AUTHORIZED");
+  assert.equal("authorization" in routed, false);
 });
