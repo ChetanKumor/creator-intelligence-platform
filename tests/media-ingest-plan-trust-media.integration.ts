@@ -139,3 +139,87 @@ for (const mode of ["pixels", "audio_payload", "wrong_grid", "omit_snap", "drop_
     assert.equal(attacked, 1); await empty(r);
   });
 }
+
+ // ---------------------------------------------------------------- C–D actual hostile pinned-child tests. Original A2 tests above remain byte-identical.
+import * as cdLocal from "../scripts/media-ingest-local.js";
+import cryptoCd from "node:crypto";
+import { cdBase, cdSeed, cdAdmit, cdTransform } from "./support/canonical-lossless-cd.js";
+import { verifyGenerated, registerGenerated } from "./support/canonical-reencode-media.js";
+let cdDirectory = "", cdIdentity = "", cdRotate = "";
+before(async () => {
+  cdDirectory = await cdBase("cd-hostile-"); cdIdentity = await cdSeed(cdDirectory, "hevc");
+  cdRotate = await cdTransform(cdDirectory, cdIdentity, "hostile-rotate", "rotate_90_cw");
+});
+for (const mode of ["wrong_chroma", "wrong_range", "lossy_qp", "crf_profile", "scale", "wrong_d4", "reverse", "drop_frame", "duplicate_frame",
+  "wrong_timing", "encode_failure", "decoder_failure", "decoder_truncated", "decoder_source_failure", "descriptor_alias"] as const)
+test("CD-HOSTILE-" + mode + ": actual child exit/output never bypasses verification", async () => {
+  const source = ["wrong_d4", "scale"].includes(mode) ? cdRotate : cdIdentity;
+  const a = await cdAdmit(source, cdDirectory), before = await sha256File(source), original = childProcess.spawn;
+  let attacked = 0, sourceDecoders = 0, perfectlyEqual = false, verified = false;
+  const children: ReturnType<typeof childProcess.spawn>[] = [], closed = new Set<ReturnType<typeof childProcess.spawn>>();
+  const observedSpawn = (file: string, args: string[], options: childProcess.SpawnOptions) => {
+    const child = original(file, args, options);
+    if (args.includes("-fs") || args.includes("rawvideo")) { children.push(child); child.on("close", () => closed.add(child)); }
+    return child;
+  };
+  childProcess.spawn = ((file: string, args: readonly string[], options: childProcess.SpawnOptions) => {
+    const encode = args.includes("-fs"), decode = args.includes("rawvideo");
+    if (decode) sourceDecoders++;
+    const decoderAttack = mode === "decoder_source_failure" ? sourceDecoders === 1 : sourceDecoders === 2;
+    if ((!encode || mode.startsWith("decoder_")) && !(decode && mode.startsWith("decoder_") && decoderAttack)) return observedSpawn(file, [...args], options);
+    attacked++; const changed = [...args], stdio = [...(options.stdio as childProcess.StdioOptions[])], vf = changed.indexOf("-vf");
+    if (mode === "wrong_chroma") changed.splice(changed.indexOf("-map_metadata"), 0, "-bsf:v", "h264_metadata=chroma_sample_loc_type=0");
+    if (mode === "wrong_range") changed[changed.indexOf("-color_range") + 1] = "pc";
+    if (mode === "lossy_qp") changed[changed.indexOf("-qp") + 1] = "18";
+    if (mode === "crf_profile") changed.splice(changed.indexOf("-qp"), 2, "-crf", "17");
+    if (mode === "scale") changed[vf + 1] += ",scale=24:32";
+    if (mode === "wrong_d4") changed[vf + 1] = changed[vf + 1]!.replace("transpose=clock", "transpose=cclock");
+    if (mode === "reverse") changed[vf + 1] += ",reverse";
+    if (mode === "drop_frame") changed.splice(changed.indexOf("-map_metadata"), 0, "-frames:v", "8");
+    if (mode === "duplicate_frame") changed[vf + 1] += ",tpad=stop=1:stop_mode=clone";
+    if (mode === "wrong_timing") changed[changed.indexOf("-video_track_timescale") + 1] = "90000";
+    if (mode === "encode_failure" || mode === "decoder_failure" || mode === "decoder_source_failure") changed.unshift("-cd_intentionally_invalid");
+    if (mode === "decoder_truncated") changed.splice(changed.length - 1, 0, "-frames:v", "4");
+    if (mode === "descriptor_alias") stdio[4] = stdio[3]!;
+    return observedSpawn(file, changed, { ...options, stdio: stdio as childProcess.StdioOptions });
+  }) as typeof childProcess.spawn;
+  syncBuiltinESMExports();
+  try {
+    await assert.rejects(() => cdLocal.withCanonicalLosslessTemporary(a.request, a.admission, async temporary => {
+      if (mode === "wrong_chroma") {
+        const out = cdLocal.canonicalLosslessTemporaryOf(temporary);
+        const oracle = await verifyGenerated(source, registerGenerated(out.outputPath), "identity", a.facts, cdDirectory);
+        perfectlyEqual = oracle.pixels.sampleMismatchCount === 0;
+      }
+      await cdLocal.verifyCanonicalLosslessTemporary(temporary); verified = true;
+    }), (e: unknown) => e instanceof cdLocal.CanonicalIngestError && ["process_failed", "process_timeout", "verification_failed", "output_invalid"].includes(e.code) && !e.message.includes("termination was not confirmed"));
+  } finally { childProcess.spawn = original; syncBuiltinESMExports(); }
+  assert.equal(verified, false); assert.ok(attacked >= 1);
+  assert.equal(closed.size, children.length, "every actual encode/decode child must confirm terminal close before the failed operation returns");
+  if (mode === "wrong_chroma") assert.equal(perfectlyEqual, true, "metadata refusal must occur despite exact Y/U/V samples");
+  assert.deepEqual(await sha256File(source), before); assert.deepEqual(await readdir(join(cdDirectory, ".local-runs")), []);
+});
+test("CD-HOSTILE-binary-hash-mismatch: full hash gate refuses; actual executable bytes remain untouched", async () => {
+  const a = await cdAdmit(cdIdentity, cdDirectory), original = cryptoCd.createHash; let hashesUntilFault = 0, injected = false, visited = false;
+  // Existing test-only instrumentation positions a hostile HASH OBSERVATION at the next full pinned binary hash.
+  // No executable is edited/replaced, and production checks are never disabled.
+  cryptoCd.createHash = ((algorithm: string, options?: Parameters<typeof cryptoCd.createHash>[1]) => {
+    const digest = original(algorithm, options);
+    if (hashesUntilFault > 0 && --hashesUntilFault === 0) { digest.update("controlled_binary_observation_mismatch"); injected = true; }
+    return digest;
+  }) as typeof cryptoCd.createHash;
+  syncBuiltinESMExports();
+  try {
+    await assert.rejects(() => cdLocal.withCanonicalLosslessTemporary({ ...a.request, instrumentation: { beforeProcess: async ({ role }) => {
+      if (role === "canonicalize") hashesUntilFault = 2; // source reconfirmation, THEN full executable hash
+    } } }, a.admission, async () => { visited = true; }), (e: unknown) => e instanceof cdLocal.CanonicalIngestError && e.code === "runtime_binary_mismatch");
+  } finally { cryptoCd.createHash = original; syncBuiltinESMExports(); }
+  assert.equal(injected, true); assert.equal(visited, false); assert.deepEqual(await readdir(join(cdDirectory, ".local-runs")), []);
+});
+test("CD-HOSTILE-path-replacement: identical replacement bytes during execution are a different held object", async () => {
+  const path = join(cdDirectory, "replacement-copy.mp4"); await copyFile(cdIdentity, path); const a = await cdAdmit(path, cdDirectory); let visited = false;
+  await assert.rejects(() => cdLocal.withCanonicalLosslessTemporary({ ...a.request, instrumentation: { beforeProcess: async ({ role }) => {
+    if (role === "canonicalize") { const bytes = await readFile(path); await unlink(path); await writeFile(path, bytes, { flag: "wx" }); }
+  } } }, a.admission, async () => { visited = true; }), (e: unknown) => e instanceof cdLocal.CanonicalIngestError && e.code === "source_changed");
+  assert.equal(visited, false); assert.deepEqual(await readdir(join(cdDirectory, ".local-runs")), []);
+});

@@ -1,8 +1,33 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (CHECKPOINT B OWNER-ACCEPTED; C–D AUTHORIZED, NOT STARTED; Gate 7 incomplete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (CHECKPOINT B OWNER-ACCEPTED; C–D IMPLEMENTED FOR OWNER REVIEW; Gate 7 incomplete)
 
 Last updated: 2026-10-08
 
 ## Current ruling
+
+- Phase 5 Gate 7 Batch **3E-B2-B2 Checkpoints C–D** (2026-10-08):
+  **FIXED LOSSLESS COMPILER AND STREAMING EXACT-PIXEL VERIFIER IMPLEMENTED; OWNER REVIEW PENDING. STOP before E–I.**
+  - Checkpoint B is owner-accepted at `d2ca72ffa38a38ed0b8a6597573e72ee049d2bb7`; its separate docs-only acceptance
+    was committed/pushed as `0fb3ca893d34949a03320de7053cfc461a5a0ea1` before implementation. Main remains
+    `4f85b559c7eff2c24e221011f3ee1dd1466a111d`; only the existing phase branch may receive the C–D code commit.
+  - Fresh consenting held source bytes, facts and center-only chroma admission bind Plan 1.1.0 to the closed frozen QP-zero
+    compiler. Serialized plans/handles, arbitrary options and changed bytes cannot execute. FD-only pinned children create
+    exclusive scoped temporary outputs; public DIRECT/N1/exact-remux/re-encode routing remains unchanged.
+  - Independent streaming Y/U/V permutations and exact indexed SHA-256 wire match the unchanged research oracle for HEVC
+    identity and all seven H.264/HEVC D4 cases. Three full-frame slots, bounded queues/digest/facts tables, paired deadlines
+    and confirmed child close apply. Perfect samples with wrong chroma/profile/timing/audio fail fresh verification.
+  - 93 C–D generated-media tests and 208 legacy generated-media regressions PASS. The 788-test pure gate's three retained
+    failures are corrected and verified by the 91-test affected-suite rerun. Typecheck, fresh clean build, 33-artifact schema
+    check, unchanged workspace/process audit, frozen source pins and all 18 historical-artifact hashes PASS.
+  - Generated 1080p/4K stress and three deterministic repeats PASS. Per-verification sample/digest/queue/read buffers are
+    bounded at 57,636,864 bytes; additional metadata tables are capped. Sampled Node RSS is recorded separately; combined
+    FFmpeg/native peak RSS, long-video capacity, cross-hardware behavior and new PCM RETIME remain unproved.
+  - Verified prepublication witnesses expire with temporary scope and create no canonical object, computation publication,
+    cache record or derived authorization. No new dependencies, owner footage, model inference, renderer/permit/freshness
+    change, main merge or deployment. **B2-B2 and Gate 7 remain incomplete and are not owner-accepted as a whole.**
+    E–I, 3E-C and Phase 6 remain **NOT STARTED, NOT AUTHORIZED**.
+  - Details: [C–D implementation and verification](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#checkpoints-cd-implementation-and-verification-2026-10-08).
+
+## Preserved Checkpoint B owner-acceptance ruling
 
 - Phase 5 Gate 7 Batch **3E-B2-B2 Checkpoint B owner acceptance** (2026-10-08):
   **CHECKPOINT B OWNER-ACCEPTED** at `d2ca72ffa38a38ed0b8a6597573e72ee049d2bb7`.

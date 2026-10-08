@@ -1390,3 +1390,525 @@ export async function inspectCanonicalChromaLocalMedia(input:CanonicalIngestRequ
   } catch(error){if(error instanceof CanonicalIngestError)throw error;throw new CanonicalIngestError("probe_invalid","The exact-byte chroma observations could not be established.");}
   finally {await source.handle.close().catch(()=>undefined);}
 }
+
+// ---------------------------------------------------------------- B2-B2 C–D additive compiler/temporary boundary (NO routing/store/cache/authorization)
+import { rmdir as removeLosslessDirectory, statfs as losslessFilesystem } from "node:fs/promises";
+/** Implementation resource policy, not a changed encode/profile/plan identity. Owners can lower the old request's output/time limits. */
+export const CANONICAL_LOSSLESS_RUNTIME_BOUNDS = Object.freeze({
+  defaultOutputBytes: 256 * 1024 * 1024, maximumOutputBytes: MAX_STAGED_SOURCE_BYTES,
+  maximumFrameBytes: 16 * 1024 * 1024, maximumFrameCount: 72000, maximumFactRows: 144000,
+  maximumFactsUtf8Bytes: 16 * 1024 * 1024, maximumArgvCharacters: 24000,
+  maximumEncodeStdoutBytes: 65536, maximumDiagnosticBytes: 2 * 1024 * 1024,
+  outputMonitorMilliseconds: 20, terminationGraceMilliseconds: HARD.terminationGraceMilliseconds,
+} as const);
+const LOSSLESS_D4_FILTERS = {
+  identity: [], rotate_90_ccw: ["transpose=cclock"], rotate_180: ["hflip", "vflip"], rotate_90_cw: ["transpose=clock"],
+  mirror_horizontal: ["hflip"], mirror_vertical: ["vflip"], transpose: ["transpose=cclock_flip"], transverse: ["transpose=clock_flip"],
+} as const;
+interface LosslessSourceContext { ctx: Context; request: Read; source: Anchor; measured: FreshFacts; plan: ChromaSafeReencodePlan }
+const anchorIdentity = (a: Anchor): SourceIdentity => ({ assetId: "asset_" + a.contentHash, contentHash: a.contentHash, sizeBytes: a.sizeBytes });
+function losslessMeasuredBounds(m: FreshFacts): void {
+  const v = m.facts.streams.find((s): s is VideoStreamFacts => s.kind === "video");
+  if (!v) fail("plan_compiler_conflict", "Lossless execution requires a measured video stream.");
+  const { width, height } = v.geometry.declared, area = width * height, frameBytes = area * 3 / 2;
+  if (![width, height].every(n => Number.isSafeInteger(n) && n > 0 && n <= 16384 && n % 2 === 0)
+    || !Number.isSafeInteger(area) || !Number.isSafeInteger(frameBytes) || frameBytes > CANONICAL_LOSSLESS_RUNTIME_BOUNDS.maximumFrameBytes)
+    fail("plan_compiler_conflict", "The decoded frame exceeds the explicit lossless allocation bound.");
+  const rows = m.facts.streams.reduce((n, s) => n + (s.kind === "video" ? s.presentationTimestamps.length : s.kind === "audio" ? s.frames.length : 0), 0);
+  if (rows > CANONICAL_LOSSLESS_RUNTIME_BOUNDS.maximumFactRows || m.packets.length > CANONICAL_LOSSLESS_RUNTIME_BOUNDS.maximumFactRows
+    || Buffer.byteLength(canonicalSerialize(m.facts), "utf8") > CANONICAL_LOSSLESS_RUNTIME_BOUNDS.maximumFactsUtf8Bytes)
+    fail("plan_compiler_conflict", "The exact fact or packet tables exceed the lossless resource bound.");
+}
+/** Held internal output observation has no authorization assertion. Same pinned queries/parser/carrier reader as Checkpoint B. */
+async function losslessChromaOf(ctx: Context, subject: Anchor, measured: FreshFacts, output: boolean): Promise<CanonicalChromaObservation> {
+  const changed = output ? "output_invalid" : "source_changed", prefix = output ? "output" : "source";
+  const v = measured.facts.streams.find((s): s is VideoStreamFacts => s.kind === "video");
+  if (!v || (v.codec !== "h264" && v.codec !== "hevc")) fail("probe_invalid", "No observable video chroma codec.");
+  const argv = ["-hide_banner", "-loglevel", "error", "-threads", "1", "-protocol_whitelist", "fd", "-f", "mov", "-fd", "3",
+    "-show_entries", "stream=index,id,codec_name,chroma_location:frame=media_type,stream_index,pts,chroma_location", "-of", "json=compact=1", "-i", "fd:"];
+  const probe = await runOver(ctx, subject, changed, prefix + "_facts" as PinnedRole, "ffprobe", argv, HARD.probeTimeoutMilliseconds, MAX_PROBE_OUTPUT_BYTES);
+  requireCompleted(probe, "chroma frame observation");
+  const raw = objectOf(JSON.parse(probe.stdout.toString("utf8"))), streams = objectsOf(raw.streams).filter(s => intOf(s.index) === v.index);
+  if (streams.length !== 1) fail("probe_invalid", "Chroma observation needs one exact video stream.");
+  const stream = streams[0]!;
+  if (stream.codec_name !== v.codec || typeof stream.id !== "string" || !/^0x[0-9a-fA-F]+$/.test(stream.id)) fail("probe_invalid", "The chroma stream/track join is malformed.");
+  const header = new ChromaHeaderObservation(v.codec), run = await runOver(ctx, subject, changed, prefix + "_headers" as PinnedRole, "ffmpeg",
+    ["-hide_banner", "-nostdin", "-nostats", "-loglevel", "info", "-threads", "1", "-noautorotate", "-copyts", ...FD_INPUT, "-map", "0:" + v.index,
+      "-c:v", "copy", "-bsf:v", "trace_headers", "-f", "null", "-protocol_whitelist", "fd", "-fd", "1", "fd:"],
+    HARD.probeTimeoutMilliseconds, HARD.maxRecipeStdoutBytes, header);
+  requireCompleted(run, "chroma SPS observation");
+  const label = (value: unknown) => value === undefined ? null : typeof value === "string" ? value : fail("probe_invalid", "A chroma label is malformed.");
+  // chromaContainerOf reuses reader/hash/reconfirm over this held object; its legacy error label is normalized at the output boundary.
+  return makeCanonicalChromaObservation({ source: anchorIdentity(subject), factsDigest: createHash("sha256").update(canonicalSerialize(measured.facts)).digest("hex"),
+    method: CHROMA_OBSERVATION_METHOD, codec: v.codec, streamIndex: v.index, container: await chromaContainerOf(subject, Number.parseInt(stream.id, 16)),
+    bitstream: header.chromaFinish(), streamReported: label(stream.chroma_location),
+    frames: objectsOf(raw.frames).filter(f => f.media_type === "video" && intOf(f.stream_index) === v.index)
+      .map((f, index) => ({ index, pts: intOf(f.pts), reported: label(f.chroma_location) })) });
+}
+/** Admission is a witness only. Re-observe current authorized held bytes, then require the full plan to match before ANY encode. */
+async function withLosslessSource<T>(input: CanonicalIngestRequest, admission: unknown, use: (bound: LosslessSourceContext) => Promise<T>): Promise<T> {
+  const admitted = canonicalChromaPlanOf(admission), request = readRequest(input), root = FootageAuthorizationRootSchema.safeParse(request.authorization);
+  if (!root.success) fail("canonicalization_consent_required", "Lossless execution requires the consenting original root.");
+  if (root.data.contentHash !== admitted.source.contentHash || root.data.sizeBytes !== admitted.source.sizeBytes)
+    fail("source_mismatch", "Admission and the current original authorization name different bytes.");
+  const ctx: Context = { toolRoot: await approvedRoot(request.toolRoot), hooks: request.hooks };
+  const source = await openAnchor(await exactLocation(request.sourcePath, "source_location_invalid"), "source_location_invalid", MAX_STAGED_SOURCE_BYTES);
+  try {
+    if (source.contentHash !== root.data.contentHash || source.sizeBytes !== root.data.sizeBytes) fail("source_mismatch", "The source is not the current authorized exact bytes.");
+    const measured = await factsOf(ctx, source, "source_changed", false);
+    losslessMeasuredBounds(measured);
+    const chroma = await losslessChromaOf(ctx, source, measured, false);
+    const planning = planChromaSafeReencode({ source: anchorIdentity(source), sourceFacts: measured.facts, sourceChroma: chroma });
+    if (planning.outcome !== "PLAN" || !planning.plan || !sameObserved(admitted, planning.plan))
+      fail("plan_compiler_conflict", "Fresh complete chroma admission must equal the trusted source witness.");
+    await reconfirm(source, "source_changed");
+    const result = await use({ ctx, request, source, measured, plan: planning.plan });
+    await reconfirm(source, "source_changed"); return result;
+  } catch (error) {
+    if (error instanceof CanonicalIngestError) throw error;
+    throw new CanonicalIngestError("unexpected_failure", "The bounded lossless operation stopped without publication.");
+  } finally { await source.handle.close().catch(() => undefined); }
+}
+/** Exact old packet/sample-duration compiler, over fresh measured packet bounds; no caller durations or codec options. */
+function losslessAudioFilters(measured: FreshFacts, plan: ChromaSafeReencodePlan["samplePlan"]): string[] {
+  const a = measured.facts.streams.find(s => s.kind === "audio"), rebase = plan.operations.find(o => o.op === "REBASE_TIMELINE_ZERO");
+  const retime = plan.operations.some(o => o.op === "RETIME_AUDIO_CONTIGUOUS");
+  if (!a || (!retime && !rebase)) return [];
+  // PCM copy is proved; this checkpoint does not admit new PCM RETIME behavior.
+  if (a.codec === "pcm_s16le" && retime) fail("audio_retime_execution_conflict", "PCM retiming has no new execution evidence.");
+  const offset = rebase?.offsets.find(o => o.streamIndex === a.index)?.offsetTicks ?? 0;
+  const packets = measured.packets.filter(p => p.streamIndex === a.index), frames = new Map(a.frames.map(f => [f.pts, f.samples]));
+  const full = a.frames.reduce((n, f) => Math.max(n, f.samples), 0);
+  const samples = packets.map(p => {
+    if (a.codec === "pcm_s16le") {
+      const count = p.size / (2 * a.channels);
+      if (!Number.isSafeInteger(count) || count <= 0 || (frames.has(p.pts) && frames.get(p.pts) !== count))
+        fail("audio_retime_execution_conflict", "PCM packet sample counts differ from the exact decoded mapping.");
+      return count;
+    }
+    const observed = frames.get(p.pts); if (observed !== undefined) return observed;
+    if (p.pts < a.frames[0]!.pts && p.duration === full) return full;
+    return fail("audio_retime_execution_conflict", "An AAC packet lacks its exact decoded sample mapping.");
+  });
+  if (!packets.length) fail("audio_retime_execution_conflict", "An audio plan has no retained packets.");
+  const runs: { start: number; samples: number }[] = [];
+  samples.forEach((count, index) => { if (index === 0 || count !== samples[index - 1]) runs.push({ start: index, samples: count }); });
+  const duration = (lo: number, hi: number): string => {
+    if (lo + 1 === hi) return String(runs[lo]!.samples);
+    const mid = Math.floor((lo + hi) / 2);
+    return "if(lt(N\\," + runs[mid]!.start + ")\\," + duration(lo, mid) + "\\," + duration(mid, hi) + ")";
+  };
+  const start = packets[0]!.pts - offset, startDts = packets[0]!.dts - offset;
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(startDts)) fail("audio_retime_execution_conflict", "Audio timestamp subtraction exceeds exact integers.");
+  const pts = retime ? "if(eq(N\\,0)\\," + start + "\\,PREV_OUTPTS+PREV_OUTDURATION)" : "PTS-" + offset;
+  const dts = retime ? "if(eq(N\\,0)\\," + startDts + "\\,PREV_OUTDTS+PREV_OUTDURATION)" : "DTS-" + offset;
+  return ["setts=pts=" + pts + ":dts=" + dts + ":duration=" + duration(0, runs.length)];
+}
+/** Private closed compiler. The only production callers obtain this plan and measurements inside withLosslessSource. */
+function losslessArgv(measured: FreshFacts, supplied: ChromaSafeReencodePlan, bound: number): string[] {
+  const plan = ChromaSafeReencodePlanSchema.parse(supplied), p = plan.samplePlan;
+  if (!sameObserved(measured.facts, plan.sourceFacts)) fail("plan_compiler_conflict", "The compiler requires its freshly measured complete source facts.");
+  const v = measured.facts.streams.find((s): s is VideoStreamFacts => s.kind === "video")!, a = measured.facts.streams.find(s => s.kind === "audio");
+  const filters: string[] = [...LOSSLESS_D4_FILTERS[p.transform], "setsar=1", "setparams=range=limited:color_primaries=bt709:color_trc=bt709:colorspace=bt709"];
+  const rebase = p.operations.find(o => o.op === "REBASE_TIMELINE_ZERO"), snap = p.operations.find(o => o.op === "SNAP_VIDEO_TIMESTAMPS");
+  if (rebase) filters.push("setpts=PTS-" + (rebase.offsets.find(o => o.streamIndex === v.index)?.offsetTicks ?? 0));
+  if (snap) filters.push("settb=expr=1/" + snap.outputTimeBase.denominator, "setpts=N*" + snap.gridPeriodTicks);
+  const audio = losslessAudioFilters(measured, p);
+  // SELECT is compiled by explicit maps. DECLARE_SQUARE is exactly the fixed setsar=1, separately freshly verified in both carriers.
+  const argv = ["-hide_banner", "-nostdin", "-nostats", "-loglevel", "verbose", "-benchmark", "-copyts", "-filter_threads", "1", "-threads", "1",
+    "-noautorotate", "-display_rotation:v:0", "0", "-protocol_whitelist", "fd", "-fd", "3", "-i", "fd:",
+    "-map", "0:" + p.streams.videoIndex, ...(p.streams.audioIndex === null ? [] : ["-map", "0:" + p.streams.audioIndex, "-c:a", "copy"]),
+    "-vf", filters.join(","), "-noautoscale", "-c:v", "libx264", "-qp", "0", "-preset", "medium", "-profile:v", "high444", "-pix_fmt", "+yuv420p",
+    "-threads:v", "2", "-bf", "0", "-g", "30", "-sc_threshold", "0", "-x264-params", "lookahead-threads=1:sliced-threads=0", "-a53cc", "0", "-udu_sei", "0",
+    "-color_range", "tv", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", "-fps_mode", "passthrough",
+    "-enc_time_base:v", "1:" + p.videoTiming.outputTimeBase.denominator, "-video_track_timescale", String(p.videoTiming.outputTimeBase.denominator),
+    ...(audio.length ? ["-bsf:a", audio.join(",")] : []), "-map_metadata", "-1", "-map_chapters", "-1", "-avoid_negative_ts", "disabled",
+    "-fflags", "+bitexact", "-fs", String(bound), "-f", a?.codec === "pcm_s16le" ? "mov" : "mp4", "-protocol_whitelist", "fd", "-fd", "4", "fd:"];
+  if (argv.join(" ").length > CANONICAL_LOSSLESS_RUNTIME_BOUNDS.maximumArgvCharacters) fail("plan_compiler_conflict", "The complete compiler invocation exceeds its resource bound.");
+  return argv;
+}
+/** Read-only compiler inspection. Serialized plans cannot reach it; returned argv is review data, never a spawn capability. */
+export async function compileCanonicalLosslessLocalMedia(input: CanonicalIngestRequest, admission: unknown): Promise<{ plan: ChromaSafeReencodePlan; argv: string[] }> {
+  return withLosslessSource(input, admission, async ({ request, measured, plan }) => ({ plan: structuredClone(plan),
+    argv: losslessArgv(measured, plan, request.maxOutputBytes ?? CANONICAL_LOSSLESS_RUNTIME_BOUNDS.defaultOutputBytes) }));
+}
+interface LosslessTemporaryState extends LosslessSourceContext {
+  output: Anchor; directory: string; argv: string[]; elapsedMilliseconds: number;
+  verificationStarted: boolean; prepublication: CanonicalLosslessPrepublicationHandle | null;
+}
+const LOSSLESS_TEMPORARY_CONSTRUCTION = Symbol("scoped-held-lossless-temporary");
+const LOSSLESS_TEMPORARIES = new WeakMap<CanonicalLosslessTemporaryHandle, LosslessTemporaryState>();
+/** Encoded bytes are NOT a verified canonical result. No store, computation publication or authorization is created. */
+export class CanonicalLosslessTemporaryHandle {
+  constructor(token: symbol, state: LosslessTemporaryState) {
+    if (token !== LOSSLESS_TEMPORARY_CONSTRUCTION) fail("request_invalid", "active_lossless_temporary_required: only a scoped held encode can mint this handle.");
+    LOSSLESS_TEMPORARIES.set(this, state); Object.freeze(this);
+  }
+}
+function losslessTemporaryState(handle: unknown): LosslessTemporaryState {
+  const state = handle instanceof CanonicalLosslessTemporaryHandle ? LOSSLESS_TEMPORARIES.get(handle) : undefined;
+  if (!state) fail("request_invalid", "active_lossless_temporary_required: a record is not active held media.");
+  return state;
+}
+/** Execution-only path is confined to this temporary's active callback. A snapshot cannot mint authority or survive closure. */
+export function canonicalLosslessTemporaryOf(handle: unknown) {
+  const state = losslessTemporaryState(handle);
+  return { state: "ENCODED_UNVERIFIED" as const, plan: structuredClone(state.plan), argv: [...state.argv],
+    source: anchorIdentity(state.source), output: anchorIdentity(state.output), outputPath: state.output.path, elapsedMilliseconds: state.elapsedMilliseconds };
+}
+/** Add only stricter limits to the accepted supervisor. Any overflow/conversion/pipe error requests termination and requires close. */
+async function superviseLosslessEncode(child: LosslessManagedChild, pending: FileHandle, timeout: number, bound: number): Promise<CanonicalProcessRun> {
+  let stdoutBytes = 0, diagnosticBytes = 0, tail = "", stopped = false, closed = false, checking = false;
+  const stop = () => {
+    if (stopped || closed) return; stopped = true;
+    child.emit("error", Object.assign(new Error("bounded_lossless_process_failed"), { code: "LOSSLESS_RESOURCE_OR_PIPE" }));
+  };
+  child.stdout?.on("data", (b: Buffer) => { stdoutBytes += b.length; if (stdoutBytes > CANONICAL_LOSSLESS_RUNTIME_BOUNDS.maximumEncodeStdoutBytes) stop(); });
+  child.stderr?.on("data", (b: Buffer) => {
+    diagnosticBytes += b.length;
+    if (diagnosticBytes > CANONICAL_LOSSLESS_RUNTIME_BOUNDS.maximumDiagnosticBytes) { stop(); return; }
+    const text = tail + b.toString("utf8");
+    if (/auto_scale|auto-inserting filter/.test(text)) stop();
+    tail = text.slice(-128);
+  });
+  child.stdout?.on("error", stop); child.stderr?.on("error", stop);
+  child.on("close", () => { closed = true; });
+  const monitor = setInterval(() => {
+    if (checking || closed || stopped) return; checking = true;
+    void pending.stat({ bigint: true }).then(s => { if (s.size > BigInt(bound)) stop(); }, stop).finally(() => { checking = false; });
+  }, CANONICAL_LOSSLESS_RUNTIME_BOUNDS.outputMonitorMilliseconds);
+  try { return await supervise(child, timeout, CANONICAL_LOSSLESS_RUNTIME_BOUNDS.maximumEncodeStdoutBytes); }
+  finally { clearInterval(monitor); }
+}
+/** Scoped exclusive TEMPORARY executor only. No caller output path; original source descriptors are read-only.
+ * Visitor runs over ENCODED_UNVERIFIED bytes. D's separate verifier must succeed before any prepublication witness is minted. */
+export async function withCanonicalLosslessTemporary<T>(input: CanonicalIngestRequest, admission: unknown,
+  visitor: (handle: CanonicalLosslessTemporaryHandle) => Promise<T>): Promise<T> {
+  if (typeof visitor !== "function") fail("request_invalid", "A scoped temporary visitor is required.");
+  return withLosslessSource(input, admission, async state => {
+    const { source, request, measured, plan, ctx } = state;
+    const workspace = await exactLocation(request.workspaceRoot, "store_location_invalid");
+    if (!(await lstat(workspace)).isDirectory() || workspace.length > MAX_WORKSPACE_PATH_LENGTH) fail("store_location_invalid", "A bounded real temporary workspace is required.");
+    const bound = request.maxOutputBytes ?? CANONICAL_LOSSLESS_RUNTIME_BOUNDS.defaultOutputBytes, argv = losslessArgv(measured, plan, bound);
+    const free = await losslessFilesystem(workspace, { bigint: true });
+    if (free.bavail * free.bsize < BigInt(bound)) fail("output_invalid", "The explicit lossless output reservation exceeds available workspace storage.");
+    const parent = await ownedDirectory(workspace, ".local-runs"), directory = join(parent, "ci-lossless-cd-" + randomBytes(16).toString("hex"));
+    await mkdir(directory);
+    const directoryIdentity = await lstat(directory, { bigint: true });
+    let pending: FileHandle | null = null, output: Anchor | null = null, handle: CanonicalLosslessTemporaryHandle | null = null;
+    let exclusiveOutputIdentity: { dev: bigint; ino: bigint } | null = null;
+    const outputPath = join(directory, "candidate." + (argv[argv.indexOf("-f") + 1] === "mov" ? "mov" : "mp4"));
+    try {
+      pending = await open(outputPath, "wx+");
+      const initial = await pending.stat({ bigint: true });
+      exclusiveOutputIdentity = { dev: initial.dev, ino: initial.ino };
+      if (!initial.isFile() || initial.size !== 0n || (initial.dev === source.dev && initial.ino === source.ino)) fail("output_invalid", "The exclusive output must be a new regular object distinct from its source.");
+      const inputReader = await reader(source, "source_changed");
+      let run: ProcessRun;
+      const start = performance.now();
+      try {
+        await hook(ctx.hooks.beforeProcess === undefined ? undefined : () => ctx.hooks.beforeProcess!({ role: "canonicalize" }));
+        await reconfirm(source, "source_changed");
+        const binary = await pinned(ctx.toolRoot, "ffmpeg");
+        const child = spawn(binary.path, argv, { shell: false, windowsHide: true, cwd: ctx.toolRoot, env: minimalEnvironment(),
+          stdio: ["ignore", "pipe", "pipe", inputReader.fd, pending.fd] });
+        run = await superviseLosslessEncode(child, pending, request.canonicalizationTimeout, bound);
+        if (await hashHandle(inputReader, source.sizeBytes) !== source.contentHash) fail("source_changed", "The source changed during lossless encoding.");
+      } finally { await inputReader.close().catch(() => undefined); }
+      requireCompleted(run, "lossless encoding");
+      await reconfirm(source, "source_changed"); await pending.sync();
+      const written = Number((await pending.stat({ bigint: true })).size);
+      if (!Number.isSafeInteger(written) || written <= 0 || written > bound) fail("output_invalid", "The encoded temporary is empty or exceeds its exact byte budget.");
+      const contentHash = await hashHandle(pending, written);
+      if (!contentHash) fail("output_invalid", "The encoded temporary could not be read whole.");
+      output = { path: outputPath, handle: pending, dev: initial.dev, ino: initial.ino, sizeBytes: written, contentHash };
+      await reconfirm(output, "output_invalid");
+      handle = new CanonicalLosslessTemporaryHandle(LOSSLESS_TEMPORARY_CONSTRUCTION, { ...state, output, directory, argv, elapsedMilliseconds: performance.now() - start, verificationStarted: false, prepublication: null });
+      const result = await visitor(handle);
+      await reconfirm(source, "source_changed"); await reconfirm(output, "output_invalid");
+      return result;
+    } finally {
+      if (handle) {
+        const scoped = LOSSLESS_TEMPORARIES.get(handle);
+        if (scoped?.prepublication) LOSSLESS_PREPUBLICATIONS.delete(scoped.prepublication);
+        LOSSLESS_TEMPORARIES.delete(handle);
+      }
+      if (pending) await pending.close().catch(() => undefined);
+      // Never remove a replacement object or recurse over owner data.
+      const named = await lstat(outputPath, { bigint: true }).catch(() => null);
+      if (named && exclusiveOutputIdentity && named.dev === exclusiveOutputIdentity.dev && named.ino === exclusiveOutputIdentity.ino && !named.isSymbolicLink()) await unlink(outputPath);
+      else if (named) fail("output_invalid", "A replacement temporary cannot be removed or trusted.");
+      const namedDirectory = await lstat(directory, { bigint: true }).catch(() => null);
+      if (namedDirectory && namedDirectory.dev === directoryIdentity.dev && namedDirectory.ino === directoryIdentity.ino && !namedDirectory.isSymbolicLink())
+        await removeLosslessDirectory(directory).catch(() => undefined);
+    }
+  });
+}
+
+ // ---------------------------------------------------------------- C–D paired decoder verification: three full-frame slots, backpressured pipes, terminal close required
+import { ExactYuv420pVerifier, ExactPixelVerificationError, boundedYuv420pFrameBytes, type ExactPixelVerificationConfig } from "../packages/media-ingest/pixels.js";
+import { type ExactPixelVerification } from "../packages/media-ingest/reencode.js";
+export const CANONICAL_LOSSLESS_STREAM_BOUNDS = Object.freeze({
+  maximumReadBytes: 65536, maximumPipeHighWaterMarkBytes: 65536, maximumQueuedBytesPerDecoder: 131072,
+  maximumDiagnosticBytesPerDecoder: 2 * 1024 * 1024, maximumVerificationUtf8Bytes: 24 * 1024 * 1024,
+} as const);
+interface LosslessDecodedPipe {
+  readonly readableLength: number; readonly readableHighWaterMark: number;
+  read(size: number): Buffer | null;
+  destroy(): unknown;
+  on(event: "readable" | "end" | "close", listener: () => void): unknown;
+  on(event: "error", listener: (error: Error) => void): unknown;
+}
+export interface CanonicalStreamingChild {
+  stdout: LosslessDecodedPipe | null;
+  stderr: { on(event: "data", listener: (chunk: Buffer) => void): unknown; on(event: "error", listener: (error: Error) => void): unknown } | null;
+  on(event: "spawn", listener: () => void): unknown;
+  on(event: "error", listener: (error: Error) => void): unknown;
+  on(event: "close", listener: (code: number | null, signal: NodeJS.Signals | null) => void): unknown;
+  kill(): boolean;
+}
+type LosslessManagedChild = CanonicalChild & CanonicalStreamingChild & { emit(event: "error", error: Error): boolean };
+export interface CanonicalLosslessStreamingResources {
+  maximumFullFrameBuffers: 3; decodedFrameBufferBytes: number; digestBufferBytes: number;
+  maximumQueuedBytesPerDecoder: 131072; maximumReadBytes: 65536;
+  sourceQueuePeakBytes: number; outputQueuePeakBytes: number;
+  sourceDecodedBytes: number; outputDecodedBytes: number;
+}
+export interface CanonicalLosslessStreamingResult { pixels: ExactPixelVerification; resources: CanonicalLosslessStreamingResources }
+interface LosslessDecoderState {
+  child: CanonicalStreamingChild; spawned: boolean; closed: boolean; killed: boolean; ended: boolean;
+  wake: (() => void) | null; queuePeak: number; decodedBytes: number; diagnostics: number;
+}
+/** Supervises two ALREADY-created children for controlled process tests, as the older single-child supervisor does.
+ * This function starts nothing and its returned data cannot mint a trusted temporary/prepublication handle.
+ * Only the private held-byte caller below starts decoders and can bind these measurements to media. */
+export async function verifyCanonicalLosslessDecodedChildren(source: CanonicalStreamingChild, output: CanonicalStreamingChild,
+  config: ExactPixelVerificationConfig, limits: { timeoutMilliseconds: number; terminationGraceMilliseconds: number }): Promise<CanonicalLosslessStreamingResult> {
+  let accumulator: ExactYuv420pVerifier;
+  try {
+    if (!limits || Object.keys(limits).sort().join(",") !== "terminationGraceMilliseconds,timeoutMilliseconds"
+      || ![limits.timeoutMilliseconds, limits.terminationGraceMilliseconds].every(n => Number.isSafeInteger(n) && n > 0)
+      || limits.timeoutMilliseconds > HARD.digestTimeoutMilliseconds || limits.terminationGraceMilliseconds > HARD.terminationGraceMilliseconds)
+      fail("request_invalid", "Invalid bounded paired-decoder limits.");
+    if (!source.stdout || !source.stderr || !output.stdout || !output.stderr) fail("process_failed", "Complete decoder pipes are required.");
+  } catch (error) {
+    if (error instanceof CanonicalIngestError) throw error;
+    fail("verification_failed", "The exact decoder configuration exceeds its numeric, geometry or allocation bound.");
+  }
+  const states: LosslessDecoderState[] = [source, output].map(child => ({ child, spawned: false, closed: false, killed: false, ended: false,
+    wake: null, queuePeak: 0, decodedBytes: 0, diagnostics: 0 }));
+  let failure: CanonicalIngestError | null = null, terminalWake: (() => void) | null = null, settled = false;
+  const wakeAll = () => { for (const state of states) { const wake = state.wake; state.wake = null; wake?.(); } const wake = terminalWake; terminalWake = null; wake?.(); };
+  const terminate = (state: LosslessDecoderState) => {
+    if (state.closed || state.killed || !state.spawned) return; state.killed = true;
+    try { state.child.kill(); } catch { /* still require terminal close within the grace */ }
+    // On failure, a paused unread stdout must not postpone child close indefinitely. No bytes from this pipe can become evidence.
+    state.child.stdout!.destroy();
+  };
+  const abort = (code: CanonicalIngestErrorCode, message: string) => {
+    if (settled) return;
+    if (failure === null) failure = new CanonicalIngestError(code, message);
+    for (const state of states) terminate(state);
+    wakeAll();
+  };
+  const observeQueue = (state: LosslessDecoderState) => {
+    const length = state.child.stdout!.readableLength;
+    if (!Number.isSafeInteger(length) || length < 0 || length > CANONICAL_LOSSLESS_STREAM_BOUNDS.maximumQueuedBytesPerDecoder)
+      abort("process_failed", "A decoder exceeded the bounded backpressured queue.");
+    state.queuePeak = Math.max(state.queuePeak, length);
+  };
+  for (const state of states) {
+    const child = state.child, pipe = child.stdout!;
+    pipe.on("readable", () => { observeQueue(state); const wake = state.wake; state.wake = null; wake?.(); });
+    pipe.on("end", () => { state.ended = true; wakeAll(); });
+    pipe.on("close", () => { if (!state.ended) abort("process_failed", "A decoder stdout pipe closed before complete EOF."); wakeAll(); });
+    pipe.on("error", () => abort("process_failed", "A decoder stdout pipe failed."));
+    child.stderr!.on("data", (chunk: Buffer) => {
+      state.diagnostics += chunk.length;
+      if (state.diagnostics > CANONICAL_LOSSLESS_STREAM_BOUNDS.maximumDiagnosticBytesPerDecoder)
+        abort("process_failed", "A decoder exceeded its diagnostic drain bound.");
+    });
+    child.stderr!.on("error", () => abort("process_failed", "A decoder stderr pipe failed."));
+    child.on("spawn", () => { state.spawned = true; if (failure) terminate(state); });
+    child.on("error", () => abort("process_failed", state.spawned ? "A decoder failed after spawn." : "A pinned decoder could not spawn."));
+    child.on("close", (code, signal) => {
+      state.closed = true;
+      if (!state.spawned || code !== 0 || signal !== null) abort("process_failed", "A decoder did not exit successfully after a confirmed spawn.");
+      wakeAll();
+    });
+  }
+  const timer = setTimeout(() => abort("process_timeout", "The complete paired decode exceeded its operation deadline."), limits.timeoutMilliseconds);
+  const check = () => { if (failure !== null) throw failure; };
+  const nextChunk = async (state: LosslessDecoderState, wanted: number): Promise<Buffer | null> => {
+    while (true) {
+      check(); observeQueue(state); check();
+      const chunk = state.child.stdout!.read(Math.min(wanted, CANONICAL_LOSSLESS_STREAM_BOUNDS.maximumReadBytes));
+      if (chunk !== null) {
+        if (!Buffer.isBuffer(chunk) || chunk.length < 1 || chunk.length > Math.min(wanted, CANONICAL_LOSSLESS_STREAM_BOUNDS.maximumReadBytes))
+          fail("process_failed", "A decoder violated the bounded binary read contract.");
+        state.decodedBytes += chunk.length; observeQueue(state); check(); return chunk;
+      }
+      if (state.ended) return null;
+      await new Promise<void>(resolve => { state.wake = resolve; });
+    }
+  };
+  const fillFrame = async (state: LosslessDecoderState, buffer: Buffer) => {
+    let at = 0;
+    while (at < buffer.length) {
+      const chunk = await nextChunk(state, buffer.length - at);
+      if (chunk === null) fail("verification_failed", at === 0 ? "Premature decoded frame EOF." : "A trailing decoded frame is incomplete.");
+      chunk.copy(buffer, at); at += chunk.length;
+    }
+  };
+  let sourceFrame: Buffer | null = null, outputFrame: Buffer | null = null;
+  try {
+    accumulator = new ExactYuv420pVerifier(config);
+    for (const state of states) if (state.child.stdout!.readableHighWaterMark > CANONICAL_LOSSLESS_STREAM_BOUNDS.maximumPipeHighWaterMarkBytes)
+      fail("process_failed", "A decoder pipe exceeds the explicit high-water bound.");
+    sourceFrame = Buffer.alloc(boundedYuv420pFrameBytes(config.sourceGeometry));
+    outputFrame = Buffer.alloc(boundedYuv420pFrameBytes(config.outputGeometry));
+    for (let index = 0; index < config.frameCount; index++) {
+      await fillFrame(states[0]!, sourceFrame); await fillFrame(states[1]!, outputFrame);
+      accumulator.compare(index, sourceFrame, outputFrame);
+      check();
+    }
+    // A single surplus byte is sufficient to reject both extra complete frames and partial trailing frames.
+    for (const state of states) if (await nextChunk(state, 1) !== null) fail("verification_failed", "The decoder produced surplus frame samples.");
+    while (!states.every(state => state.closed)) { check(); await new Promise<void>(resolve => { terminalWake = resolve; }); }
+    check();
+    const pixels = accumulator.finish();
+    if (Buffer.byteLength(canonicalSerialize(pixels), "utf8") > CANONICAL_LOSSLESS_STREAM_BOUNDS.maximumVerificationUtf8Bytes)
+      fail("verification_failed", "The bounded verification metadata table is oversized.");
+    return { pixels, resources: { maximumFullFrameBuffers: 3, decodedFrameBufferBytes: accumulator.bufferAccounting.frameBytes,
+      digestBufferBytes: accumulator.bufferAccounting.digestBytes, maximumQueuedBytesPerDecoder: 131072, maximumReadBytes: 65536,
+      sourceQueuePeakBytes: states[0]!.queuePeak, outputQueuePeakBytes: states[1]!.queuePeak,
+      sourceDecodedBytes: states[0]!.decodedBytes, outputDecodedBytes: states[1]!.decodedBytes } };
+  } catch (error) {
+    if (error instanceof CanonicalIngestError) abort(error.code, error.message);
+    else if (error instanceof ExactPixelVerificationError) abort("verification_failed", "Exact Y/U/V frame permutation, order or sample equality failed.");
+    else abort("process_failed", "The bounded paired decoder operation failed.");
+    // Do not detach a still-live companion decoder. Kill is requested once; only close confirms completion.
+    if (!states.every(state => state.closed)) await new Promise<void>(resolve => {
+      let finished = false;
+      const finish = () => { if (finished) return; finished = true; clearTimeout(grace); terminalWake = null; resolve(); };
+      const grace = setTimeout(finish, limits.terminationGraceMilliseconds);
+      const wait = () => { if (states.every(state => state.closed)) finish(); else terminalWake = wait; };
+      wait();
+    });
+    if (!states.every(state => state.closed)) fail("process_failed", "Decoder termination was not confirmed by terminal close.");
+    throw failure ?? new CanonicalIngestError("process_failed", "The paired decoder operation failed.");
+  } finally {
+    settled = true; clearTimeout(timer); sourceFrame = null; outputFrame = null; wakeAll();
+  }
+}
+
+ // ---------------------------------------------------------------- C–D held-byte proof: no canonical store/cache/derived authorization or public ingest routing
+import { buildCanonicalReencodeDerivation } from "../packages/media-ingest/reencode.js";
+import { buildChromaSafeDerivation, type ChromaSafeDerivation } from "../packages/media-ingest/chroma.js";
+const losslessDecoderArgv = (videoIndex: number): string[] => [
+  "-hide_banner", "-nostdin", "-nostats", "-loglevel", "error", "-filter_threads", "1", "-threads", "1", "-noautorotate",
+  "-protocol_whitelist", "fd", "-f", "mov", "-fd", "3", "-i", "fd:", "-map", "0:" + videoIndex,
+  "-fps_mode", "passthrough", "-noautoscale", "-pix_fmt", "+yuv420p", "-threads:v", "1",
+  "-f", "rawvideo", "-protocol_whitelist", "fd", "-fd", "1", "fd:",
+];
+/** Each decoder has its own freshly re-hashed read-only reader AND independent full executable verification.
+ * The shared deadline begins before both readers/pins/hooks, never resets for the slower companion. */
+async function losslessHeldPixels(state: LosslessTemporaryState): Promise<CanonicalLosslessStreamingResult> {
+  const { source, output, ctx, request, plan } = state, start = performance.now();
+  const sourceReader = await reader(source, "source_changed"); let outputReader: FileHandle | null = null;
+  let sourceChild: LosslessManagedChild | null = null, paired = false;
+  try {
+    outputReader = await reader(output, "output_invalid");
+    await hook(ctx.hooks.beforeProcess === undefined ? undefined : () => ctx.hooks.beforeProcess!({ role: "source_video_digest" }));
+    await reconfirm(source, "source_changed");
+    const sourceBinary = await pinned(ctx.toolRoot, "ffmpeg");
+    await hook(ctx.hooks.beforeProcess === undefined ? undefined : () => ctx.hooks.beforeProcess!({ role: "output_video_digest" }));
+    await reconfirm(output, "output_invalid"); await reconfirm(source, "source_changed");
+    const outputBinary = await pinned(ctx.toolRoot, "ffmpeg");
+    const remaining = Math.floor(request.canonicalizationTimeout - (performance.now() - start));
+    if (remaining < 1) fail("process_timeout", "The complete exact verification expired before decoder spawn.");
+    const spawnDecoder = (binary: VerifiedBinary, videoIndex: number, descriptor: number) => spawn(binary.path, losslessDecoderArgv(videoIndex), {
+      shell: false, windowsHide: true, cwd: ctx.toolRoot, env: minimalEnvironment(), stdio: ["ignore", "pipe", "pipe", descriptor] });
+    sourceChild = spawnDecoder(sourceBinary, plan.samplePlan.streams.videoIndex, sourceReader.fd);
+    const outputChild = spawnDecoder(outputBinary, 0, outputReader.fd);
+    paired = true;
+    const result = await verifyCanonicalLosslessDecodedChildren(sourceChild, outputChild, { sourceGeometry: plan.samplePlan.inputGeometry,
+      outputGeometry: plan.samplePlan.outputGeometry, transform: plan.samplePlan.transform, frameCount: plan.samplePlan.videoTiming.frameCount },
+      { timeoutMilliseconds: remaining, terminationGraceMilliseconds: HARD.terminationGraceMilliseconds });
+    if (await hashHandle(sourceReader, source.sizeBytes) !== source.contentHash) fail("source_changed", "The source changed during exact verification.");
+    if (await hashHandle(outputReader, output.sizeBytes) !== output.contentHash) fail("output_invalid", "The temporary changed during exact verification.");
+    await reconfirm(source, "source_changed"); await reconfirm(output, "output_invalid");
+    return result;
+  } catch (error) {
+    if (sourceChild && !paired) {
+      // A synchronous companion-spawn failure still supervises and closes the first child.
+      const stopped = await supervise(sourceChild, 1, 0);
+      if (!stopped.terminationConfirmed) fail("process_failed", "The first decoder did not confirm termination after companion spawn failure.");
+    }
+    if (error instanceof CanonicalIngestError) throw error;
+    throw new CanonicalIngestError("process_failed", "The pinned paired decoders could not complete.");
+  } finally { await sourceReader.close().catch(() => undefined); await outputReader?.close().catch(() => undefined); }
+}
+export interface CanonicalLosslessPrepublicationProof {
+  state: "VERIFIED_PREPUBLICATION"; derivation: ChromaSafeDerivation; resources: CanonicalLosslessStreamingResources;
+  encoderArgv: string[]; encoderElapsedMilliseconds: number; elapsedMilliseconds: number;
+}
+const LOSSLESS_PREPUBLICATION_CONSTRUCTION = Symbol("scoped-exact-chroma-prepublication");
+const LOSSLESS_PREPUBLICATIONS = new WeakMap<CanonicalLosslessPrepublicationHandle, { temporary: CanonicalLosslessTemporaryHandle; proof: CanonicalLosslessPrepublicationProof }>();
+/** Internal proof of currently held temporary bytes. NO publication permission, cache record or derived media authorization. */
+export class CanonicalLosslessPrepublicationHandle {
+  constructor(token: symbol, temporary: CanonicalLosslessTemporaryHandle, proof: CanonicalLosslessPrepublicationProof) {
+    if (token !== LOSSLESS_PREPUBLICATION_CONSTRUCTION) fail("request_invalid", "active_lossless_prepublication_required: only fresh complete held-byte verification can mint this handle.");
+    LOSSLESS_PREPUBLICATIONS.set(this, { temporary, proof }); Object.freeze(this);
+  }
+}
+/** Snapshot for review/tests, with fresh byte reconfirmation. Expires when the enclosing exclusive temporary callback closes. */
+export async function canonicalLosslessPrepublicationOf(handle: unknown): Promise<CanonicalLosslessPrepublicationProof> {
+  const entry = handle instanceof CanonicalLosslessPrepublicationHandle ? LOSSLESS_PREPUBLICATIONS.get(handle) : undefined;
+  if (!entry || !LOSSLESS_TEMPORARIES.has(entry.temporary))
+    fail("request_invalid", "active_lossless_prepublication_required: JSON or a closed temporary is not held media.");
+  const state = losslessTemporaryState(entry.temporary);
+  await reconfirm(state.source, "source_changed"); await reconfirm(state.output, "output_invalid");
+  return structuredClone(entry.proof);
+}
+/** No caller facts, digests, argv or transforms. The only parameter is this runtime's still-active exclusive output handle.
+ * Re-observe the authorized source, compare every decoded Y/U/V sample, then observe output facts/chroma and packet payloads.
+ * Frozen 0.3/0.4 builders replay all geometry, signaling, carrier, timing/audio and identity checks before minting a scoped proof. */
+export async function verifyCanonicalLosslessTemporary(handle: unknown): Promise<CanonicalLosslessPrepublicationHandle> {
+  if (arguments.length !== 1) fail("request_invalid", "caller_evidence_refused: no supplied facts, digests or options are verification.");
+  const state = losslessTemporaryState(handle), start = performance.now(), { source, output, ctx, plan } = state;
+  if (state.verificationStarted) fail("request_invalid", "one_verification_per_temporary: concurrent or repeated proof construction exceeds the scoped resource policy.");
+  state.verificationStarted = true;
+  await reconfirm(source, "source_changed"); await reconfirm(output, "output_invalid");
+  const freshSource = await factsOf(ctx, source, "source_changed", false); losslessMeasuredBounds(freshSource);
+  const freshSourceChroma = await losslessChromaOf(ctx, source, freshSource, false);
+  const freshPlan = planChromaSafeReencode({ source: anchorIdentity(source), sourceFacts: freshSource.facts, sourceChroma: freshSourceChroma });
+  if (freshPlan.outcome !== "PLAN" || !sameObserved(freshPlan.plan, plan))
+    fail("verification_failed", "Fresh complete source chroma admission no longer agrees with the executed plan.");
+  const exact = await losslessHeldPixels(state);
+  const measured = await factsOf(ctx, output, "output_invalid", true); losslessMeasuredBounds(measured);
+  let outputChroma: CanonicalChromaObservation;
+  try { outputChroma = await losslessChromaOf(ctx, output, measured, true); }
+  catch (error) {
+    if (error instanceof CanonicalIngestError && error.code === "source_changed") fail("output_invalid", "The internal output chroma carrier changed during observation.");
+    if (error instanceof CanonicalIngestError) throw error;
+    fail("verification_failed", "Fresh output chroma could not be established.");
+  }
+  const sourceAudio = freshSource.facts.streams.find(s => s.kind === "audio"), outputAudio = measured.facts.streams.find(s => s.kind === "audio");
+  const audioPackets = sourceAudio === undefined ? null : {
+    method: PLAN_VERIFICATION_METHODS.audioPackets,
+    sourceDigest: await packetContentDigest(source, freshSource, sourceAudio.index, "source_changed"),
+    outputDigest: outputAudio === undefined ? fail("verification_failed", "Copied audio is missing from the output.") : await packetContentDigest(output, measured, outputAudio.index, "output_invalid"),
+  };
+  let derivation: ChromaSafeDerivation;
+  try {
+    const sampleDerivation = buildCanonicalReencodeDerivation({ rootAuthorization: state.request.authorization, sourceFacts: freshSource.facts,
+      plan: plan.samplePlan, output: { contentHash: output.contentHash, sizeBytes: output.sizeBytes, facts: measured.facts }, pixels: exact.pixels, audioPackets });
+    derivation = buildChromaSafeDerivation({ sampleDerivation, plan, outputChroma });
+  } catch { fail("verification_failed", "Exact sample/timing/audio/profile and explicit center output verification did not all pass."); }
+  await reconfirm(source, "source_changed"); await reconfirm(output, "output_invalid");
+  const prepublication = new CanonicalLosslessPrepublicationHandle(LOSSLESS_PREPUBLICATION_CONSTRUCTION, handle as CanonicalLosslessTemporaryHandle, {
+    state: "VERIFIED_PREPUBLICATION", derivation, resources: exact.resources, encoderArgv: [...state.argv],
+    encoderElapsedMilliseconds: state.elapsedMilliseconds, elapsedMilliseconds: performance.now() - start });
+  state.prepublication = prepublication; return prepublication;
+}

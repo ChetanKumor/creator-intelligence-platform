@@ -396,3 +396,266 @@ All 18 historical untracked artifacts are snapshotted by SHA-256/size and preser
 size match the accepted runtime. Evidence: `.local-runs/phase5-gate7/batch3e-b2b2-cd-20261008/00-baseline.json` and
 `01-pinned-binaries.json`. The default command runner failed during setup before any shell started; read-only Git checks
 completed through the approved sandbox override. No baseline drift or unexplained material change was found.
+
+## Checkpoints C–D implementation and verification (2026-10-08)
+
+**C–D implemented for owner review; B2-B2 and Gate 7 remain incomplete. STOP before E–I.**
+This is production compiler/verifier code exercised on generated media only. It is not owner-footage verification,
+a published canonical object, a derived authorization, or a production ingest/render route.
+
+### Reconciled baseline and separate owner acceptance
+
+- Initial local/tracking/live phase HEAD: `d2ca72ffa38a38ed0b8a6597573e72ee049d2bb7`, 13 ahead / 0 behind main;
+  clean tracked worktree and index, all 18 historical untracked artifacts snapshotted.
+- Checkpoint B owner-acceptance docs-only commit, pushed and independently reconciled first:
+  `0fb3ca893d34949a03320de7053cfc461a5a0ea1` (`docs(gate7): accept B2-B2 chroma safety checkpoint`).
+  C–D implementation baseline is that commit, 14 ahead / 0 behind.
+- Main/local origin/main/live main: `4f85b559c7eff2c24e221011f3ee1dd1466a111d`. No main modification or merge.
+- The accepted B identities, center-only policy, fixed profile and original STOP/correction evidence above remain unchanged.
+  The original 32,133-byte phase-record prefix still hashes to
+  `92f9991532d0d890c8dab3c43134d192854b290ea2959c0e02f5f17ceeba8384`.
+
+### Closed compiler and fresh authority binding
+
+`compileCanonicalLosslessLocalMedia` is read-only compiler inspection. `withCanonicalLosslessTemporary` executes the
+same private typed compiler over a fresh authorized held source; `verifyCanonicalLosslessTemporary` performs verification.
+Each first requires the existing trusted chroma admission witness, the consenting original 1.1.0 root, exact source hash/size,
+fresh facts and all chroma carriers, a newly admitted Plan 1.1.0 equal to that witness, and execution-time held-byte reconfirmation.
+Legacy sample Plan 1.0.0, serialized Plan 1.1.0, JSON, prototype-built handles and caller facts/argv/options cannot execute.
+Admission remains a witness, not an execution permit. A source or named-object change invalidates the operation.
+
+The original adapter's first 118,584 bytes remain exact, SHA-256
+`f56abf2048e6991a67482cc806727b926b610c2e5a81545c91fc6ac8d8a92a66`.
+DIRECT/N1/exact-remux and `canonicalizeLocalMedia` routing are unchanged. The addition has only two new audited spawn sites:
+the closed encoder and the private descriptor-bound paired decoder helper. No accepted source-hash test is disabled;
+additive accounting separately pins the old three spawn sites and the complete old prefix.
+
+Actual HEVC identity invocation recorded in a generated-media proof (no audio, video index 0, time base 1/15360, 256 MiB budget):
+
+```text
+-hide_banner -nostdin -nostats -loglevel verbose -benchmark -copyts -filter_threads 1 -threads 1
+-noautorotate -display_rotation:v:0 0 -protocol_whitelist fd -fd 3 -i fd: -map 0:0
+-vf setsar=1,setparams=range=limited:color_primaries=bt709:color_trc=bt709:colorspace=bt709
+-noautoscale -c:v libx264 -qp 0 -preset medium -profile:v high444 -pix_fmt +yuv420p -threads:v 2
+-bf 0 -g 30 -sc_threshold 0 -x264-params lookahead-threads=1:sliced-threads=0 -a53cc 0 -udu_sei 0
+-color_range tv -color_primaries bt709 -color_trc bt709 -colorspace bt709 -fps_mode passthrough
+-enc_time_base:v 1:15360 -video_track_timescale 15360 -map_metadata -1 -map_chapters -1
+-avoid_negative_ts disabled -fflags +bitexact -fs 268435456 -f mp4 -protocol_whitelist fd -fd 4 fd:
+```
+
+The accepted profile identity remains
+`canonical_lossless_encode_profile_v1_b5a0d8d303c8f62a0d44fecc65b07221fedb1e4ae74d84a4dba66c4bb62a1dc4`.
+`+yuv420p` forbids implicit format conversion. There is no automatic scaling, rotation, `fps` filter, color/range conversion,
+CRF choice, lossy fallback or added chroma-siting argument. `setsar`/`setparams` retain the accepted declarative recipe.
+
+| Transform | Fixed D4 filter prefix |
+| --- | --- |
+| identity | none |
+| rotate_90_ccw | transpose=cclock |
+| rotate_180 | hflip,vflip |
+| rotate_90_cw | transpose=clock |
+| mirror_horizontal | hflip |
+| mirror_vertical | vflip |
+| transpose | transpose=cclock_flip |
+| transverse | transpose=clock_flip |
+
+`SELECT_AV_STREAMS` compiles explicit video/audio maps; `DECLARE_SQUARE_SAMPLE_ASPECT` is `setsar=1`.
+`REBASE_TIMELINE_ZERO` uses the accepted per-stream offsets; `SNAP_VIDEO_TIMESTAMPS` uses the accepted exact
+`settb=expr=1/<denominator>,setpts=N*<gridPeriodTicks>` and mux/encoder time bases. Frame mapping is presentation-index identity.
+Audio maps add `-c:a copy`. Accepted AAC contiguous retiming/rebase uses a closed `setts` packet expression constructed from
+fresh decoded sample counts and exact retained packet mapping, including accepted preroll; output packet payloads are independently hashed.
+All five operations composed together, HEVC B-frame input with snap, AAC identity and PCM copy are proved. PCM copy retains MOV muxing;
+other accepted cases use MP4. PCM RETIME is explicitly refused; no new PCM-retiming support is claimed.
+An oversized or unfaithful compilation refuses rather than dropping an operation.
+
+### Pinned children, exclusive bytes and source immutability
+
+Full executable hashes are checked before every spawn, including independently for both decoders:
+
+| Executable under `.tools/ffmpeg/ffmpeg-9.0.1-essentials_build/bin/` | Bytes | SHA-256 |
+| --- | --- | --- |
+| ffmpeg.exe | 102856192 | 72a489eccd008c2ec2c0a5856c5c75bc3d8bbfa90166c4566865c246445e6aa3 |
+| ffprobe.exe | 102652416 | 19202b23c0043f15ad1b7bce2344f406fd52bd6efd8f995ce02e7392a1cec52f |
+
+All children use `shell:false`, pinned absolute executables, the existing minimal environment and approved tool-root cwd.
+FFmpeg receives only inherited media descriptors and the fd protocol; no caller media path, shell command, PATH binary or network protocol.
+Source anchors/readers are read-only, hash/size/dev/inode bound and reconfirm their named object. No production write/chmod/rename/delete
+targets a source. Native descriptor-alias attack fails without changing source bytes. New generated fault-injection copies are deliberately
+changed/replaced by the tests to prove refusal; they are not original owner footage or a runtime source-writing behavior.
+
+Output is a new random scoped directory under the approved workspace `.local-runs`, with an exclusive `wx+` candidate.mp4/mov descriptor.
+Default output budget is 256 MiB; accepted lower request bounds apply; hard maximum remains 8 GiB. Available storage must cover the budget.
+`-fs`, 20 ms held-output monitoring, post-size/hash/reconfirmation and exact verification all apply. Exit zero alone is not success.
+Encode stdout is capped at 64 KiB, diagnostic drain at 2 MiB; conversion diagnostics, pipe/process errors, oversize and timeouts refuse.
+Existing request deadlines (maximum 1,800,000 ms), measurement deadlines and 10,000 ms termination grace remain controlling.
+
+Incomplete outputs are unlinked only if their name still identifies the exclusively created inode; no replacement object is removed.
+Only that owned empty directory may be removed, without recursive cleanup of owner data. Generated success/failure tests leave no candidate.
+No canonical object, computation publication record, cache entry or derived authorization is created.
+
+### Independent bounded streaming exact-pixel verification
+
+`packages/media-ingest/pixels.ts` imports no test oracle, filesystem or process capability. It computes inverse integer D4 permutations
+independently of the accepted test oracle's forward scatter. Every complete source/output frame is assembled from arbitrarily split chunks.
+One source slot, one output slot and one expected slot are reused by presentation index; all Y/U/V samples are compared, then hashed.
+No whole decoded-video buffer or frame-count-growing queue is retained. Swapped geometry for 90-degree transforms is checked independently.
+
+The method remains `exact_yuv420p_planes_sha256_by_index_v1`. The UTF-8 canonical frame header binds method, frame index, literal yuv420p,
+width/height and ordered Y/U/V names and lengths; its byte length is prefixed as u32 big-endian, then exact frame bytes are hashed with SHA-256.
+The ordered sequence digest uses the exact accepted canonical JSON `{method,frameCount,frames:[{index,digest}]}` wire, incrementally hashed.
+All eight mathematical cases, literal header wire and complete generated proofs equal the unchanged independent reference byte-for-byte.
+Success requires zero total/maximum/per-plane sample error, equal counts/order/geometry/format and identical expected/output digests.
+
+Two freshly hashed read-only descriptors and two independently hash-verified pinned decoders are used. A shared deadline begins before
+both readers/pins/hooks and never resets for the companion. Decoder stdout is paused/backpressured, read in at most 64 KiB chunks;
+stderr is continuously drained with a 2 MiB bound per child. Failure aborts both; kill is requested once and terminal close is required.
+Paused failed stdout is destroyed after kill so unread buffered bytes cannot indefinitely prevent native close. Nonzero/signal/error exits,
+missing spawn/terminal close, stalls, broken pipes, premature EOF, partial/truncated frames and even one surplus byte all refuse.
+Actual hostile-child tests observe every encode/decode child close before refusal returns; missing-close controlled tests remain failures.
+
+Explicit allocation/table bounds per active verification:
+
+| Bound | Maximum |
+| --- | --- |
+| Full decoded frames | 3 (source + output + independent expected) |
+| One even 8-bit yuv420p frame | 16,777,216 bytes; safe integer products, dimensions at most 16384 |
+| Three decoded-frame slots | 50,331,648 bytes |
+| Two stdout readable queues | 131,072 bytes each; high-water mark at most 65,536 |
+| Conservative two transient reads | 65,536 bytes each |
+| Binary ordered digest table | 72,000 frames × 96 = 6,912,000 bytes |
+| Above sample/digest/queue/read buffers combined | **57,636,864 bytes**, plus small bounded headers/hash state |
+| Verification JSON | 24 MiB UTF-8; three ordered digest arrays, each at most 72,000 entries |
+| Each complete facts record | 16 MiB UTF-8; frame/fact and packet rows at most 144,000 |
+
+Existing observer caps also remain: bounded probe/header diagnostics, 64 MiB movie-header inspection, bounded SPS rows/line assembly and
+streamed carrier observations. The old held-byte hash readers remain bounded. One temporary permits one verification attempt, guarded
+before the first await; concurrent/repeated proof construction refuses, and retained private proof entries are removed at callback closure.
+These are application buffer and metadata cardinality bounds, not a hard cap or byte-accurate accounting for V8 heap, FFmpeg codec memory,
+kernel pipe buffers or caller-retained review snapshots. Combined parent/child peak RSS is unmeasured; no fabricated total-process bound.
+
+### Fresh source/output chroma, profile, timing and proof
+
+Output is inspected as an internally generated held anchor using the existing trusted facts/carrier readers and parsers.
+No owner-supplied root authorization is fabricated for output. The public source observer retains its original consent/identity boundary.
+Fresh source admission must still equal the executed plan. Output facts, raw SPS, container carriers, stream and every frame must agree:
+H.264, progressive 8-bit yuv420p, correct dimensions, limited BT.709 interpretation, square SAR, no residual display transform,
+exact output frame count/PTS, and explicit type-1 center declaration with no relevant conflicting carrier.
+Missing/default/left/other unsupported source siting never acquires an executable witness. Output bytes with perfect samples but explicit
+left signaling fail; an actual process-level retag counterexample demonstrates this independently of source/output byte binding.
+
+Fresh sample, timing, audio packet and output-profile measurements build the unchanged 0.3 derivation, then the unchanged mandatory 0.4
+chroma derivation. Only then can a private scoped `VERIFIED_PREPUBLICATION` witness exist. Its snapshot rehashes both held objects and
+expires with the exclusive temporary. Caller JSON/digests, failed encodes/decodes or self-consistent structural records cannot mint it.
+
+### RED-first evidence, corrections and final gates
+
+`E = .local-runs/phase5-gate7/batch3e-b2b2-cd-20261008/` (ignored). No generated media or local receipt is staged.
+
+- C2: `03-c2-compiler-red.log`, 32 failures against the missing compiler, before implementation.
+- C3: `05-c3-encode-red.log`, 28 failures against the missing executor, before implementation.
+- D1: `14-d1-streaming-red-corrected.log`, missing pixel/paired-stream behavior fails 41 of 51 tests; negative configuration
+  assertions that already rejected missing constructors are distinguished from meaningful GREEN evidence.
+- D3: `24-d3-prepublication-red-corrected.log`, all 29 missing verifier/prepublication tests fail before implementation.
+- Resource quota: `40-d4-proof-budget-red.log` demonstrates concurrent proof construction incorrectly succeeding;
+  the guard before the first await and closure-time proof deletion fix it.
+- All RED source snapshots and intermediate failing builds/fixtures remain preserved. Corrections include generated AV timecode
+  construction, cleanup of a failed exclusive output, independent-oracle test calibration, an omitted audio-method tag, and native
+  paused-pipe termination. The unchanged auditor rejected a `typeof spawn` type query; the addition now uses a structural child type.
+- `38-d4-focused-pure.log` runs 26 suites: 785/788 pass; three failures are retained. Two audit cases are resolved by the structural
+  type correction; the existing lifecycle path assertion is resolved with a canonical task-local TMP path instead of the Windows
+  short-name temp alias. `47-corrected-pure-boundaries.log` reruns the affected suites plus pixels/process/pins: **91/91 PASS**.
+  Together these receipts resolve every one of the 788 focused tests; no assertion, auditor or old golden is weakened.
+- `49-final-media-regressions.log` has no terminal summary and is not counted as a completed gate. Its long-path N1 failures are
+  reproduced by `52-legacy-path-diagnostic.log`: unchanged `store_location_invalid`, workspace too long for the accepted layout.
+  The anomalous failed chroma-carrier attempt is retained. The unchanged suites then pass with a short canonical workspace TMP.
+- `51-legacy-failures-recheck.log`: **75/75 PASS** (50 Checkpoint B chroma media + 25 B1B/N1 media), no failures/skips.
+- `48-final-cd-media.log`: **93/93 PASS** (32 compiler + 28 encoder + 30 streaming/chroma proofs + 3 stress), no failures/skips.
+- `41-d4-hostile-closure.log`: **17/17 PASS**, actual child/output attacks; these are also included in the final A2 trust suite.
+
+- `54-final-remaining-media-regressions.log`: **133/133 PASS** (remaining seven legacy generated-media suites, including all 17
+  appended C–D hostile cases), no failures/skips. The complete nine-suite media regression gate is **208/208 PASS**.
+- `53-typecheck-confirmed.log`: `npm.cmd run typecheck` **PASS, exit 0**.
+- `55-final-schemas-check.log`: exact `npm.cmd run schemas:check` **PASS, exit 0**, including a fresh clean build
+  (`npm run clean` and TypeScript) and verification of all **33** unchanged schema/synthetic artifacts.
+- `56-final-workspace-audit.log`: unchanged `npm.cmd run audit:workspace` **PASS, exit 0**: 135 application TypeScript files,
+  18 explicit runtime adapters and the unchanged eight registered process-capable test files. Both full executable hashes reconfirmed.
+- **1,089 distinct focused tests resolved PASS** across the 788-test pure gate and its affected-suite correction, 93 C–D media tests
+  and 208 legacy media regressions. Overlapping reruns/17 hostile cases are not counted twice.
+
+Receipt hashes (files under E; source RED snapshots and all intervening receipts are retained):
+
+| Receipt | SHA-256 |
+| --- | --- |
+| `00-baseline.json` | `f0eda199485efd9c6c502facfdd4efc9f664467928b117aae0ef75da01482673` |
+| `01-pinned-binaries.json` | `a3cae46cdb6c90672de97a64a4e7e8ab41a4aee9761aff2f577c1ebd9dea5618` |
+| `03-c2-compiler-red.log` | `9c0db581b435b7a2a2c7b695775d68ab7e3fd964fbd79d52aa5000adb356edeb` |
+| `05-c3-encode-red.log` | `74cd6d287e9d066f5c6ff36c8b701986db91920edcec4972be9b6144b9556007` |
+| `14-d1-streaming-red-corrected.log` | `0eaa5bdac03b451e3f12a36313d0c757b49a4aa104864854b22b8f589746c0ac` |
+| `24-d3-prepublication-red-corrected.log` | `69e42d770bec8b5718d2f22f4c351a048e5bc85f99c07026183dbfc8540b78fe` |
+| `40-d4-proof-budget-red.log` | `af2dbea631ffb9d836f3c12741aebf71a61949aa4af7c29e4dfc40020c7cfeb8` |
+| `38-d4-focused-pure.log` | `8d60775e1d69aa82fa6a19659e8527b72491b4b0b8f5c3ed74bbd2c1edfcad87` |
+| `47-corrected-pure-boundaries.log` | `ad7ff0553f4f3b75e2f4f7bbee344c8ad7d0e6763298e163321a7621c466256d` |
+| `48-final-cd-media.log` | `8bfe4742a52e68f47351c0dd07fc11d1ff34a692240e63cb3b107a416a1fcd3b` |
+| `51-legacy-failures-recheck.log` | `7732244240db53ceb4004afe85154d530f8a7333d1dff0f3b9a672add0c897c3` |
+| `52-legacy-path-diagnostic.log` | `497ffe5103bac00e31767ba35dc0cf48f8d7c3fcf5eaf7cc0e9bc57760b2f113` |
+| `53-typecheck-confirmed.log` | `86054fef6d461178cfaef190e14832658004a8bec9afe95d7285940354351e00` |
+| `54-final-remaining-media-regressions.log` | `aa984df478b4e7a43181b7533ce59a5f8a6e797ad401dbbe5471347cd984f801` |
+| `55-final-schemas-check.log` | `5c0915fd040207d8920fbfe7caa091d449d899fe4e40f7dd77453ab293ca7d3e` |
+| `56-final-workspace-audit.log` | `2585b6ad67784c7be8d7db16bb86ee5b55494f3d50273558cd39948763867a37` |
+
+Focused pure scope covers media-ingest B1A/B1B, profile/plan/records/matrix/chroma/re-encode/reference, owner-media canonical/derived/plan,
+renderer/audit/workspace boundaries, exact-time, execution/runtime/review and existing synthetic lifecycle/harness compatibility tests.
+Only the previously accepted synthetic test harness is exercised; no actual owner-footage runner or model inference is used.
+Media commands use `node --import ./scripts/no-network.mjs --test --test-concurrency=1` with the four new C–D media suites
+and the nine affected legacy suites (re-encode, N1 compatibility, facts, plan, plan trust, chroma, ingest, owner canonical, render).
+The final legacy reruns add TAP reporting and task-local TMP/TEMP; this changes neither test assertions nor production limits.
+
+### Generated stress and measured memory
+
+All media is generated asymmetric moving content. Independent test-only full-video reference decoding runs after verifier telemetry
+and is not imported into production. Stress frame counts exceed the three live-frame slots; a 120-frame pure test also fixes slot count.
+
+| Generated case (isolated stress run) | Encode ms | Complete verification ms | Frame buffers | Digest bytes | Sampled Node RSS peak bytes |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| H.264 1920×1080, 16 frames, rotate_90_cw | 3065.003 | 10385.022 | 9331200 | 1536 | 187596800 |
+| HEVC 3840×2160, 4 frames, identity | 3966.638 | 9732.608 | 37324800 | 384 | 190488576 |
+
+Each decoded side contains 49,766,400 exact bytes; observed queue peaks are 98,304 bytes per decoder.
+Receipts: `cd-stress-csHXII/receipt.json` and `cd-stress-Iv5N1n/receipt.json` under `.local-runs/phase5-gate7/`.
+10 ms sampled Node RSS includes this test process and earlier fixture allocations and can miss brief peaks.
+`process.resourceUsage().maxRSS` reports 360464 KiB for that complete Node stress process (fixture/oracle allocations included),
+not an isolated verifier or combined codec-process peak. FFmpeg child RSS and combined pipeline peak were not reliably measured.
+
+The final C–D repeat stress receipt also records 1080p encode/verification 2933.249/10668.161 ms and 4K 3875.414/27269.445 ms,
+sampled Node RSS peaks 179974144/204996608 bytes and process maxRSS 363692 KiB; other regressions overlapped part of that run.
+Those host observations are not an SLA or throughput extrapolation. Three fixed-profile repeats agree in full output byte hash,
+exact ordered sample proof, output chroma and argv (isolated hash `d2024555f42ff60e18c246045a66251c56fe8e53c86fb394e0e9e0fad2b985b1`).
+No 10-/15-minute, cross-hardware or hardware/browser playback claim is made.
+
+### Diff/source preservation and remaining E–I
+
+Final source accounting is retained in `E/58-final-source-preservation.json`: all 411 baseline files checked, **404 unchanged**
+and exactly seven authorized existing paths changed (two phase docs, additive runtime, two additive-accounting tests,
+append-only hostile tests and append-only generated AV helper). All **18** historical untracked artifacts retain exact hash/size.
+All other 39 authoritative files/receipts remain exact; this phase record changes append-only.
+Old runtime, A2 hostile tests (12,217 bytes) and research helper (17,807 bytes) remain exact at their pinned prefixes.
+All frozen contracts, schemas, package/lockfile, renderer/authority and workspace auditor hashes remain exact.
+Nine new source/test files are individually reviewed and hashed; working/staged diff checks are required before code commit.
+The final Git reconciliation receipt records clean tracked state, preserved artifacts, main equality, only the phase-branch push
+and local/tracking/live code HEAD equality. These statements describe C–D, not completion/acceptance of the whole B2-B2 batch.
+
+Reviewed changed files consist only of the additive local compiler/verifier, pure pixels module, generated/adversarial tests, precise
+additive source-pin accounting and these two phase documents. No package/lockfile, executable/licensing configuration, schema identity,
+renderer/permit/freshness, existing ingest route, store/cache/lifecycle code or owner media is changed.
+
+Known limits: conservative explicit-center eligibility only; fixed software profile; bounded short generated fixtures; unmeasured
+combined native/parent RSS; no new PCM RETIME or long-video/cross-hardware capacity proof. Windows file-symlink creation can be EPERM;
+actual directory-junction refusal and same-byte source-path replacement are covered, and the optional file-link limitation is retained.
+
+Next separate authorization/review must cover E production ingest routing, F freshly verified publication/cache, G derived
+authorization/lifecycle, H generated derived-source renderer/QC handoff, and I final affected batch closure.
+No E–I integration is implemented here. B2-B2 is neither fully complete nor owner-accepted; Gate 7 remains incomplete.
+Code publication is limited to `feat(gate7): implement chroma-gated lossless compiler and streaming verifier` on the existing phase branch.
+Final code HEAD/local/tracking/live reconciliation is recorded in the code-publication receipt and owner report; no merge.
+
+**3E-B2-B2 CHECKPOINTS C–D IMPLEMENTED — FOR OWNER REVIEW. STOP before E–I.**

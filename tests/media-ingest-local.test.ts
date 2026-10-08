@@ -3,6 +3,7 @@
 // executable starts here; the static boundary is read from the adapter's source. No media, process, model or network.
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { PassThrough } from "node:stream";
 import { test } from "node:test";
@@ -98,7 +99,13 @@ test("B1B-S02 the adapter's static boundary: exact imports, spawn only, no listi
   assert.deepEqual(processNames, ["spawn"]);
   for (const forbidden of ["readdir", "opendir", "glob", "watch", "fetch", "exec", "execSync", "execFile", "execFileSync", "spawnSync", "fork", "Socket", "createConnection",
     "eval", "require", "rename", "copyFile", "writeFileSync"]) assert.ok(!names.has(forbidden), `the adapter names ${forbidden}`);
-  assert.equal((text.match(/\bspawn\(/g) ?? []).length, 3, "supervised measurement, frozen N1 recipe, and closed v1 plan execution");
-  assert.equal((text.match(/shell: false/g) ?? []).length, 3);
+  // C–D additive accounting keeps the exact accepted 118584-byte B boundary and its original three spawns.
+  const historical = Buffer.from(text, "utf8").subarray(0, 118584).toString("utf8"), additive = text.slice(118584);
+  assert.equal(createHash("sha256").update(historical).digest("hex"), "f56abf2048e6991a67482cc806727b926b610c2e5a81545c91fc6ac8d8a92a66");
+  assert.match(additive, /^\n\/\/ ---------------------------------------------------------------- B2-B2 C–D additive compiler/);
+  assert.equal((historical.match(/\bspawn\(/g) ?? []).length, 3, "unchanged measurement, N1 and v1 plan execution");
+  assert.equal((historical.match(/shell: false/g) ?? []).length, 3);
+  assert.equal((additive.match(/\bspawn\(/g) ?? []).length, 2, "only the closed lossless encoder and held-byte paired decoder helper");
+  assert.equal((additive.match(/shell: false/g) ?? []).length, 2);
   assert.doesNotMatch(text, /shell: true|process\.env\[(?!"SystemRoot")|Math\.random|Date\.now|new Date\(/);
 });

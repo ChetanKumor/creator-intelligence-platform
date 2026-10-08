@@ -209,3 +209,13 @@ export async function declareGeneratedChroma(source:string, output:string, codec
     "-map_metadata","-1","-fflags","+bitexact","-f","mp4"]);
   return output;
 }
+
+/** C–D fixture constructor: copy generated AV/timecode tracks and declare explicit center on a NEW object only. */
+export async function declareGeneratedAvCenter(source: string, output: string, codec: "h264" | "hevc",
+  timescale: 15360 | 90000 | 600 = 90000, mux: "mp4" | "mov" = "mp4", timecode = false): Promise<string> {
+  if (!["h264", "hevc"].includes(codec) || ![15360, 90000, 600].includes(timescale) || !["mp4", "mov"].includes(mux)) throw new Error("Closed generated AV declaration required");
+  await pinnedRun("ffmpeg", source, output, ["-copyts", "-threads", "1", "-noautorotate"],
+    ["-map", "0:v:0", "-map", "0:a:0?", "-c", "copy", "-bsf:v", codec + "_metadata=chroma_sample_loc_type=1", "-video_track_timescale", String(timescale),
+      "-avoid_negative_ts", "disabled", "-map_metadata", "-1", ...(timecode ? ["-timecode", "00:00:00:00"] : []), "-fflags", "+bitexact", "-f", mux]);
+  return output;
+}

@@ -532,8 +532,8 @@ test("B1A-D07 a derived authorization is built only from a valid derivation and 
 test("B1A-P01 the media-ingest package is pure: bounded imports, no process, file, network, clock or entropy access, no render-core cycle", () => {
   const files = readdirSync("packages/media-ingest").filter(f => f.endsWith(".ts")).sort().map(f => `packages/media-ingest/${f}`);
   // 3E-B2-A1 (owner-authorized allowlist change): the profile and plan modules join the package under the same purity rules.
-  // B2-B2 Checkpoint B adds chroma.ts under the same purity restrictions; no runtime capability is added.
-  assert.deepEqual(files, ["packages/media-ingest/canonical.ts", "packages/media-ingest/chroma.ts", "packages/media-ingest/index.ts", "packages/media-ingest/plan.ts", "packages/media-ingest/profile.ts", "packages/media-ingest/reencode.ts"]);
+  // B2-B2 Checkpoint B adds chroma.ts; C–D adds pixels.ts under these same purity restrictions.
+  assert.deepEqual(files, ["packages/media-ingest/canonical.ts", "packages/media-ingest/chroma.ts", "packages/media-ingest/index.ts", "packages/media-ingest/pixels.ts", "packages/media-ingest/plan.ts", "packages/media-ingest/profile.ts", "packages/media-ingest/reencode.ts"]);
   for (const path of files) {
     const text = readFileSync(path, "utf8"), source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true);
     const visit = (node: ts.Node): void => {
