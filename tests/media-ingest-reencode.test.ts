@@ -185,5 +185,16 @@ test("B1-C-frozen: accepted N1, Profile v1, Plan v1, 0.2 derivation and executio
     "packages/media-ingest/plan.ts":"29a5c4b8e0eacb0ddbdd6bc27909078e26d5482bf96b3de23a11780ef9a35f39",
     "scripts/media-ingest-local.ts":"8bfd56980d2cb1d5693cc924e73a6ccfb7c86eba29ec9b101bf4729e13aa6fd8",
   };
-  for(const [path,digest] of Object.entries(pins)) assert.equal(sha(readFileSync(path,"utf8")),digest,path);
+  for(const [path,digest] of Object.entries(pins)) {
+    let text=readFileSync(path,"utf8");
+    if(path==="scripts/media-ingest-local.ts") {
+      // Owner-authorized Checkpoint B: exactly one import plus an appended observer. Every accepted runtime byte remains pinned.
+      const marker="// ---------------------------------------------------------------- B2-B2 chroma-only observation/admission (no encode/publication/cache/lifecycle)";
+      assert.equal(text.split(marker).length,2);
+      const addition=/^import \{ CHROMA_OBSERVATION_METHOD, ChromaSafeReencodePlanSchema, makeCanonicalChromaObservation, planChromaSafeReencode, type CanonicalChromaObservation, type ChromaSpsDeclaration, type ChromaSafeReencodePlan, type ChromaPlanningResult \} from "\.\.\/packages\/media-ingest\/chroma\.js";\r?\n/m;
+      assert.equal([...text.matchAll(new RegExp(addition,"gm"))].length,1);
+      text=text.slice(0,text.indexOf(marker)).replace(addition,"").replace(/\r?\n$/,"");
+    }
+    assert.equal(sha(text),digest,path);
+  }
 });

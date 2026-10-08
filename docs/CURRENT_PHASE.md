@@ -1,8 +1,48 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B1 (OWNER-ACCEPTED; B2-B2 authorized; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (CHROMA SAFETY CONTRACT IMPLEMENTED; OWNER REVIEW PENDING; Gate 7 not yet complete)
 
 Last updated: 2026-10-08
 
 ## Current ruling
+
+- Phase 5 Gate 7 Batch **3E-B2-B2 Checkpoint B chroma continuation** (2026-10-08):
+  **CHROMA SAFETY CONTRACT IMPLEMENTED; OWNER REVIEW PENDING. B2-B2 is not complete.**
+  - The owner authorized a narrow correction after the preserved chroma STOP. Baseline is the pushed acceptance-doc commit
+    `61b4bb1b8f9ea3efb57524fe76e107018fb2a468`; accepted B2-B1 remains `059754f47fb83ac1936824c4d9cfa7b725ea232b`.
+    Main remains `4f85b559c7eff2c24e221011f3ee1dd1466a111d`; only the phase branch is the publication target.
+  - New mandatory ReencodePlan **1.1.0** and Derivation **0.4.0** bind exact bytes, complete original facts, raw chroma carriers,
+    independent D4 positions, conservative admission, unchanged fixed QP-zero profile and fresh exact sample/siting verification.
+    No frozen parser/identity is edited. Pure JSON cannot mint the read-only trusted admission witness; legacy plans cannot bypass it.
+  - Alpha eligibility is conditional explicit **center** siting: HEVC identity and all seven H.264/HEVC D4 cases with agreeing
+    container/bitstream/stream/frame evidence. All left re-encodes DEFER, including identity/vertical mirror: fixed output omits
+    type-zero signaling and no complete normative default proof is established. Missing evidence DEFERs; contradictions REFUSE.
+    No encoder-signaling change, chroma relocation/resampling, color/range conversion, audio encode or lossy fallback.
+  - **65 pure + 50 generated chroma tests, 384 pure compatibility + 80 generated compatibility tests PASS** (579 distinct).
+    Build/typecheck, 33-artifact schema check, unchanged process/workspace audit and old golden pins PASS. Original STOP/20-result
+    RED evidence and all 18 historical artifacts are preserved; append-only details include all intermediate failures.
+  - The production addition is a held-byte **read-only observer** only. Existing DIRECT/N1/exact-remux execution is unchanged;
+    re-encode execution, output publication/cache, derived authorization/lifecycle and derived-source rendering remain unwired.
+    **Checkpoints C-I require the next owner review and are not resumed.** No owner footage, models, downloads, dependency/lockfile
+    changes, permit/freshness changes or main modification. 3E-C and Phase 6 remain **NOT STARTED, NOT AUTHORIZED**.
+  - Details: [Checkpoint B chroma continuation](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#checkpoint-b-chroma-safety-continuation-2026-10-08).
+
+## Historical rulings (append-only)
+
+- Phase 5 Gate 7 Batch **3E-B2-B2** (2026-10-08): **BLOCKED at Checkpoint B —
+  `3E_B2_B2_CHROMA_SEMANTICS_DECISION_REQUIRED`**. No production re-encode implementation or B2-B2 commit/push.
+  - Baseline local/tracking/live `059754f47fb83ac1936824c4d9cfa7b725ea232b`; B2-B1 owner-acceptance docs committed and pushed first as
+    `61b4bb1b8f9ea3efb57524fe76e107018fb2a468`, then local/tracking/live matched. Main remains
+    `4f85b559c7eff2c24e221011f3ee1dd1466a111d`; branch 12 ahead / 0 behind. The 18 historical artifacts remain preserved.
+  - Mandatory pinned-runtime chroma preflight uses generated asymmetric 64x48, three-frame media only. All 20 research outputs pass
+    exact Y/U/V verification; six left-sited D4 cases fail the independent chroma-position invariant while still signaling left.
+    Center-sited fixtures pass all seven D4 cases; identity preserves each of the six observed siting declarations. RED receipt retained.
+  - Strict Facts v1, Profile v1 and frozen re-encode Plan/Derivation 0.3 cannot represent that distinction or replay its safety rule.
+    Owner ruling is required for a byte-bound additive chroma-safety evidence/refusal contract and its accepted identity binding.
+    No unrecorded guard, output metadata rewrite, chroma resampling, lossy encode or contract change was silently introduced.
+  - Fresh build PASS on unchanged accepted code. Checkpoints C–I and their production/media/lifecycle/render/regression gates are
+    **NOT STARTED**. DIRECT/N1/exact-remux, source bytes, old identities, fixed encode profile, permit and freshness semantics remain
+    unchanged. No output was published and no derived authorization issued. No owner footage, model, dependency or lockfile change.
+  - Details: [B2-B2 stop and generated evidence](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md).
+    B2-B2 remains uncommitted pending owner review of this blocker. 3E-C and Phase 6 remain **NOT STARTED, NOT AUTHORIZED**.
 
 - 3E-B2-B1 owner acceptance (2026-10-08): **3E-B2-B1 OWNER-ACCEPTED** at
   `059754f47fb83ac1936824c4d9cfa7b725ea232b`.

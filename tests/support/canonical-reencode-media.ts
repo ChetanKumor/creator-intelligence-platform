@@ -201,3 +201,11 @@ export async function verifyGenerated(source: string, output: string, transform:
     audioPackets:sourceAudio === null && outputAudio === null ? null : {method:PLAN_VERIFICATION_METHODS.audioPackets,sourceDigest:sourceAudio,outputDigest:outputAudio} });
   return { pixels, outputFacts, derivation, elapsedMs: performance.now()-start };
 }
+
+/** Checkpoint B generated-only metadata fixture: no sample encode, no arbitrary bitstream-filter arguments. */
+export async function declareGeneratedChroma(source:string, output:string, codec:"h264"|"hevc", location:0|1|2|3|4|5):Promise<string> {
+  if(!["h264","hevc"].includes(codec) || !Number.isInteger(location) || location<0 || location>5)throw new Error("Closed chroma fixture declaration required");
+  await pinnedRun("ffmpeg",source,output,["-threads","1","-noautorotate"],["-map","0:v:0","-c:v","copy","-bsf:v",`${codec}_metadata=chroma_sample_loc_type=${location}`,
+    "-map_metadata","-1","-fflags","+bitexact","-f","mp4"]);
+  return output;
+}

@@ -39,6 +39,7 @@ import { CANONICAL_TOOLCHAIN, MediaIngestError, N1_ARGV_TEMPLATE, N1_RECIPE, bui
 import { DISPLAY_MATRIX_CARRIER_OBSERVATION, type VideoStreamFacts, type StreamFacts } from "../packages/media-ingest/profile.js";
 import { CANONICAL_PLAN_TOOLCHAIN, CanonicalizationPlanSchema, PLAN_VERIFICATION_METHODS, buildCanonicalMediaPlanDerivation, buildCanonicalPlanDerivedAuthorization,
   canonicalPlanComputationIdOf, planCanonicalizationV1, type CanonicalMediaPlanDerivation, type CanonicalizationPlan, type CanonicalPlanningResult } from "../packages/media-ingest/plan.js";
+import { CHROMA_OBSERVATION_METHOD, ChromaSafeReencodePlanSchema, makeCanonicalChromaObservation, planChromaSafeReencode, type CanonicalChromaObservation, type ChromaSpsDeclaration, type ChromaSafeReencodePlan, type ChromaPlanningResult } from "../packages/media-ingest/chroma.js";
 
 export const CANONICAL_INGEST_ERROR_CODES = ["request_invalid", "authorization_invalid", "canonicalization_consent_required", "runtime_config_invalid",
   "runtime_binary_missing", "runtime_binary_mismatch", "source_location_invalid", "source_mismatch", "source_changed", "store_location_invalid", "store_unavailable",
@@ -1253,4 +1254,139 @@ export async function canonicalizeLocalMedia(input: CanonicalIngestRequest): Pro
     if (pendingHandle !== null) await pendingHandle.close().catch(() => undefined);
     for (const path of pendingPaths) await unlink(path).catch(() => undefined);
   }
+}
+
+// ---------------------------------------------------------------- B2-B2 chroma-only observation/admission (no encode/publication/cache/lifecycle)
+/** The original observer/supervisor stays unchanged. This separate streaming SPS parser consumes the same pinned instrument. */
+class ChromaHeaderObservation extends HeaderObservation {
+  private chromaPending="";
+  private chromaTotal=0;
+  private chromaInvalid=false;
+  private chromaFields:Record<string,number>|null=null;
+  private chromaSps:ChromaSpsDeclaration[]=[];
+  constructor(private readonly chromaCodec:"h264"|"hevc"){super();}
+  private endChromaSps():void {
+    const fields=this.chromaFields;this.chromaFields=null;if(fields===null)return;
+    const vuiPresent=fields.vui_parameters_present_flag,locationPresent=vuiPresent===0?null:fields.chroma_loc_info_present_flag;
+    this.chromaSps.push({spsIndex:this.chromaSps.length,chromaFormatIdc:fields.chroma_format_idc!,
+      frameMbsOnlyFlag:this.chromaCodec==="h264"?fields.frame_mbs_only_flag as 0|1:null,vuiPresent:vuiPresent as 0|1,
+      locationPresent:locationPresent as 0|1|null,topFieldType:locationPresent===1?fields.chroma_sample_loc_type_top_field!:null,
+      bottomFieldType:locationPresent===1?fields.chroma_sample_loc_type_bottom_field!:null});
+    if(this.chromaSps.length>4096)this.chromaInvalid=true;
+  }
+  private chromaLine(line:string):void {
+    const match=/^\[trace_headers @ [0-9A-Fa-f]+\] (.*)$/.exec(line.trimEnd());if(!match)return;
+    const text=match[1]!;if(text==="Sequence Parameter Set"){this.endChromaSps();this.chromaFields={};return;}
+    if(/^[A-Z]/.test(text)){this.endChromaSps();return;}
+    const field=/^\d+ +([a-zA-Z0-9_\[\]]+) +[01]+ += +(-?\d+)$/.exec(text);if(!field || this.chromaFields===null)return;
+    const name=field[1]!;
+    if(["chroma_format_idc","frame_mbs_only_flag","vui_parameters_present_flag","chroma_loc_info_present_flag","chroma_sample_loc_type_top_field","chroma_sample_loc_type_bottom_field"].includes(name)){
+      if(Object.hasOwn(this.chromaFields,name))this.chromaInvalid=true;this.chromaFields[name]=Number(field[2]);
+    }
+  }
+  override consume(bytes:Buffer):void {
+    super.consume(bytes);this.chromaTotal+=bytes.length;if(this.chromaTotal>512*1024*1024||this.chromaInvalid){this.chromaInvalid=true;return;}
+    this.chromaPending+=bytes.toString("utf8");let end:number;
+    while((end=this.chromaPending.indexOf("\n"))!==-1){this.chromaLine(this.chromaPending.slice(0,end));this.chromaPending=this.chromaPending.slice(end+1);}
+    if(this.chromaPending.length>8192)this.chromaInvalid=true;
+  }
+  chromaFinish():ChromaSpsDeclaration[] {
+    this.finish();if(this.chromaPending!=="")this.chromaLine(this.chromaPending);this.endChromaSps();
+    if(this.chromaInvalid||!this.chromaSps.length)fail("probe_invalid","Complete bounded SPS chroma observations are required.");
+    // Strict contract validation below rejects any missing raw field; it never supplies a codec default.
+    return this.chromaSps;
+  }
+}
+/** Only audited video sample-entry boxes are interpretable by the alpha; all other carrier names survive and refuse. */
+async function chromaContainerOf(subject:Anchor,trackId:number):Promise<CanonicalChromaObservation["container"]> {
+  const handle=await reader(subject,"source_changed");
+  try {
+    let position=0,count=0,moov:Buffer|null=null;
+    while(position<subject.sizeBytes){
+      if(++count>100000 || position+8>subject.sizeBytes)fail("probe_invalid","The chroma container table is malformed.");
+      const header=await readRange(handle,position,Math.min(16,subject.sizeBytes-position)),short=header.readUInt32BE(0),length=short===1?16:8;
+      const size=short===1?Number(header.readBigUInt64BE(8)):short===0?subject.sizeBytes-position:short;
+      if(!Number.isSafeInteger(size)||size<length||position+size>subject.sizeBytes)fail("probe_invalid","The chroma container box is out of bounds.");
+      if(header.toString("latin1",4,8)==="moov"){if(moov!==null)fail("probe_invalid","Ambiguous chroma container headers.");moov=await readRange(handle,position+length,size-length);}
+      position+=size;
+    }
+    if(moov===null)fail("probe_invalid","Chroma observation requires one movie header.");
+    const bytes=moov,children=(b:MediaBox)=>mediaBoxes(bytes,b.start+b.header,b.end);
+    const one=(list:MediaBox[],type:string):MediaBox=>{const found=list.filter(b=>b.type===type);if(found.length!==1)fail("probe_invalid","Ambiguous chroma track structure.");return found[0]!;};
+    const matches:CanonicalChromaObservation["container"][]=[];
+    for(const trak of mediaBoxes(bytes,0,bytes.length).filter(b=>b.type==="trak")){
+      const track=children(trak),tkhd=one(track,"tkhd"),body=tkhd.start+tkhd.header,version=bytes[body];
+      if(version!==0&&version!==1)fail("probe_invalid","Unsupported chroma track header version.");
+      if(bytes.readUInt32BE(body+(version===1?20:12))!==trackId)continue;
+      const media=children(one(track,"mdia")),hdlr=one(media,"hdlr");if(bytes.toString("latin1",hdlr.start+hdlr.header+8,hdlr.start+hdlr.header+12)!=="vide")fail("probe_invalid","Chroma track must be video.");
+      const stsd=one(children(one(children(one(media,"minf")),"stbl")),"stsd"),at=stsd.start+stsd.header;
+      if(bytes.readUInt32BE(at+4)!==1)fail("probe_invalid","Multiple chroma sample descriptions are unsupported.");
+      const entries=mediaBoxes(bytes,at+8,stsd.end);if(entries.length!==1||entries[0]!.end-entries[0]!.start<86)fail("probe_invalid","Malformed chroma sample entry.");
+      const entry=entries[0]!,sampleEntry=entry.type;
+      if(!["avc1","avc3","hvc1","hev1"].includes(sampleEntry))fail("probe_invalid","Unsupported chroma sample-entry codec.");
+      const inventory:CanonicalChromaObservation["container"]["entries"]=mediaBoxes(bytes,entry.start+entry.header+78,entry.end).map(b=>{
+        const payload=bytes.subarray(b.start+b.header,b.end),item={type:b.type,payloadBytes:payload.length,payloadHash:createHash("sha256").update(payload).digest("hex")};
+        if(b.type==="fiel")return {...item,...(payload.length===2?{field:{count:payload[0]!,order:payload[1]!}}:{})};
+        if(b.type!=="colr")return item;
+        const subtype=payload.toString("latin1",0,4);
+        const recognized=(subtype==="nclx"&&payload.length===11&&(payload[10]!&127)===0)||(subtype==="nclc"&&payload.length===10);
+        return {...item,color:{subtype:recognized?subtype as "nclx"|"nclc":"other" as const,primaries:recognized?payload.readUInt16BE(4):null,
+          transfer:recognized?payload.readUInt16BE(6):null,matrix:recognized?payload.readUInt16BE(8):null,fullRange:recognized&&subtype==="nclx"?Boolean(payload[10]!&128):null}};
+      });
+      matches.push({trackId,sampleEntry:sampleEntry as CanonicalChromaObservation["container"]["sampleEntry"],entries:inventory});
+    }
+    if(matches.length!==1)fail("probe_invalid","The chroma observation must join one exact video track.");
+    if(await hashHandle(handle,subject.sizeBytes)!==subject.contentHash)fail("source_changed","The chroma container changed during observation.");
+    await reconfirm(subject,"source_changed");return matches[0]!;
+  } finally {await handle.close().catch(()=>undefined);}
+}
+const CHROMA_ADMISSION_CONSTRUCTION=Symbol("held-byte-chroma-admission-only");
+const CHROMA_ADMISSIONS=new WeakMap<CanonicalChromaAdmissionHandle,ChromaSafeReencodePlan>();
+/** Opaque read-only admission witness. It is not an execution permit; Checkpoints C-I remain unwired. */
+export class CanonicalChromaAdmissionHandle {
+  constructor(token:symbol,plan:ChromaSafeReencodePlan){
+    if(token!==CHROMA_ADMISSION_CONSTRUCTION)fail("request_invalid","trusted_chroma_admission_required: only held-byte observation can mint this handle.");
+    CHROMA_ADMISSIONS.set(this,structuredClone(ChromaSafeReencodePlanSchema.parse(plan)));Object.freeze(this);
+  }
+}
+/** JSON, legacy B2-B1 plans and counterfeit instances are never trusted byte observations. Returns a private snapshot copy. */
+export function canonicalChromaPlanOf(handle:unknown):ChromaSafeReencodePlan {
+  const plan=handle instanceof CanonicalChromaAdmissionHandle?CHROMA_ADMISSIONS.get(handle):undefined;
+  if(plan===undefined)fail("request_invalid","trusted_chroma_admission_required: a serialized plan is not observed-byte admission.");
+  return structuredClone(plan);
+}
+/** No caller facts/plans/filters. Fresh held bytes -> old facts plus separate complete raw chroma carriers -> versioned admission.
+ * This inspection starts only probes/header observations. It does not execute a re-encode, publish bytes or issue authorization. */
+export async function inspectCanonicalChromaLocalMedia(input:CanonicalIngestRequest):Promise<{source:SourceIdentity;facts:CanonicalMediaFacts;
+  observation:CanonicalChromaObservation;planning:ChromaPlanningResult;admission:CanonicalChromaAdmissionHandle|null}> {
+  const request=readRequest(input),root=FootageAuthorizationRootSchema.safeParse(request.authorization);
+  if(!root.success)fail("canonicalization_consent_required","Chroma re-encode admission requires the consenting original root.");
+  const toolRoot=await approvedRoot(request.toolRoot),ctx:Context={toolRoot,hooks:request.hooks};
+  const source=await openAnchor(await exactLocation(request.sourcePath,"source_location_invalid"),"source_location_invalid",MAX_STAGED_SOURCE_BYTES);
+  try {
+    if(source.contentHash!==root.data.contentHash||source.sizeBytes!==root.data.sizeBytes)fail("source_mismatch","The chroma source is not the authorized exact bytes.");
+    const measured=await factsOf(ctx,source,"source_changed",false),v=measured.facts.streams.find((s):s is VideoStreamFacts=>s.kind==="video");
+    if(!v || (v.codec!=="h264"&&v.codec!=="hevc"))fail("probe_invalid","No observable video chroma codec.");
+    const argv=["-hide_banner","-loglevel","error","-threads","1","-protocol_whitelist","fd","-f","mov","-fd","3","-show_entries",
+      "stream=index,id,codec_name,chroma_location:frame=media_type,stream_index,pts,chroma_location","-of","json=compact=1","-i","fd:"];
+    const probe=await runOver(ctx,source,"source_changed","source_facts","ffprobe",argv,HARD.probeTimeoutMilliseconds,MAX_PROBE_OUTPUT_BYTES);
+    requireCompleted(probe,"chroma frame observation");
+    const raw=objectOf(JSON.parse(probe.stdout.toString("utf8"))),streams=objectsOf(raw.streams).filter(s=>intOf(s.index)===v.index);
+    if(streams.length!==1)fail("probe_invalid","Chroma observation needs one exact video stream.");
+    const stream=streams[0]!;if(stream.codec_name!==v.codec || typeof stream.id!=="string"||!/^0x[0-9a-fA-F]+$/.test(stream.id))fail("probe_invalid","The chroma stream/track join is malformed.");
+    const header=new ChromaHeaderObservation(v.codec),run=await runOver(ctx,source,"source_changed","source_headers","ffmpeg",
+      ["-hide_banner","-nostdin","-nostats","-loglevel","info","-threads","1","-noautorotate","-copyts",...FD_INPUT,"-map",`0:${v.index}`,"-c:v","copy",
+        "-bsf:v","trace_headers","-f","null","-protocol_whitelist","fd","-fd","1","fd:"],HARD.probeTimeoutMilliseconds,HARD.maxRecipeStdoutBytes,header);
+    requireCompleted(run,"chroma SPS observation");
+    const label=(value:unknown)=>value===undefined?null:typeof value==="string"?value:fail("probe_invalid","A chroma label is malformed.");
+    const identity={assetId:`asset_${source.contentHash}`,contentHash:source.contentHash,sizeBytes:source.sizeBytes};
+    const observation=makeCanonicalChromaObservation({source:identity,factsDigest:createHash("sha256").update(canonicalSerialize(measured.facts)).digest("hex"),method:CHROMA_OBSERVATION_METHOD,
+      codec:v.codec,streamIndex:v.index,container:await chromaContainerOf(source,Number.parseInt(stream.id,16)),bitstream:header.chromaFinish(),streamReported:label(stream.chroma_location),
+      frames:objectsOf(raw.frames).filter(f=>f.media_type==="video"&&intOf(f.stream_index)===v.index).map((f,index)=>({index,pts:intOf(f.pts),reported:label(f.chroma_location)}))});
+    const planning=planChromaSafeReencode({source:identity,sourceFacts:measured.facts,sourceChroma:observation});
+    await reconfirm(source,"source_changed");
+    const admission=planning.outcome==="PLAN"&&planning.plan!==null?new CanonicalChromaAdmissionHandle(CHROMA_ADMISSION_CONSTRUCTION,planning.plan):null;
+    return {source:identity,facts:measured.facts,observation,planning,admission};
+  } catch(error){if(error instanceof CanonicalIngestError)throw error;throw new CanonicalIngestError("probe_invalid","The exact-byte chroma observations could not be established.");}
+  finally {await source.handle.close().catch(()=>undefined);}
 }

@@ -50,3 +50,15 @@ export async function patchPlanFixture(from: string, to: string, patch: { pasp?:
   }
   await writeFile(to, bytes, { flag: "wx" }); return to;
 }
+
+/** Chroma hostile fixtures only: add an unknown interpretation carrier or a malformed colr to a NEW generated copy. */
+export async function appendChromaFixtureBox(from:string,to:string,type:"cloc"|"colr"):Promise<string> {
+  const bytes=await readFile(from); if(bytes.length>4*1024*1024)throw new Error("Chroma fixture exceeds its tiny-media bound");
+  const parents=chain(bytes,["moov","trak","mdia","minf","stbl","stsd"]),stsd=parents.at(-1)!;
+  const entry=boxes(bytes,stsd.start+stsd.header+8,stsd.end)[0]!,mdat=boxes(bytes).find(b=>b.type==="mdat")!;
+  if(parents[0]!.start<mdat.end)throw new Error("Chroma fixture requires trailing moov");
+  const extra=Buffer.alloc(12);extra.writeUInt32BE(12,0);extra.write(type,4,"latin1");extra.write(type==="colr"?"nclx":"test",8,"latin1");
+  const out=Buffer.concat([bytes.subarray(0,entry.end),extra,bytes.subarray(entry.end)]);
+  for(const box of [...parents,entry]){if(box.header!==8)throw new Error("Chroma fixture requires short box headers");out.writeUInt32BE(box.end-box.start+12,box.start);}
+  await writeFile(to,out,{flag:"wx"});return to;
+}
