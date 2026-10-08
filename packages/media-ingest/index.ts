@@ -25,3 +25,8 @@ export { AnyCanonicalMediaDerivationSchema, CANONICALIZATION_OPERATIONS, CANONIC
   buildCanonicalPlanDerivedAuthorization, canonicalPlanComputationIdOf, canonicalizationPlanIdOf, planCanonicalizationV1, revalidateCanonicalizationPlan,
   type CanonicalMediaPlanDerivation, type CanonicalPlanToolchain, type CanonicalPlanningResult, type CanonicalizationOperationName,
   type CanonicalizationPlan } from "./plan.js";
+/** B2-B1 pure additive candidate contract. No production execution, cache, publication or authorization routing is added. */
+export { CANONICAL_LOSSLESS_ENCODE_PROFILE, CANONICAL_REENCODE_SEMANTICS, CANONICAL_REENCODE_TOOLCHAIN, CANONICAL_REENCODE_PLAN_IDENTITY,
+  D4_COORDINATE_MAPPINGS, EXACT_PIXEL_METHOD, PIXEL_TRANSFORMS, CanonicalReencodePlanSchema, ExactPixelVerificationSchema,
+  CanonicalReencodeDerivationSchema, planCanonicalReencode, canonicalReencodeComputationIdOf, buildCanonicalReencodeDerivation,
+  type CanonicalReencodePlan, type CanonicalReencodeDerivation, type ExactPixelVerification, type ReencodePlanningResult } from "./reencode.js";

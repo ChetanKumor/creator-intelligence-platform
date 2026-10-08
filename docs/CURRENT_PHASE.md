@@ -1,8 +1,29 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-A2 (OWNER-ACCEPTED; B2-B1 authorized; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B1 (IMPLEMENTED; OWNER REVIEW PENDING; Gate 7 not yet complete)
 
 Last updated: 2026-10-08
 
 ## Current ruling
+
+- Phase 5 Gate 7 Batch **3E-B2-B1** (2026-10-08): **IMPLEMENTED; OWNER REVIEW PENDING**. Lossless feasibility and pure additive contract gates pass.
+  - Baseline `871cd69301e60e46ebfc64ffc44baef7067fd8e9`; A2 owner-acceptance docs committed/pushed first as
+    `c4c448028bb9d772702d36023632bf54da3927dc`. Main remains `4f85b559c7eff2c24e221011f3ee1dd1466a111d`; no merge.
+  - Pinned libx264 QP 0, medium, high444 profile with **8-bit yuv420p**, two encoder threads, one decoder/filter/lookahead thread:
+    exact decoded HEVC identity and all seven D4 permutations, including HEVC+D4, proved with generated media and an independent Y/U/V
+    plane reference. No scaling, color/range conversion or audio re-encode. Limited BT.709 output; unspecified source description retained
+    truthfully under Profile v1's interpretation; unspecified range still REFUSE. **No lossy canonical video encode is authorized.**
+  - Separate `CanonicalReencodePlan 1.0.0`, fixed encode-profile identity and `CanonicalMediaDerivation 0.3.0` are pure additions. Full
+    plan/source/toolchain computation binding and fresh exact-pixel/timing/audio verification semantics are specified. Profile v1, remux
+    Plan 1.0.0, derivations 0.1/0.2, N1 identities/recipe/argv, production routing, store and lifecycle are unchanged.
+  - Focused evidence: 77 pure tests and 28 generated-media tests PASS; 28 reviewed mutations killed. All nine required composition classes
+    are covered, including all five old repairs with HEVC+D4. Repeated bytes match in the same-machine/pinned-build domain only.
+    Final bounded 1080p encode 3.25–3.31 s / verify 6.18–6.60 s; six-frame 4K encode 2.94–2.96 s / verify 4.88–4.90 s.
+    Output/source ratios 1.8763× and 2.0215× on the documented high-detail synthetic fixtures; operational costs remain owner review items.
+  - No B2-B production execution is wired. B2-B2, 3E-C and Phase 6 remain **NOT STARTED** and require owner authorization.
+  - Final build, typecheck, schema check, workspace audit and complete staged diff review PASS. **515 tests pass**, plus 28 reviewed mutation
+    kills. The owner's explicit authorization resolved the blocked synthetic unit-test gate: the exact authorized command passed **9/9**;
+    its compiled bytes match the TypeScript source's in-memory emit. No owner-footage runner was executed. All 18 historical artifacts,
+    accepted identities, protected runtime files, dependencies and lockfile are unchanged. Only explicit B2-B1 files enter the commit.
+    The historical statements below remain evidence of their checkpoints. Details: [B2-B1 record](phases/phase-5-gate-7-batch-3e-b2b1-lossless-canonical-reencode.md).
 
 - B2-A2 owner acceptance (2026-10-08): **OWNER-ACCEPTED** at `871cd69301e60e46ebfc64ffc44baef7067fd8e9`.
   - The owner accepted production-enforced CanonicalMediaProfile v1, trusted exact-byte fact extraction, exact-remux plan execution,
