@@ -371,3 +371,28 @@ renderer/permit/freshness semantics and protected architecture are unchanged. Co
 final local/tracking/live equality is recorded in the publication reconciliation receipt and final owner report.
 Maximum publication status: **3E-B2-B2 CHROMA SAFETY CONTRACT IMPLEMENTED — PUSHED FOR OWNER REVIEW**.
 3E-C and Phase 6 remain **NOT STARTED, NOT AUTHORIZED**.
+
+## Checkpoint B owner acceptance (2026-10-08)
+
+**Checkpoint B OWNER-ACCEPTED** at `d2ca72ffa38a38ed0b8a6597573e72ee049d2bb7`
+(`feat(gate7): bind trusted chroma siting to lossless plans`).
+The owner accepted CanonicalChromaObservation 1.0.0, CanonicalChromaAdmission 1.0.0, CanonicalReencodePlan 1.1.0,
+CanonicalMediaDerivation 0.4.0 and chroma-safe computation identity v3, with the unchanged fixed B2-B1 QP-zero encode profile.
+Only complete trusted explicit-center evidence is eligible; every other unsupported chroma case remains deferred or refused.
+
+This separate documentation-only commit records owner acceptance. The original Checkpoint B STOP, original 20-result RED,
+subsequent correction receipts, old identities and historical limitations above remain preserved. No execution or fresh media
+verification is claimed by this acceptance checkpoint. Acceptance of B does not close the whole B2-B2 batch.
+
+The same owner instruction authorizes **Checkpoints C–D only**: a fixed production compiler, bounded temporary prepublication
+execution and independent bounded streaming exact-pixel plus fresh chroma/profile/timing/audio verification using generated media.
+C–D are **AUTHORIZED, NOT STARTED** at this checkpoint. Checkpoints E–I are not authorized or started.
+No production ingest routing, canonical store publication/cache, derived authorization/lifecycle, render handoff, owner footage,
+new dependencies, model inference, deployment, publication or main merge is authorized. 3E-C and Phase 6 remain unauthorized.
+
+Fresh C1 baseline: local = tracking = live branch `d2ca72ffa38a38ed0b8a6597573e72ee049d2bb7`;
+main = origin/main = live main `4f85b559c7eff2c24e221011f3ee1dd1466a111d`; 13 ahead / 0 behind; tracked worktree/index clean.
+All 18 historical untracked artifacts are snapshotted by SHA-256/size and preserved. Both pinned executables' full SHA-256 and
+size match the accepted runtime. Evidence: `.local-runs/phase5-gate7/batch3e-b2b2-cd-20261008/00-baseline.json` and
+`01-pinned-binaries.json`. The default command runner failed during setup before any shell started; read-only Git checks
+completed through the approved sandbox override. No baseline drift or unexplained material change was found.

@@ -1,8 +1,21 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (CHROMA SAFETY CONTRACT IMPLEMENTED; OWNER REVIEW PENDING; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (CHECKPOINT B OWNER-ACCEPTED; C–D AUTHORIZED, NOT STARTED; Gate 7 incomplete)
 
 Last updated: 2026-10-08
 
 ## Current ruling
+
+- Phase 5 Gate 7 Batch **3E-B2-B2 Checkpoint B owner acceptance** (2026-10-08):
+  **CHECKPOINT B OWNER-ACCEPTED** at `d2ca72ffa38a38ed0b8a6597573e72ee049d2bb7`.
+  - Accepted: CanonicalChromaObservation 1.0.0, CanonicalChromaAdmission 1.0.0, CanonicalReencodePlan 1.1.0,
+    CanonicalMediaDerivation 0.4.0, chroma-safe computation identity v3, the unchanged fixed B2-B1 QP-zero encode profile,
+    and conservative explicit-center alpha eligibility. Other unsupported chroma cases remain deferred or refused.
+  - This docs-only checkpoint records the owner's ruling. It preserves the original chroma STOP, RED receipts and correction evidence;
+    it makes no new media verification claim. **Checkpoints C–D only are AUTHORIZED, NOT STARTED.**
+    E–I, owner footage, publication/cache/lifecycle, render integration, 3E-C and Phase 6 are not authorized.
+    B2-B2 and Gate 7 remain incomplete; no main merge, deployment, dependency change or model inference is authorized.
+  - Details: [Checkpoint B owner acceptance](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#checkpoint-b-owner-acceptance-2026-10-08).
+
+## Preserved Checkpoint B implementation ruling
 
 - Phase 5 Gate 7 Batch **3E-B2-B2 Checkpoint B chroma continuation** (2026-10-08):
   **CHROMA SAFETY CONTRACT IMPLEMENTED; OWNER REVIEW PENDING. B2-B2 is not complete.**
