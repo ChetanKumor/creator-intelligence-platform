@@ -1,5 +1,8 @@
 # Phase 5 Gate 7 Batch 3E-B2-A2 — Executable typed exact-remux canonicalization
 
+**Current status (2026-10-08): OWNER-ACCEPTED at `871cd69301e60e46ebfc64ffc44baef7067fd8e9`.** See the acceptance checkpoint below.
+The earlier status and evidence remain preserved as history.
+
 **Status (2026-10-08): IMPLEMENTED; OWNER REVIEW PENDING. All required verification gates pass.**
 
 The final implementation commit and push receipt are reported separately. Gate 7 remains incomplete. B2-B, 3E-C and Phase 6 have not started.
@@ -336,3 +339,19 @@ part of the implementation change set. B2-A1 acceptance remains the existing `9c
   unsupported color remain refused. True VFR and explicit non-square SAR remain deferred.
 - B2-B's intended separately reviewed alpha scope remains only D4 orientation/mirror pixel baking and HEVC 8-bit SDR to H.264. Neither is
   implemented or started here. 3E-C requires subsequent owner direction/review; Phase 6 and Gate 7 completion are not authorized by A2.
+
+## Owner acceptance (2026-10-08)
+
+The owner accepted Batch 3E-B2-A2 at `871cd69301e60e46ebfc64ffc44baef7067fd8e9`:
+
+- production-enforced CanonicalMediaProfile v1 and trusted exact-byte fact extraction;
+- exact-remux plan execution and v0.2 derivation/computation records;
+- cache/publication semantics and owner-media 0.2 integration;
+- frozen N1 compatibility;
+- the narrow propagated-display-matrix evidence clarification: one stream matrix repeated identically on every decoded frame is one
+  semantic transform with both carriers recorded; independent, incomplete, varying or conflicting frame transforms remain refused.
+
+This is a documentation-only acceptance checkpoint. No production code, test or historical evidence is changed and no additional
+verification is claimed. All limitations above remain. The owner separately authorizes B2-B1 generated-media research, exact independent
+D4 verification and pure additive lossless re-encode contracts. Lossy canonical video encoding is not authorized. B2-B1 has not started
+at this checkpoint; B2-B2 production execution, 3E-C and Phase 6 are not started or authorized. Gate 7 remains not yet complete.

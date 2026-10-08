@@ -1,8 +1,18 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-A2 (IMPLEMENTED; OWNER REVIEW PENDING; Gate 7 not yet complete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-A2 (OWNER-ACCEPTED; B2-B1 authorized; Gate 7 not yet complete)
 
 Last updated: 2026-10-08
 
 ## Current ruling
+
+- B2-A2 owner acceptance (2026-10-08): **OWNER-ACCEPTED** at `871cd69301e60e46ebfc64ffc44baef7067fd8e9`.
+  - The owner accepted production-enforced CanonicalMediaProfile v1, trusted exact-byte fact extraction, exact-remux plan execution,
+    v0.2 derivation/computation records, cache/publication semantics, owner-media 0.2 integration, frozen N1 compatibility, and the narrow
+    propagated-display-matrix evidence clarification. The historical evidence and limitations below remain unchanged.
+  - This checkpoint records the owner's ruling only: documentation only, no production/test changes and no new verification claim.
+  - The owner authorizes **3E-B2-B1**: generated-media lossless re-encode feasibility, independent exact D4 sample verification, and pure
+    additive contracts only. No lossy canonical video encode is authorized. B2-B1 is **NOT STARTED** at this acceptance checkpoint.
+    B2-B2 production execution, 3E-C and Phase 6 remain **NOT STARTED** and require later owner authorization. Gate 7 remains incomplete.
+  - Details: [B2-A2 acceptance checkpoint](phases/phase-5-gate-7-batch-3e-b2a2-executable-typed-remux.md#owner-acceptance-2026-10-08).
 
 - Phase 5 Gate 7 Batch 3E-B2-A2 (2026-10-08): **IMPLEMENTED; OWNER REVIEW PENDING**.
   - Continued from `9cd339534867260ec77461776a85f7c33ab0aa75`; no reset, history rewrite or duplicated acceptance checkpoint. The 18
