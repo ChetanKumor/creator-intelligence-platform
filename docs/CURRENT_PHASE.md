@@ -1,3 +1,26 @@
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (H OWNER-ACCEPTED; I AUTHORIZED, NOT STARTED; Gate 7 incomplete)
+
+Last updated: 2026-10-09
+
+## Current ruling
+
+- **H OWNER-ACCEPTED** at `55ccdd2c6e06ba7787c424ca9bd1053213c26de6` under the owner's explicit 2026-10-09 directive.
+  - Acceptance covers documented generated HEVC to verified 0.4 canonical derivatives, explicit G registration, registered staging,
+    genuine lifecycle/conformance observations, non-serializable permits, pinned native rendering and independent native technical QC,
+    including the documented 15-line lifecycle timing repair. Editorial inputs remain structural/stub.
+  - Exact implementation inventory, original RED/GREEN receipts, historical 1,514-case inventory/three-case overlap, native output digest
+    and previous acceptance/preservation evidence are substantiated. No material contradiction was found. This docs-only ruling adds no fresh media proof.
+  - **Rule #1: reuse existing verified infrastructure. Checkpoint I alone is AUTHORIZED, NOT STARTED**, conditional on successful
+    separate publication of this acceptance and verified local/tracking/live equality. I is final generated-media verification for owner review;
+    it must rerun the full 304-case legacy native gate on the accepted H code, and does not imply B2-B2 owner acceptance.
+  - All recorded local/in-memory lifecycle, Windows trust, resource, audio, model and generated-media limitations remain binding.
+    **B2-B2 and Gate 7 remain incomplete. Owner footage, 3E-C and Phase 6 remain NOT AUTHORIZED.** No main merge or deployment.
+  - Details: [H owner acceptance](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#checkpoint-h-owner-acceptance-2026-10-09).
+
+## Preserved full current-phase history from the H implementation SHA
+
+The complete earlier file follows verbatim. Its historical status/authorization statements are superseded only by the ruling above.
+
 # Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (H IMPLEMENTED FOR OWNER REVIEW; Gate 7 incomplete)
 
 Last updated: 2026-10-09

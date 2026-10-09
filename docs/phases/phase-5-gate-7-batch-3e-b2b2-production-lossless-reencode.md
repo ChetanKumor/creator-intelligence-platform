@@ -1322,3 +1322,42 @@ power-loss atomicity. Previously documented same-user Windows filesystem/binary 
 of a running FFmpeg or already-started logical execution is claimed. No unresolved H trust-boundary failure remains in the tested scope.
 **H is ready for independent owner acceptance; it is not owner-accepted. Checkpoint I, owner footage, Batch 3E-C and Phase 6 remain
 NOT STARTED, NOT AUTHORIZED. B2-B2 and Gate 7 remain incomplete. STOP after H publication.**
+
+
+## Checkpoint H owner acceptance (2026-10-09)
+
+**H OWNER-ACCEPTED** at `55ccdd2c6e06ba7787c424ca9bd1053213c26de6`. The owner explicitly accepts only the documented
+**generated-media and structural-editorial scope**: generated HEVC canonicalization to actual verified 0.4 derivatives, explicit
+G registration, registered staging, genuine lifecycle/conformance observations, non-serializable permits, pinned native FFmpeg,
+independent native technical QC and the documented 15-line lifecycle timing repair. All prior history remains verbatim.
+
+Fresh acceptance baseline: local/tracking/live phase HEAD equals the accepted H SHA on the existing phase branch; tracked
+worktree/index clean; exactly 18 historical untracked artifacts. Local/tracking/live main remains
+`4f85b559c7eff2c24e221011f3ee1dd1466a111d`. GitHub's implementation inventory independently equals the eight documented files;
+its parent is the separate G acceptance publication `dea036d6a0f2ca589c9a51b76e22bc1cc59676f2`.
+
+Ignored acceptance evidence: `.local-runs/phase5-gate7/batch3e-b2b2-h-acceptance-20261009/`.
+Existing H inventory/preservation audits were reused without rewriting their historical receipts. The 1,514 distinct test-name
+multiplicities and exactly three segmented-freshness overlaps are substantiated; original five RED counterexamples, their source
+snapshots and GREEN receipts remain present. All 404 H-protected tracked files, 18 historical hash/size pairs, 144 prior accepted
+evidence files and both executable pins are exact. The acceptance baseline snapshots 412 tracked paths, 40 authoritative references
+and 205 prior receipt/source files; seven H native receipts and the actual main-path original/derivative/output bytes are separately bound.
+
+Accepted H native output remains SHA-256 `490af62fcc543b835e0ffed3c2d06665ef3a1ec21de0ad6b94d54da05859e0d5`,
+224,588 bytes, 60 frames / 2 seconds / 90x160 / H.264 yuv420p MP4, no audio; independent QC: 12 PASS, two audio checks not applicable.
+Accepted receipt/QC/0.4 schemas validate their identities, and actual held source/derivative/output hashes equal those records.
+No material contradiction was found. This documentation-only acceptance adds no new native execution claim.
+
+All limitations remain: generated fixtures with structural/stub editorial inputs, local in-memory lifecycle state, accepted same-user
+Windows replacement limitations, no linked-audio 0.4 render, owner-footage/model editorial quality, long-video capacity, hardware
+playback, distributed durability, combined native peak RSS or professional editing/SaaS readiness. Already-started execution is
+not implicitly cancelled. No production, test, dependency, schema, toolchain or expected hash changes in this acceptance.
+
+**Rule #1 remains controlling. Checkpoint I alone is AUTHORIZED as the next bounded final-verification checkpoint**, beginning
+only after this separate docs-only commit is pushed and local/tracking/live equality is verified. I must run every affected gate,
+including the full 304-case legacy native inventory after final H changes; produce new generated-media render/QC proof and final
+cross-boundary/preservation evidence; and prepare a closure decision for independent owner review. It may not silently broaden
+production scope. **I and B2-B2 are not owner-accepted; Gate 7 remains incomplete. Owner footage, 3E-C and Phase 6 remain
+NOT STARTED, NOT AUTHORIZED.** No main merge or deployment. Publication is limited to the existing phase branch.
+
+The separate acceptance SHA and verified publication equality are recorded in `08-publication-receipt.json` and the final report.
