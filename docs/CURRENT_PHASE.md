@@ -1,3 +1,23 @@
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (H IMPLEMENTED FOR OWNER REVIEW; Gate 7 incomplete)
+
+Last updated: 2026-10-09
+
+## Current ruling
+
+- **CHECKPOINT H IMPLEMENTED FOR OWNER REVIEW. H is not owner-accepted.** G remains owner-accepted at `63f9bad4a83726b1631eaceb4b8b399fee6f0322`.
+  - Started from verified local/tracking/live `dea036d6a0f2ca589c9a51b76e22bc1cc59676f2` on the existing phase branch. Main remains `4f85b559c7eff2c24e221011f3ee1dd1466a111d`.
+  - **Rule #1:** the first complete generated 0.4 registration → owned staging → genuine permit → pinned render → independent QC case passed on unchanged production APIs/code.
+  - Five preserved native/awaited lifecycle RED counterexamples require only 15 existing-handle requery lines in the accepted renderer/issuer paths. No new encoder, authority, staging, registry, QC engine, dependency or contract identity.
+  - Final gates: **1514 distinct tests PASS**, zero failures/skips; original inventories exact. Final H/pure/shared-consumer runs follow the last repair. The completed 304-case legacy gate's three affected segmented freshness cases are rerun, without duplicate counting.
+  - Typecheck, clean build, 33 unchanged schemas, workspace/process audit and preservation PASS. All 18 historical artifacts and 144 accepted evidence files are exact; main unchanged.
+  - Actual main output: 60 frames / 2 s / 90×160 / H.264 yuv420p MP4, independently passing native technical QC. Editorial inputs are explicitly structural/stub; no owner footage or model inference. Existing local/in-memory and Windows operational limits remain.
+  - **Checkpoint I, owner footage, Batch 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED. B2-B2 and Gate 7 remain incomplete. STOP after H.**
+  - Details: [Checkpoint H implementation](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#checkpoint-h-implementation-2026-10-09).
+
+## Preserved full current-phase history from the H starting SHA
+
+The complete earlier file follows verbatim. Its historical authorization/status statements are superseded only by the current ruling above.
+
 # Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (G OWNER-ACCEPTED; H AUTHORIZED, NOT STARTED; Gate 7 incomplete)
 
 Last updated: 2026-10-09

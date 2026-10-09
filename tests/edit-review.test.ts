@@ -19,6 +19,7 @@ import { CRITIC_DIMENSIONS, CriticReportSchema, DETERMINISTIC_CHECKS, EDIT_REVIE
   runCriticReview, selectEvidence, validateTranscriptPack, type EditorialObservation, type ObservationRequest, type ObservationTarget, type ReviewPlan, type ReviewPolicy,
   type SemanticCriticInput, type SemanticCriticPort, type TranscriptEvidence } from "../packages/edit-review/index.js";
 import { SyntheticFixtureCritic, assetOf, f32Audio, hashOf, renderedChain, yuvFrames, type RenderedChain, type SourceSpec } from "./support/edit-review.js";
+import { acceptedHRendererBytes } from "./support/registered-derivative-render-preservation.js";
 
 // ---------------------------------------------------------------- helpers
 async function refusal(run: () => unknown): Promise<string> {
@@ -45,7 +46,8 @@ function allKeys(value: unknown, keys = new Set<string>()): Set<string> {
   return keys;
 }
 const LOCATION = /[A-Za-z]:[\\/]|\\\\|\/\/|https?:|\.(?:exe|bin|mp4|mov|json)\b/i;
-const sha256File = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");
+// H permits only the five proved lifecycle requery insertions; the historical renderer golden stays exact.
+const sha256File = (path: string) => createHash("sha256").update(acceptedHRendererBytes(path, readFileSync(path))).digest("hex");
 const bytesOf = (value: unknown) => new TextEncoder().encode(canonicalSerialize(value)).length;
 const EVIDENCE = join(".test-artifacts", "phase5-gate7-batch3a");
 function persist(name: string, value: unknown): void { mkdirSync(EVIDENCE, { recursive: true }); writeFileSync(join(EVIDENCE, name), `${JSON.stringify(value, null, 2)}\n`); }

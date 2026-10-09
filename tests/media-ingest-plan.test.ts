@@ -12,6 +12,7 @@ import * as ownerMedia from "../packages/edit-render/owner-media.js";
 import { identify } from "../packages/editorial/common.js";
 import * as protocol from "../packages/footage-analyzer/protocol.js";
 import * as ingest from "../packages/media-ingest/index.js";
+import { acceptedHRendererBytes } from "./support/registered-derivative-render-preservation.js";
 import { ANALYSIS, CREATOR, DAY0, DAY2, EVALUATION, PROJECT, canonicalChain, classify, derivative, probeOf, registrationV2, reidentified, root,
   rootWithoutConsent, v1 } from "./support/canonical-media.js";
 import { FX, HASH_OUT, MATRICES, SAR_UNSPECIFIED, SIZE_OUT, X264_UUID, asset05Audio, audioFrames, audioStream, cfr, clone, composedSource, facts, gap500, jittered,
@@ -45,7 +46,8 @@ const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
 const reduced = (n: number, d: number) => ({ numerator: n / gcd(n, d), denominator: d / gcd(n, d) });
 const videoTimelineDigest = (den: number, pts: readonly number[]): string => sha(canonicalSerialize({ timeBase: { numerator: 1, denominator: den }, presentationTimestamps: [...pts] }));
 const audioTimelineDigest = (den: number, frames: readonly Json[]): string => sha(canonicalSerialize({ timeBase: { numerator: 1, denominator: den }, frames: [...frames] }));
-const fileSha = (path: string): string => createHash("sha256").update(readFileSync(path)).digest("hex");
+// H permits only the five proved lifecycle requery insertions; the historical renderer golden stays exact.
+const fileSha = (path: string): string => createHash("sha256").update(acceptedHRendererBytes(path, readFileSync(path))).digest("hex");
 const CANONICAL_ORDER = ["SELECT_AV_STREAMS", "REBASE_TIMELINE_ZERO", "DECLARE_SQUARE_SAMPLE_ASPECT", "SNAP_VIDEO_TIMESTAMPS", "RETIME_AUDIO_CONTIGUOUS"];
 
 // ================================================================ PLAN

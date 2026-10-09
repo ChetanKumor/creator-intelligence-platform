@@ -1187,3 +1187,138 @@ render/QC proof. **Checkpoint I is NOT STARTED, NOT AUTHORIZED.** B2-B2 and Gate
 
 The separate acceptance SHA and local/tracking/live equality after push are recorded in the final report and ignored
 `02-publication-receipt.json`. **STOP after G acceptance publication and report; H and I remain NOT STARTED.**
+
+
+## Checkpoint H implementation (2026-10-09)
+
+**CHECKPOINT H IMPLEMENTED FOR OWNER REVIEW. H is not owner-accepted. B2-B2 and Gate 7 remain incomplete.**
+Only H was authorized from `dea036d6a0f2ca589c9a51b76e22bc1cc59676f2` on `phase/5-gate7-3e-production-hardening`.
+Local/tracking/live phase SHA matched before changes. Local/tracking/live main remained
+`4f85b559c7eff2c24e221011f3ee1dd1466a111d`. G was separately owner-accepted at
+`63f9bad4a83726b1631eaceb4b8b399fee6f0322`, published as the starting acceptance commit above.
+All earlier phase records remain the exact byte prefix. The complete previous CURRENT_PHASE remains its exact byte suffix.
+Ignored evidence prefix: `E = .local-runs/phase5-gate7/batch3e-b2b2-h-20261009/`.
+
+### Rule #1: reuse before building
+
+The first real case succeeded on **unchanged production code**: `05-first-integration.log` **1/1 PASS**.
+Its full native receipt/QC is retained under `h-generated-fUqpUA/h-render-qc-receipts.json` in the same phase5-gate7 parent.
+No handoff bridge, encoder, runtime, staging store, authority, registry or QC engine was missing or added.
+`15-reuse-audit.json` preserves that initial finding; `28-segmented-reuse-addendum.json` appends the later hostile finding.
+
+| Accepted production component | Reused behavior |
+| --- | --- |
+| `canonicalizeLocalMedia`, E–F held-source/held-output verifier and canonical store | Actual generated HEVC → lossless 0.4 output; complete fresh Y/U/V, chroma, profile, timing and publication proof |
+| G `createOwnerMediaLifecycleAuthority`, Registration 0.3.0 and its existing E–F bridge | Explicit consenting original, derived declaration/render statement, exact complete proof, root-first identity and inherited lifecycle |
+| `OwnerMediaLifecycleAuthority.sourceLocations` | Execution-local registered mapping only; never permission |
+| `createLocalEditRuntime`, existing locator/ledger/staging and Gate 3D builders | Explicit allowed roots, actual full source verification, admitted DAG/media grants/reservation, genuine claim ownership and staged bytes |
+| `observe`, `probePinnedMediaRuntime`, `probeStagedInputs`, `issueExecutablePermit` | Live post-claim/post-stage evidence, exact lineage/conformance, private single-use permit and frozen freshness/policy binding |
+| Existing render compiler, `executeAuthorizedRender`, publication and receipts | Pinned fd-only FFmpeg, durable start, exact output identity and truthful failure/accounting |
+| Existing `executeAuthorizedSegmentedRender` | Inspected and reused to challenge a bypass through the same permit; no new segmented functionality |
+| `runTechnicalMediaQc` and `packages/edit-render/qc.ts` | Separate pinned probe/full decode; expectations from the DAG; receipt/output/scope linkage |
+
+The sole production change is **15 added lines in scripts/edit-render-local.ts**. They re-query existing trusted lifecycle
+handles after awaited permit validation, immediately before each executor's durable start, and before its first native media process.
+The same existing binding-current check prevents issuing an already-ended permit. No grant semantics, source eligibility, public
+schema/identity/version, clock ceiling, codec/profile, compiler, dependency, binary or QC expectation changed.
+The segmented guard is limited to its **first** media process, preserving accepted already-started execution semantics.
+
+### Preserved RED and original GREEN
+
+| Original counterexample | Preserved RED | Correction and unchanged rerun |
+| --- | --- | --- |
+| Root deletion during awaited native input validation; derivative expiry after durable start before spawn | `07-lifecycle-red.log`: **0 PASS / 2 FAIL**, actual native successes despite the forbidden state | Existing reconfirm before durable start and first mono spawn; `11-original-green.log` includes both original passing assertions |
+| Root deletion during permit's awaited staged-byte validation | `09-permit-race-red.log`: **0 PASS / 1 FAIL**, permit incorrectly issued | Final binding-current/lifecycle requery before returning the permit; same test passes in the four-case original GREEN |
+| Same genuine permit enters accepted segmented execution after a pre-start deletion or pre-first-process expiry | `26-segmented-red.log`: **0 PASS / 2 FAIL**, actual native segmented successes | Two existing-handle requery points, no feature addition; unmodified `26-segmented-hostile.mjs` rerun as `30-original-segmented-green.log`: **2/2 PASS** |
+
+All RED test/renderer snapshots and actual run objects/receipts remain ignored and preserved. `11-original-green.log` is
+**4/4 PASS**, including the original native render/QC case. The initial helper-only TypeScript diagnostics in 02/03/12 build logs
+remain preserved. `13-full-matrix.log` is the intermediate emitted-code 85/85 run; final gates use the fresh clean rebuilt source.
+
+### Actual generated-media path and exact result
+
+Generated 90×160, 30-fps, 30-frame HEVC with explicit center chroma and fixture-owner root consent → accepted lossless 0.4
+canonicalization/publication → explicit Registration 0.3.0 → registered derivative plus a distinct generated H.264 original →
+registered locator → owned staging → replay-valid initial DAG, actual byte-verification Evidence/media grants/reservation → real
+claim → trusted owner observations, native pinned runtime and staged-input probes → genuine private permit → pinned rendering →
+content-addressed output → independent native QC. The metadata tables, cheap measurements and 1152-wide backend used to form the
+editorial chain are **structural/stub** test infrastructure; they are not model output. Native conformance must prove their actual
+frame/geometry assumptions. No production embedding cache receives those vectors. No owner footage or pretrained model runs.
+
+Final main-path output: **60 frames, 2 seconds, 90×160, H.264/yuv420p, MP4, no audio**, **224588 bytes**.
+SHA-256: `490af62fcc543b835e0ffed3c2d06665ef3a1ec21de0ad6b94d54da05859e0d5`.
+Registered derivative: `377ebb5adb7f8131e31b4673719a9a4e7a43ed04841b9601a4b1003655f772dd`, 336472 bytes.
+Execution receipt: `render_execution_receipt_v0_4d229eb84f9463c195170a2cf138052ac8e36adb3ca8095b9a99a7fb1bbbfa04`.
+Independent QC receipt: `technical_media_qc_receipt_v0_16429440c801752009b14429462716757dc4a43f66e8d404ef17b5c31cab8ea3`.
+QC is **PASS**: 12 checks pass; the two audio checks are not applicable. The independent ffprobe and full FFmpeg decode actually
+execute, re-hash the held output and bind the exact receipt/program/DAG/scope/content identity. This is technical QC only.
+Full final native joins are in `C:/Users/KOUSHIK VARDHON/creator-intelligence-platform/.local-runs/phase5-gate7/h-generated-EafFH7/h-render-qc-receipts.json`; summary/audit: `E/38-final-test-results.json`.
+The existing segmented path additionally renders this registered source and passes native QC. A bounded state-change case after
+its first native stage confirms unchanged already-started behavior; future lifecycle queries refuse the deleted source. This does
+not claim cancellation of a running child or retroactive revocation of a render that already began.
+
+### Adversarial trust boundaries
+
+| Requested case | Existing boundary exercised |
+| --- | --- |
+| 1 valid registered derivative/render/QC | H-01 complete native path and exact joins; existing segmented native success/QC |
+| 2 unregistered published derivative | Owner authority unknown-asset observation; publication cannot be an ExecutablePermit |
+| 3 schema-valid forged registration | G fresh complete media/compact-record verification rejects coherent counterfeit proof |
+| 4 creator/project scope; 5 render statement; 6 root/derived authorization | Existing strict registration/declaration parser and exact admitted authorization/provenance equality |
+| 7 deletion/expiry at applicable boundaries | Root/own × deletion/expiry across observation, issuance, execution and both native pre-execution windows, including changes during awaits |
+| 8 stale observation; 9 copied observation | Frozen exclusive freshness and private trusted-handle boundary |
+| 10 fake/missing permit; 11 consumed/expired permit | Private ExecutablePermit identity, single-use state, existing validity and durable-start checks |
+| 12 wrong locator; 13 staged mutation; 14 physical substitution | Existing locator/one-handle staging identity, staged hashing, G physical identity and link-free parent checks |
+| 15 corrupt canonical object/record | G store/media verifier, no cache data as permission |
+| 16 render scope/admitted set; 17 claim/reservation/media grant | Existing policy scope, staged-source set, claim ownership and replay-valid DAG/artifact authority |
+| 18 actual FFmpeg failure | Native nonzero child after controlled staged corruption: consumed start, failed record, no published output |
+| 19 interruption/unconfirmed termination | Terminal pre-spawn interruption; accepted supervision/classifier with explicitly controlled structural child events; full M34 legacy truth cases |
+| 20 missing/corrupt/mismatched/nonconforming output | Existing independent QC identity/container/stream/geometry/rate/decode checks; no expectation changed |
+| 21 QC binds exact execution/output | Actual native receipt IDs, program/DAG/scope and independently observed output hash/size |
+| 22 scope-free cache permission transfer | Same computation/cache bytes in a separately declared foreign scope cannot produce this claim's observation/permit |
+| 23 originals/synthetic legacy | Complete 304-case prior native inventory, 845-case prior pure inventory and additional shared-consumer regressions |
+
+Native directory junction and same-byte file replacement attacks run on this host. Native file-symlink creation remains unavailable;
+G's existing explicitly labelled controlled refusal coverage stays unchanged. The unconfirmed-child case is controlled supervision
+evidence, not an observed unkillable native process. The generated media evidence is never relabelled as real model/owner footage.
+
+### Final gates and preservation
+
+| Gate | Executable outcome | Receipt under E |
+| --- | --- | --- |
+| H | 95/95 PASS | `31-final-h-tests.log` |
+| pure | 845/845 PASS | `32-final-affected-pure.log` |
+| G | 54/54 PASS | `20-full-g-tests.log` |
+| E-F | 97/97 PASS | `21-full-ef-media.log` |
+| C-D and legacy | 304/304 PASS | `22-full-legacy-media.log` |
+| shared render consumers (pure) | 103/103 PASS | `33-final-consumer-pure.log` |
+| shared render consumers (native) | 19/19 PASS | `34-final-consumer-media.log` |
+
+**1514 distinct tests PASS**, zero failures/cancellations/skips/todos in the final gate receipts.
+The three accepted segmented freshness cases are deliberately rerun in 34 after the final five-line repair and overlap the 304;
+they are not added twice. The full historical G/845-pure/97-E–F/304-native test-name multiplicities match exactly, not a selected subset.
+G/E–F production paths are unchanged. All H, pure and shared-consumer gates are rebuilt/rerun after the last repair. The unchanged
+C–D/ingest portion of the completed 304-case gate is retained; its only affected three segmented freshness cases are rerun in 34.
+`35-final-typecheck.log`, `29-final-security-build.log` and `37-final-clean-build-schemas.log`: PASS, fresh clean build,
+all **33 unchanged schema artifacts**. `36-final-workspace-audit.log`: **136 application TS / 18 adapters / unchanged 9 process
+harness registrations**, PASS. `41-final-process-audit.json`: no repository test workers or pinned FFmpeg/ffprobe children remain.
+
+`39-preservation-before-doc.json`, staged/publication preservation receipts: **404 protected tracked files, all 18 historical
+untracked hash/size pairs, all 144 previously accepted E–F/repair/G/acceptance evidence files and both executable pins exact**.
+The original schema identities, old parsers, package/lockfile, accepted model configuration and all older goldens remain unchanged.
+Two historical test hash readers reverse only the five literal proved insertions, each exactly once, then require their unchanged
+original renderer hash. Independent audit reverses those readers too and proves every original assertion byte. No golden is regenerated.
+
+Only eight H files may be staged: the renderer adapter; the new H integration test, fixture and inverse-delta helper; the two existing
+hash-reader tests; CURRENT_PHASE; this appended phase record. Generated media/receipts remain ignored. No main merge or deployment.
+Commit/push and local/tracking/live equality are recorded in the final owner report and `44-publication-preservation.json`.
+
+### Limits and exact next boundary
+
+This is small bounded generated-media execution/QC, with structural/stub editorial inputs and the accepted local in-memory lifecycle
+authority. It does not prove owner-footage or fresh-model editing, linked-audio 0.4 rendering, long-video capacity, hardware playback,
+professional creative quality, combined native peak RSS, cross-machine byte determinism, durable cross-instance deletion state or
+power-loss atomicity. Previously documented same-user Windows filesystem/binary replacement limits remain. No immediate cancellation
+of a running FFmpeg or already-started logical execution is claimed. No unresolved H trust-boundary failure remains in the tested scope.
+**H is ready for independent owner acceptance; it is not owner-accepted. Checkpoint I, owner footage, Batch 3E-C and Phase 6 remain
+NOT STARTED, NOT AUTHORIZED. B2-B2 and Gate 7 remain incomplete. STOP after H publication.**

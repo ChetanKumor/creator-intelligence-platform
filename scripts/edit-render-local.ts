@@ -469,6 +469,10 @@ export async function issueExecutablePermit(input: { call: RuntimeCall; media: T
   const binding = await evaluateRealExecutionEvidence(context, { policy, program, runtimeProbe: media.runtimeProbe, capabilityProbe: media.capabilityProbe,
     staged: input.staged, lifecycle: lifecycle.map(l => l.record), conformance: conformance.map(c => c.record) });
   const reservation = ReservationSchema.parse(new RuntimeArtifacts(artifacts).exact(binding.reservation.artifact, "Reservation", ROUTING_VERSION, "reservation_invalid"));
+  // H: awaited staged-byte validation cannot leave a live lifecycle change behind the issuance boundary.
+  const confirming = runtimeNow(runtime);
+  confirmPermitBindingCurrent(binding, confirming);
+  for (const observation of lifecycle) observation.reconfirm(confirming);
   return new ExecutablePermit(PERMIT, { binding, context, root: rootOfMedia(media), program, policy, reservation,
     runtimeProbe: media.runtimeProbe, lifecycle: Object.freeze([...lifecycle]), consumed: false });
 }
@@ -532,6 +536,9 @@ export async function executeAuthorizedRender(permit: ExecutablePermit, options:
     cwd = await workingDirectory(store);
     // The claim's one execution is consumed durably before any process starts.
     const startedAt = runtimeNow(runtime);
+    // H: requery after awaited binary/input validation, before consuming the durable execution claim.
+    try { for (const observation of lifecycle) observation.reconfirm(startedAt); }
+    catch (error) { return failed("authority_recheck", code(error, "permit_required")); }
     try { start = buildExecutionStart({ binding, startedAt }); } catch (error) { return failed("permit_validation", code(error, "permit_expired")); }
     if (await publishExclusive(store, startPath(store, binding.claimTarget.claimTargetId), new TextEncoder().encode(`${canonicalSerialize(start)}\n`)) === "exists") {
       start = null; return failed("execution_start", "execution_already_started");
@@ -549,6 +556,9 @@ export async function executeAuthorizedRender(permit: ExecutablePermit, options:
       const spawnedAt = runtimeNow(runtime);
       // A runtime clock that has already run back past the start can never certify this execution: nothing is spawned.
       if (spawnedAt < started.startedAt) return failed("process", "evidence_chronology_invalid");
+      // H: a change while publishing the start or inside instrumentation is a consumed-claim failure, never a spawn.
+      try { for (const observation of lifecycle) observation.reconfirm(spawnedAt); }
+      catch (error) { return failed("authority_recheck", code(error, "permit_required")); }
       const run = await runPinned(ffmpeg, argv, { inherit: [...inputs.map(i => i.handle.fd), pendingOutput.handle.fd], cwd, timeoutMilliseconds, stdoutLimit: 65_536 });
       const completedAt = runtimeNow(runtime);
       if (completedAt < spawnedAt) {
@@ -802,6 +812,9 @@ export async function executeAuthorizedSegmentedRender(permit: ExecutablePermit,
     cwd = await workingDirectory(store);
     // The claim's one execution is consumed durably before any process starts.
     const startedAt = runtimeNow(runtime);
+    // H: the same permit can enter this accepted path; close its awaited pre-start lifecycle window.
+    try { for (const observation of lifecycle) observation.reconfirm(startedAt); }
+    catch (error) { return failed("authority_recheck", code(error, "permit_required")); }
     try { start = buildExecutionStart({ binding, startedAt }); } catch (error) { return failed("permit_validation", code(error, "permit_expired")); }
     if (await publishExclusive(store, startPath(store, binding.claimTarget.claimTargetId), new TextEncoder().encode(`${canonicalSerialize(start)}\n`)) === "exists") {
       start = null; return failed("execution_start", "execution_already_started");
@@ -820,6 +833,8 @@ export async function executeAuthorizedSegmentedRender(permit: ExecutablePermit,
       if (budget < 1) fail("reservation_consumption_exceeded", "The execution's wall-clock reservation is exhausted.");
       const spawnedAt = runtimeNow(runtime);
       if (spawnedAt < clock) fail("evidence_chronology_invalid", "The runtime clock ran backwards before a process.");
+      // H: only the first media process is a pre-execution boundary; already-started execution semantics stay unchanged.
+      if (processes.length === 0) for (const observation of lifecycle) observation.reconfirm(spawnedAt);
       const run = await runPinned(binary, argv, { inherit, cwd: workDir, timeoutMilliseconds: budget, stdoutLimit: 65_536 });
       const completedAt = runtimeNow(runtime);
       if (completedAt < spawnedAt) {
