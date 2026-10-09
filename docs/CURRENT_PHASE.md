@@ -1,8 +1,30 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (E–F OWNER-ACCEPTED; G AUTHORIZED, NOT STARTED; Gate 7 incomplete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (CHECKPOINT G IMPLEMENTED FOR OWNER REVIEW; Gate 7 incomplete)
 
 Last updated: 2026-10-09
 
 ## Current ruling
+
+- **CHECKPOINT G IMPLEMENTED FOR OWNER REVIEW** (2026-10-09). G is not owner-accepted; B2-B2 and Gate 7 remain incomplete.
+  - Starting implementation `da3a01be7198c18879a256836d51f24575c30230`; E–F owner acceptance was separately committed and
+    pushed as `358866208a606feb0cf5a9c340dbcb0205aa6df1` before G. Only the existing phase branch receives G publication.
+  - Additive **OwnerMediaRegistration 0.3.0** explicitly declares actual **CanonicalMediaDerivation 0.4.0** and its Plan 1.1.0.
+    The same authority registers the original first, then calls the existing held-byte E–F store/verifier in read-only mode.
+    Complete fresh scoped evidence must equal the declaration and strict compact record. Cache misses never encode or repair.
+  - Explicit root canonicalization consent and the existing derived-capable owner render statement are required. Scope-free
+    computations carry no scope-free permission. `PUBLISHED_VERIFIED_NOT_AUTHORIZED` remains non-authorizing.
+    Existing lineage, effective root/derived deletion and expiry, trusted observation/requery and freshness apply.
+  - Final gates: **54 focused G + 845 pure + 97 E–F + 304 historical native = 1,300 distinct tests PASS**, zero failures/skips.
+    Typecheck, fresh clean build, all **33** unchanged schema artifacts, workspace/process audit and preservation checks PASS.
+    All 18 historical artifacts, 42 original E–F files, 16 repair files, old parsers/identities, pins and dependencies are preserved.
+  - Evidence uses generated pinned media and explicitly structural/stub analysis for lifecycle joins. This remains the accepted
+    local in-memory authority, not a new durable production lifecycle service. Real file-symlink creation is denied on this host;
+    controlled link-refusal branches are labelled, while directory junctions and replacement races run natively.
+    No real-footage, long-video, hardware playback, combined native RSS or 0.4 renderer/QC success is claimed.
+  - **H–I, renderer/QC integration, owner footage, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED.** No permit-policy,
+    renderer/QC, model, dependency, schema-artifact, main-branch or deployment change. STOP after G publication and report.
+  - Details: [Checkpoint G implementation](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#checkpoint-g-implementation-2026-10-09).
+
+## Preserved E–F owner acceptance ruling
 
 - **E–F OWNER-ACCEPTED** (2026-10-09) at `da3a01be7198c18879a256836d51f24575c30230`, including the output-byte budget repair.
   - The owner accepts the existing canonical publication/cache implementation, fresh lossless verification and corrected output-byte

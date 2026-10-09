@@ -422,3 +422,69 @@ export function canonicalComputationRecordOf(input: unknown): { name: string; by
   check(new TextEncoder().encode(bytes).length <= CANONICAL_STORE.maxRecordBytes, "limit_exceeded", "A computation record exceeds its bound.");
   return { name: canonicalComputationRecordName(computationId), bytes, record };
 }
+
+// ---------------------------------------------------------------- B2-B2 G: additive registration; old schemas and identities above stay exact.
+import { ChromaSafeDerivationSchema, type ChromaSafeDerivation } from "../media-ingest/chroma.js";
+export const OWNER_MEDIA_LOSSLESS_REGISTRATION_VERSION = "0.3.0" as const;
+/** Explicit 0.4 declarations only. This is owner-supplied data, never proof of fresh verification or a render permit. */
+export const OwnerMediaLosslessRegistrationSchema = z.strictObject({
+  artifactType: z.literal("OwnerMediaRegistration"), artifactVersion: z.literal(OWNER_MEDIA_LOSSLESS_REGISTRATION_VERSION), stability: z.literal("internal_pre_stable"),
+  footage: FootageManifestSchema,
+  canonicalDerivatives: z.array(z.strictObject({ entryId: IdSchema, rootEntryId: IdSchema,
+    authorization: FootageAuthorizationDerivedSchema, derivation: ChromaSafeDerivationSchema })).max(MAX_RENDER_SOURCES),
+  renderAuthorization: AnyOwnerRenderAuthorizationSchema,
+}).superRefine((value, ctx) => {
+  const issue = (message: string) => ctx.addIssue({ code: "custom", message });
+  const { originals, hashes } = checkDeclaredOriginals(value.footage, readAny, issue);
+  const roots = new Map(originals.map(o => [o.entryId, o.authorization])), entries = new Set(value.footage.assets.map(a => a.entryId)), plans = new Set<string>();
+  for (const d of value.canonicalDerivatives) {
+    const a = d.authorization, s = d.derivation.sampleDerivation, root = roots.get(d.rootEntryId);
+    if (entries.has(d.entryId)) issue("Every declaration has its own entry identity.");
+    entries.add(d.entryId);
+    if (hashes.has(a.contentHash)) issue("Duplicate or conflicting source declarations are refused.");
+    hashes.add(a.contentHash);
+    if (root === undefined) issue("A canonical derivative is declared only beside its declared root source.");
+    else {
+      if (root.schemaVersion !== "1.1.0" || root.canonicalizationConsent !== "local_media_canonicalization") issue("The declared root must consent to canonicalization.");
+      if (!equal(a.derivedFrom.rootAuthorization, root) || !equal(s.source.rootAuthorization, root)
+        || s.source.assetId !== `asset_${root.contentHash}` || s.source.contentHash !== root.contentHash || s.source.sizeBytes !== root.sizeBytes)
+        issue("The full 0.4 derivation and authorization name exactly the declared original root.");
+      const pair = canonicalSerialize([d.rootEntryId, d.derivation.plan.planId]);
+      if (plans.has(pair)) issue("A declared root has at most one derivative per plan.");
+      plans.add(pair);
+    }
+    if (s.output.contentHash !== a.contentHash || s.output.sizeBytes !== a.sizeBytes || s.output.assetId !== `asset_${a.contentHash}`)
+      issue("The output names exactly the declared derivative bytes.");
+    if (a.derivedFrom.derivationId !== d.derivation.derivationId || a.derivedFrom.recipeId !== d.derivation.plan.planId)
+      issue("The lineage names the actual 0.4 derivation and Plan 1.1.0 identity.");
+    if (a.creatorId !== value.footage.creatorId || a.projectId !== value.footage.projectId
+      || s.scope.creatorId !== value.footage.creatorId || s.scope.projectId !== value.footage.projectId) issue("Every derivative keeps the declared creator and project.");
+  }
+  if (value.canonicalDerivatives.length > 0 && value.renderAuthorization.statement !== OWNER_CANONICAL_RENDER_AUTHORIZATION_STATEMENT)
+    issue("A canonical derivative needs the owner's explicit derived-capable render declaration.");
+});
+export type OwnerMediaLosslessRegistration = z.infer<typeof OwnerMediaLosslessRegistrationSchema>;
+export interface OwnerMediaLosslessDerivative extends Omit<OwnerMediaCanonicalDerivative, "derivation"> { derivation: ChromaSafeDerivation }
+/** Version-specific projection; legacy declaration parsing and digest serialization remain unchanged. */
+export function ownerMediaLosslessDeclarations(input: unknown): { registrationDigest: string; declarations: OwnerMediaOriginalDeclaration[];
+  derivatives: OwnerMediaLosslessDerivative[]; renderScope: OwnerMediaRenderScope } {
+  const registration = parse(OwnerMediaLosslessRegistrationSchema, input, "lifecycle_authority_scope_invalid");
+  const declarations = registration.footage.assets.map(a => {
+    const authorization = readAny(a.authorization);
+    check(authorization !== null && authorization.sourceType === "owner_supplied", "lifecycle_authority_scope_invalid", "Every original is owner-supplied.");
+    return { entryId: a.entryId, assetId: `asset_${authorization.contentHash}`, contentHash: authorization.contentHash,
+      sizeBytes: authorization.sizeBytes, path: a.path, authorization };
+  }).sort((a, b) => compareText(a.assetId, b.assetId));
+  const roots = new Map(declarations.map(d => [d.entryId, d]));
+  const derivatives = registration.canonicalDerivatives.map(d => ({ entryId: d.entryId, rootEntryId: d.rootEntryId,
+    rootAssetId: roots.get(d.rootEntryId)!.assetId, assetId: `asset_${d.authorization.contentHash}`, contentHash: d.authorization.contentHash,
+    sizeBytes: d.authorization.sizeBytes, authorization: d.authorization, derivation: d.derivation, derivationId: d.derivation.derivationId,
+    computationId: d.derivation.computationId, recipeId: d.derivation.plan.planId })).sort((a, b) => compareText(a.assetId, b.assetId));
+  const registrationDigest = sha256(canonicalSerialize({ artifactVersion: OWNER_MEDIA_LOSSLESS_REGISTRATION_VERSION,
+    renderAuthorization: registration.renderAuthorization, creatorId: registration.footage.creatorId, projectId: registration.footage.projectId,
+    sources: declarations.map(d => ({ entryId: d.entryId, assetId: d.assetId, contentHash: d.contentHash, sizeBytes: d.sizeBytes, authorization: d.authorization })),
+    derivatives: derivatives.map(d => ({ entryId: d.entryId, rootEntryId: d.rootEntryId, assetId: d.assetId, contentHash: d.contentHash,
+      sizeBytes: d.sizeBytes, authorization: d.authorization, derivationId: d.derivationId, computationId: d.computationId })) }));
+  const covered = registration.renderAuthorization.statement === OWNER_CANONICAL_RENDER_AUTHORIZATION_STATEMENT ? [...declarations, ...derivatives] : declarations;
+  return { registrationDigest, declarations, derivatives, renderScope: { statement: registration.renderAuthorization.statement, assetIds: covered.map(d => d.assetId).sort(compareText) } };
+}

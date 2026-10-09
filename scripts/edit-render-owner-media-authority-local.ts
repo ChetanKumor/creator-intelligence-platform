@@ -41,6 +41,10 @@ import { requireCall } from "../packages/edit-runtime/call.js";
 import { runtimeNow, verifyClaim } from "../packages/edit-runtime/ledger.js";
 import { FootageAuthorizationDerivedSchema } from "../packages/footage-analyzer/protocol.js";
 import { AnyCanonicalMediaDerivationSchema } from "../packages/media-ingest/index.js";
+// B2-B2 G: no process capability here; the existing ingest adapter owns all fresh held-byte verification.
+import { OwnerMediaLosslessRegistrationSchema, ownerMediaLosslessDeclarations } from "../packages/edit-render/owner-media.js";
+import { ChromaSafeDerivationSchema } from "../packages/media-ingest/chroma.js";
+import { withVerifiedCanonicalLosslessStoredLocalMedia, type CanonicalStoredFileIdentity } from "./media-ingest-local.js";
 
 const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/, MAX_LOCATION_LENGTH = 1024, WINDOWS = sep === "\\";
 function fail(code: EditRenderErrorCode, message: string): never { throw new EditRenderError(code, message); }
@@ -105,9 +109,9 @@ export class OwnerMediaLifecycleAuthority {
   readonly #registrationDigest: string;
   readonly #renderAuthorization: AnyRenderAuthorization;
   readonly #scope: { projectId: string; creatorId: string };
-  readonly #version: "0.1.0" | "0.2.0";
+  readonly #version: "0.1.0" | "0.2.0" | "0.3.0";
   constructor(construction: symbol, clock: RuntimeClock, registry: Map<string, Entry>, registrationDigest: string, renderAuthorization: AnyRenderAuthorization,
-    scope: { projectId: string; creatorId: string }, version: "0.1.0" | "0.2.0" = "0.1.0") {
+    scope: { projectId: string; creatorId: string }, version: "0.1.0" | "0.2.0" | "0.3.0" = "0.1.0") {
     if (construction !== CONSTRUCTION) fail("trust_handle_required", "The owner-local authority is created only by createOwnerMediaLifecycleAuthority.");
     this.#clock = clock; this.#registry = registry; this.#registrationDigest = registrationDigest;
     this.#renderAuthorization = structuredClone(renderAuthorization); this.#scope = { ...scope }; this.#version = version;
@@ -145,12 +149,32 @@ export class OwnerMediaLifecycleAuthority {
     const root = this.#entry(entry.lineage.rootAssetId);
     return effectiveDerivedLifecycle({ deletionRequestedAt: root.deletionRequestedAt, expiresAt: root.expiresAt }, own);
   }
+  /** G keeps the registered file's parent chain link-free at later byte queries as well as registration. */
+  async #verifyRegisteredBytes(entry: Entry): Promise<void> {
+    if (this.#version === "0.3.0") await assertNoLinkedParents(entry.location);
+    await verifyBytes(entry.location, entry.declaration, { dev: entry.dev, ino: entry.ino });
+    if (this.#version === "0.3.0") {
+      await assertNoLinkedParents(entry.location);
+      const named = await lstat(entry.location, { bigint: true }).catch(() => fail("lifecycle_authority_unknown_asset", "The registered name disappeared during its byte query."));
+      if (named.isSymbolicLink() || !named.isFile() || named.dev !== entry.dev || named.ino !== entry.ino || named.size !== BigInt(entry.declaration.sizeBytes))
+        fail("lifecycle_authority_unknown_asset", "The registered name changed during its held byte query.");
+    }
+  }
   /** Re-verifies one registered source's full bytes now, through one held handle of the registered file. */
   async verify(assetId: string): Promise<VerifiedOwnerSource> {
     const entry = this.#entry(assetId);
-    await verifyBytes(entry.location, entry.declaration, { dev: entry.dev, ino: entry.ino });
+    if (this.#version === "0.3.0") {
+      this.assertCurrent(assetId, this.#now());
+      if (entry.lineage !== null) {
+        const root = this.#entry(entry.lineage.rootAssetId);
+        await this.#verifyRegisteredBytes(root);
+      }
+    }
+    await this.#verifyRegisteredBytes(entry);
+    const checkedAt = this.#version === "0.3.0" ? this.#now() : null;
+    if (checkedAt !== null) this.assertCurrent(assetId, checkedAt);
     const d = entry.declaration;
-    return { entryId: d.entryId, assetId: d.assetId, contentHash: d.contentHash, sizeBytes: d.sizeBytes, checkedAt: this.#now() };
+    return { entryId: d.entryId, assetId: d.assetId, contentHash: d.contentHash, sizeBytes: d.sizeBytes, checkedAt: checkedAt ?? this.#now() };
   }
   /**
    * The current lifecycle of one declared source at `now`, an instant of the trusted runtime clock: unknown, deleted or expired refuses.
@@ -182,7 +206,8 @@ export class OwnerMediaLifecycleAuthority {
       return;
     }
     const lineage = entry.lineage, root = this.#entry(lineage.rootAssetId), derived = FootageAuthorizationDerivedSchema.safeParse(entry.declaration.authorization);
-    if (provenance.sourceType !== "system_canonicalized" || !derived.success || !AnyCanonicalMediaDerivationSchema.safeParse(lineage.derivation).success
+    if (provenance.sourceType !== "system_canonicalized" || !derived.success || !(this.#version === "0.3.0"
+      ? ChromaSafeDerivationSchema.safeParse(lineage.derivation).success : AnyCanonicalMediaDerivationSchema.safeParse(lineage.derivation).success)
       || root.lineage !== null || !equal(root.declaration.authorization, derived.data.derivedFrom.rootAuthorization)
       || !equal(provenance.root, { assetId: root.declaration.assetId, contentHash: root.declaration.contentHash, sizeBytes: root.declaration.sizeBytes })
       || provenance.derivationId !== lineage.derivationId || provenance.recipeId !== lineage.recipeId) {
@@ -206,12 +231,20 @@ export class OwnerMediaLifecycleAuthority {
     if (entry.declaration.contentHash !== source.contentHash || entry.declaration.sizeBytes !== source.sizeBytes) fail("lifecycle_authority_unknown_asset",
       "The declared bytes are not the admitted bytes.");
     if (!equal(entry.declaration.authorization, authorization)) fail("lifecycle_authority_scope_invalid", "The admitted authorization is not the one the owner declared.");
-    if (this.#version === "0.2.0") this.#lineageOf(entry, provenance);
+    if (this.#version !== "0.1.0") this.#lineageOf(entry, provenance);
     const checkStartedAt = runtimeNow(runtime);
-    await verifyBytes(entry.location, entry.declaration, { dev: entry.dev, ino: entry.ino });
+    if (this.#version === "0.3.0") {
+      this.assertCurrent(source.assetId, checkStartedAt);
+      if (entry.lineage !== null) {
+        const root = this.#entry(entry.lineage.rootAssetId);
+        await this.#verifyRegisteredBytes(root);
+      }
+    }
+    await this.#verifyRegisteredBytes(entry);
     const verifiedAt = runtimeNow(runtime);
     const state = this.#state(entry);
     const checkCompletedAt = runtimeNow(runtime);
+    if (this.#version === "0.3.0") this.assertCurrent(source.assetId, checkCompletedAt);
     if (verifiedAt < checkStartedAt || checkCompletedAt < verifiedAt) fail("evidence_chronology_invalid", "The runtime clock ran backwards during the query.");
     const token = randomBytes(32).toString("hex");
     const record = buildOwnerMediaLifecycleObservation({ dag, claim, stagedSource: receipt, provenance, state,
@@ -316,12 +349,14 @@ async function registerOriginal(base: string, declaration: { entryId: string; as
  * registration, the footage manifest's directory and, for declared derivatives, the canonical workspace are the only inputs: nothing is
  * discovered, and a location is kept only to re-verify the same file.
  */
-export async function createOwnerMediaLifecycleAuthority(input: { registration: unknown; baseDirectory: string; clock: RuntimeClock; canonicalWorkspace?: string }):
+export async function createOwnerMediaLifecycleAuthority(input: { registration: unknown; baseDirectory: string; clock: RuntimeClock; canonicalWorkspace?: string; canonicalToolRoot?: string }):
   Promise<OwnerMediaLifecycleAuthority> {
   if (input === null || typeof input !== "object") fail("input_invalid", "An owner registration, its base directory and a runtime clock are required.");
   if (input.clock === null || typeof input.clock !== "object" || typeof input.clock.now !== "function") fail("input_invalid", "A runtime clock is required.");
   if (typeof input.baseDirectory !== "string") fail("lifecycle_authority_scope_invalid", "The footage manifest's directory is an explicit local directory.");
   const supplied = structuredClone(input.registration), canonicalWorkspace = input.canonicalWorkspace;
+  if ((supplied as { artifactVersion?: unknown } | null)?.artifactVersion === "0.3.0")
+    return createCanonical(supplied, input.baseDirectory, input.clock, canonicalWorkspace, input.canonicalToolRoot);
   if ((supplied as { artifactVersion?: unknown } | null)?.artifactVersion === "0.2.0") return createCanonical(supplied, input.baseDirectory, input.clock, canonicalWorkspace);
   const { registration, registrationDigest, declarations } = ownerMediaDeclarations(supplied);
   const base = await baseOf(input.baseDirectory);
@@ -339,9 +374,15 @@ async function baseOf(baseDirectory: string): Promise<string> {
   return base;
 }
 /** OwnerMediaRegistration 0.2.0: every original first, then each declared derivative from the canonical store only. */
-async function createCanonical(supplied: unknown, baseDirectory: string, clock: RuntimeClock, canonicalWorkspace: unknown): Promise<OwnerMediaLifecycleAuthority> {
-  const declared = ownerMediaCanonicalDeclarations(supplied);
-  const registration = OwnerMediaCanonicalRegistrationSchema.parse(supplied), expiresAt = registration.renderAuthorization.expiresAt;
+async function createCanonical(supplied: unknown, baseDirectory: string, clock: RuntimeClock, canonicalWorkspace: unknown, canonicalToolRoot?: string): Promise<OwnerMediaLifecycleAuthority> {
+  const lossless = (supplied as { artifactVersion?: unknown }).artifactVersion === "0.3.0";
+  const declared = lossless ? ownerMediaLosslessDeclarations(supplied) : ownerMediaCanonicalDeclarations(supplied);
+  const registration = lossless ? OwnerMediaLosslessRegistrationSchema.parse(supplied) : OwnerMediaCanonicalRegistrationSchema.parse(supplied), expiresAt = registration.renderAuthorization.expiresAt;
+  if (lossless) {
+    const now = clock.now();
+    if (typeof now !== "string" || !TIMESTAMP.test(now) || now < registration.renderAuthorization.authorizedAt) fail("lifecycle_authority_scope_invalid", "The trusted clock must be inside the owner's authorization window.");
+    if (expiresAt !== null && now >= expiresAt) fail("lifecycle_expired", "The owner's render authorization has ended.");
+  }
   const base = await baseOf(baseDirectory);
   const registry = new Map<string, Entry>(), locations = new Set<string>();
   for (const declaration of declared.declarations) await registerOriginal(base, declaration, registry, locations, expiresAt);
@@ -354,6 +395,18 @@ async function createCanonical(supplied: unknown, baseDirectory: string, clock: 
       // A derivative is considered only after its root is registered and verified.
       const root = registry.get(d.rootAssetId);
       if (root === undefined || root.lineage !== null) fail("lifecycle_authority_scope_invalid", "A canonical derivative is registered only after its declared root.");
+      let location: string, identity: { dev: bigint; ino: bigint };
+      if (d.derivation.artifactVersion === "0.4.0") {
+        if (!lossless || typeof canonicalToolRoot !== "string") fail("lifecycle_authority_scope_invalid", "A 0.4 declaration requires its versioned registration and pinned verification runtime.");
+        let bound: CanonicalStoredFileIdentity | undefined;
+        await withVerifiedCanonicalLosslessStoredLocalMedia({ sourcePath: root.location, rootAuthorization: root.declaration.authorization,
+          workspaceRoot: canonicalWorkspace, toolRoot: canonicalToolRoot, clock }, d.derivation, async verified => {
+          await verifyBytes(root.location, root.declaration, { dev: root.dev, ino: root.ino });
+          bound = verified;
+        });
+        if (!bound) fail("lifecycle_authority_scope_invalid", "The trusted verifier did not consume a held canonical object.");
+        location = bound.path; identity = await verifyBytes(location, d, { dev: bound.dev, ino: bound.ino });
+      } else {
       const authorization = FootageAuthorizationDerivedSchema.safeParse(d.authorization), derivation = AnyCanonicalMediaDerivationSchema.safeParse(d.derivation);
       if (!authorization.success || !derivation.success || !equal(authorization.data.derivedFrom.rootAuthorization, root.declaration.authorization)
         || derivation.data.output.contentHash !== d.contentHash || derivation.data.output.sizeBytes !== d.sizeBytes || derivation.data.source.contentHash !== root.declaration.contentHash) {
@@ -365,8 +418,9 @@ async function createCanonical(supplied: unknown, baseDirectory: string, clock: 
         fail("lifecycle_authority_scope_invalid", "A declared derivative is only a result the canonical store's verified computation names.");
       }
       // Its bytes come only from their content address, re-hashed in full through one held handle.
-      const location = join(objects, canonicalObjectName(d.contentHash));
-      const identity = await verifyBytes(location, d, null);
+      location = join(objects, canonicalObjectName(d.contentHash));
+      identity = await verifyBytes(location, d, null);
+      }
       let real: string;
       try { real = await realpath(location); } catch { fail("lifecycle_authority_scope_invalid", "A declared source does not exist."); }
       if (!sameLocation(real, location)) fail("lifecycle_authority_scope_invalid", "A canonical object resolves elsewhere than its content address.");
@@ -378,6 +432,8 @@ async function createCanonical(supplied: unknown, baseDirectory: string, clock: 
         lineage: { rootAssetId: d.rootAssetId, derivationId: d.derivationId, recipeId: d.recipeId, derivation: d.derivation } });
     }
   }
-  return new OwnerMediaLifecycleAuthority(CONSTRUCTION, clock, registry, declared.registrationDigest, registration.renderAuthorization,
-    { projectId: registration.footage.projectId, creatorId: registration.footage.creatorId }, "0.2.0");
+  const authority = new OwnerMediaLifecycleAuthority(CONSTRUCTION, clock, registry, declared.registrationDigest, registration.renderAuthorization,
+    { projectId: registration.footage.projectId, creatorId: registration.footage.creatorId }, lossless ? "0.3.0" : "0.2.0");
+  if (lossless) for (const d of authority.declared) await authority.verify(d.assetId);
+  return authority;
 }

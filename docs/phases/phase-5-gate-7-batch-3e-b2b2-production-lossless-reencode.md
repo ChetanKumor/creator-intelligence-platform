@@ -995,3 +995,172 @@ trusted existing-store verification and owner-media registration/lifecycle bridg
 separately before G begins. `PUBLISHED_VERIFIED_NOT_AUTHORIZED` remains non-authorizing; no encode, cache or record supplies consent.
 **H–I, renderer/QC integration, owner footage, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED.** B2-B2 and Gate 7 remain
 incomplete and are not owner-accepted as a whole. No main merge, deployment or dependency change is authorized.
+
+## Checkpoint G implementation (2026-10-09)
+
+**CHECKPOINT G IMPLEMENTED FOR OWNER REVIEW. G is not owner-accepted; B2-B2 and Gate 7 remain incomplete.**
+The required starting SHA was `da3a01be7198c18879a256836d51f24575c30230` on
+`phase/5-gate7-3e-production-hardening`. E–F acceptance was separately committed and pushed, documentation only, as
+`358866208a606feb0cf5a9c340dbcb0205aa6df1`; local/tracking/live phase equality was verified before any G production change.
+Local/tracking/live main remained `4f85b559c7eff2c24e221011f3ee1dd1466a111d`. Historical entries above remain unchanged.
+G receipts and RED source snapshots are ignored under `.local-runs/phase5-gate7/batch3e-b2b2-g-20261009/` (G below).
+
+### Rule #1 reuse decision and required additions
+
+Inspection covered the owner authority/registration and ingest adapter, FootageAuthorization protocol, canonical/plan/chroma/
+re-encode/compact record implementations, existing registration/lifecycle tests, permits, execution authority and the phase authorities.
+The 0.2 registration expects older top-level source/output/recipe-or-plan derivations and legacy computation records. Actual 0.4
+has `sampleDerivation`, full chroma evidence, Plan 1.1.0 and a distinct compact scope-free computation record. Passing schema-valid
+caller JSON or rehashing that compact record cannot establish that the trusted runtime verified the media.
+
+| Existing implementation retained | Use in G |
+| --- | --- |
+| `checkDeclaredOriginals`, `ownerMediaRelativeSegments`, `FootageAuthorizationDerivedSchema`, `AnyOwnerRenderAuthorizationSchema` | Exact owner declaration, original scope/path rules, inherited root authorization and explicit render statement |
+| `ChromaSafeDerivationSchema`, `planCanonicalizationV1`, `planChromaSafeReencode`, `chromaSafeComputationIdOf` | Actual 0.4 identities and freshly admitted exact Plan 1.1.0; no legacy cast or invented fields |
+| `factsOf`, `losslessMeasuredBounds`, `losslessChromaOf`, `losslessAudioFilters`, `verifyLosslessHeldObjects` | Existing pinned source observation, resource/admission restrictions and complete source/output sample/chroma/timing/audio verification |
+| `parseLosslessComputationRecordBytes`, `CanonicalLosslessComputationRecordSchema`, `compactLosslessComputationRecordOf` | Existing bounded strict record parsing and exact equality with a projection of fresh complete evidence |
+| `canonicalObjectName`, `canonicalComputationRecordName`, held anchors/store and reconfirmation methods | Same canonical-v0 names, full-file identities, no-overwrite publication and corrupt-cache refusal |
+| `registerOriginal`, `verifyBytes`, the existing authority registry and construction symbol | Root-first registration, same byte-verification mechanism and private registered entry map |
+| `effectiveDerivedLifecycle`, deletion/expiry methods, observation builders, trusted observation token/proves/reconfirm and runtime clock | Existing inherited lifecycle, provenance, session trust, requery and freshness |
+| Old `ownerMediaDeclarations`, `ownerMediaCanonicalDeclarations`, 0.1/0.2 schemas and `canonicalComputationRecordOf` | Unchanged legacy parsing, serialization and registration behavior |
+
+The narrowly additive contract is **OwnerMediaRegistration 0.3.0**, the next registration version, distinct from derivation 0.4.0.
+`OwnerMediaLosslessRegistrationSchema` and `ownerMediaLosslessDeclarations` accept only actual 0.4 derivatives, beside their
+explicitly declared consenting original. They bind root/output asset/hash/size, exact root authorization, creator/project, actual
+0.4 derivation ID and computation ID, and **`derivation.plan.planId`** as recipe identity. Full derivation validation remains in
+the existing ChromaSafe schema. Duplicate identities, conflicting declarations and multiple derivatives for one root/plan refuse.
+The old registration parsers, AnyCanonicalMediaDerivationSchema and legacy computation identities are unchanged. No compact
+record is made to masquerade as the old record or as complete verified media evidence.
+
+The required trusted adapter is `withVerifiedCanonicalLosslessStoredLocalMedia` in the existing ingest adapter. It accepts the
+authority's registered root, trusted workspace/tool configuration and explicit full declaration; it accepts no derivative location
+or detached caller proof. A read-only option on the same store and existing `executeLosslessStore` path refuses missing storage,
+record or object without directory repair, encoding or publication. It freshly observes the held source, admits exactly the stated
+plan under unchanged compiler eligibility, and runs the same complete E–F verifier over the actual held output. The strict record
+must equal the compact projection of this fresh computation, and the entire freshly rebuilt scoped derivation must equal the
+owner's declaration. The existing output-byte budget is enforced before the scoped callback. Record/store/source/output identities
+are reconfirmed after that callback and before success. No second store, verifier, registry, lifecycle or permit system is introduced.
+
+The same `createOwnerMediaLifecycleAuthority` branches on registration 0.3.0. It registers originals first, calls the bridge itself
+with the registered root, checks root physical identity again and records the actual canonical object's held identity in the existing
+map/lineage. Only after final full-byte and lifecycle checks does it return an authority. This callback's identity data cannot construct
+an authority or trusted observation. All renderer/QC/permit consumers and policies remain unchanged; no render permit is issued by G.
+
+### Security and lifecycle behavior
+
+The owner must explicitly supply the original's valid authorization and canonicalization consent, the derivative declaration and
+existing derived-capable render statement. Analysis consent alone refuses. Both inherited root authorizations must exactly equal
+the registered original; exact creator/project and original/output byte identities are mandatory. A cache hit, valid content hash,
+scope-free computation, compact record or copied schema-valid derivation grants no registration by itself. A foreign scope's
+otherwise identical computation cannot transfer authorization: fresh full derivation scope/root authorization differs and refuses.
+The ordinary ingest result remains exactly `PUBLISHED_VERIFIED_NOT_AUTHORIZED`, with `renderAuthority: not_registered`.
+
+Canonical locations come only from the existing trusted workspace and content address. Store records are bounded, canonical bytes;
+links, junctions, traversal, unsafe file types, missing or substituted files and conflicting identities refuse through existing owned
+errors. The G query path checks the link-free parent chain before and after full held-byte verification and checks the named file's
+final type/dev/inode/size. It verifies the registered original's bytes as well as the derivative at later queries. A valid content hash
+does not excuse a different physical file or stale root/lineage. These checks prove the held/query-time bytes, not eternal immutability.
+
+Derived state uses unchanged `effectiveDerivedLifecycle`: root or own deletion makes it unavailable; the earlier root/own expiry
+governs and expiry updates only shrink the window. The owner render window bounds registration and all G entries. G verifies current
+lifecycle before and after work, and the returned `checkedAt` is the same trusted clock instant checked for expiry. Observation
+provenance binds exact root, derivation and Plan identity, and existing trusted requery refuses later deletion/expiry. No deletion state
+is reset within the authority. This remains the frozen local in-memory per-run authority; no durable cross-instance lifecycle service
+or persisted deletion-state guarantee is added or claimed.
+
+### RED-first and hostile verification chronology
+
+- `01-red-build.log`, `02-red-test.ts`, `03-registration-red.log`: before production changes, **1 PASS / 3 FAIL**.
+  Unregistered publication remains non-authorizing; explicit 0.4 registration, cache-hit registration and lifecycle cannot pass the
+  accepted old parser (`lifecycle_authority_scope_invalid`). `05-registration-green.log` runs the same four cases: **4/4 PASS**.
+- `08-hostile-red.log` and exact source snapshots: **0 PASS / 2 FAIL**. The new callback initially runs before a tighter output
+  budget refuses, and a live parent junction initially survives a later byte query. Budget-before-consumption and G-only link-chain
+  checks correct these actual defects without changing legacy behavior or the accepted E–F budget/refusal semantics.
+- `16-query-race-red.log` and source snapshots: **0 PASS / 1 FAIL**. Replacing a named object with equal bytes while its original
+  handle is being hashed initially succeeds. The final named-file physical identity check now refuses the same executable attack.
+- `41-clock-red.log` and source snapshots: **0 PASS / 1 FAIL**. Two clock reads initially check an earlier allowed instant and
+  return a later expired timestamp. G now binds the lifecycle check and returned verification timestamp to one trusted instant.
+- `53-pcm-policy-red.log` and snapshots: **0 PASS / 1 FAIL**, an admission/refusal-precedence finding, not accepted forged media.
+  A new generated MOV/PCM source receives a seven-tick stts gap before authorization; ordinary ingest correctly defers unproved
+  PCM RETIME. A research-built output fails complete packet identity, and deliberately forged schema-consistent facts/commitments
+  and compact record are data only. G already refuses later as `cache_corrupt`; it now reuses `losslessAudioFilters` so the frozen
+  compiler's `audio_retime_execution_conflict` refuses before consulting the store. Eligibility is not expanded.
+
+All original RED instruments remain in the final G suite and pass. The 54-case suite also checks missing consent/render declaration,
+wrong creator/project/root authorization and lineage, wrong derivation/Plan/computation IDs, invalid chroma, strict record reconstruction/
+alteration/incompatibility, actual object corruption or absence, record/object mismatch, caller paths/traversal/links, cache misses and
+read-only no-repair behavior, self-consistent forged derivation with and without a forged compact record, cross-scope compute reuse,
+root/own expiry/deletion, expiry during verification, deletion/expiry between observation and trusted requery, and native same-byte
+replacement. Refusal assertions distinguish CanonicalIngestError/EditRenderError from unexpected exceptions and assert no encoder
+on existing-store paths. Complete pinned media verification, not merely schema shape, supports each successful registration.
+
+Intermediate failures are retained, not relabelled as successful receipts. `06-adversarial-build.log` has a fixture inference/type error;
+`07-hostile-build.log` corrects it. `10-full-g-tests.log` is **44/48**: copied readonly attack object, native file-symlink creation EPERM
+and an omitted structural fixture purpose cause four fixture failures; corrected `13-full-g-tests.log` is **48/48**. File-symlink tests
+attempt native creation and explicitly label controlled lstat link-refusal coverage when this account returns EPERM, with no skipped
+assertion. Directory junctions and held-name replacement are native. `48-pcm-admission-red.log` and `51-pcm-gap-red.log` retain two
+unsuccessful fixture assumptions (MOV mux normalization; then real packet identity mismatch); final forged input is explicitly labelled.
+
+`21-full-affected-pure.log` is **763/764**, preserving the host's 8.3 TEMP alias failure and an incomplete initial suite inventory.
+`25-final-full-pure.log` is **844/845**, preserving the unchanged runtime-isolation refusal of an in-workspace TEMP. The corrected
+29-suite inventory (`24-final-pure-inventory.txt`) uses the full canonical external TEMP/TMP path; both complete later runs pass.
+`34-full-legacy-media.log` initially covers 270 tests; inventory comparison discovers the missing 34 existing renderer/QC media cases,
+which are run unchanged in `59-full-render-authority-media.log`. The final audit verifies the complete prior 304-name multiset.
+`37-audit-parser-red.log` preserves an audit parser failure on old human-readable RED logs; the corrected parser accepts both reporter
+formats and requires real historical inventories. No test, old expected hash, resource guard or assertion is weakened.
+A temporary automatic approval-review usage-limit failure executed no command; after the owner's continuation, the same reviewed
+execution route succeeds. No approval mechanism was bypassed and no gate remains blocked by it.
+
+### Final executable gates and preservation
+
+| Final receipt under G | Outcome |
+| --- | --- |
+| `55-final-g-tests.log` | **54/54 PASS**, zero failures/skips; all explicit registration, native verification and hostile instruments |
+| `56-full-affected-pure.log` | **845/845 PASS**, zero failures/skips; all 812 historical cases preserved plus affected additional suites/assertions |
+| `33-full-ef-media.log` | **97/97 PASS**, zero failures/skips; complete accepted routing/cache/media and repaired output-budget gate |
+| `34-full-legacy-media.log` + `59-full-render-authority-media.log` | **270 + 34 = 304/304 PASS**, zero failures/skips; exact prior C–D/legacy/permit/execution/freshness inventory |
+| `37-final-test-results.json`, `37-test-results-audit-green.log` | **1,300 distinct final tests**, exact count/zero skips and historical test-name multiplicity checks PASS; RED outcomes recorded |
+| `29-final-typecheck.log` | `npm.cmd run typecheck`, exit 0, after the final production correction |
+| `54-final-build.log`, `35-clean-build-schemas.log` | Final clean TypeScript builds PASS; `npm.cmd run schemas:check`, all **33 unchanged artifacts** PASS |
+| `36-workspace-audit.log` | **136 application TS / 18 adapters / unchanged 9 process harness registrations** PASS |
+| `61-workspace-process-audit.json` | No repository test Node workers or FFmpeg/ffprobe processes remain |
+| `60-final-preservation-review.json`, `62-post-publication-preservation.json` | **399 protected tracked files / 18 historical artifacts / 42 original E–F files / 16 repair files / 2 executable pins** exact hash/size PASS |
+
+Evidence kinds remain explicit: native gates use only generated media with pinned FFmpeg/ffprobe; pure and structural lifecycle/
+permit joins use fixture metadata and stub vectors. No owner footage, fresh pretrained inference or 0.4 rendered/QC output is produced.
+Prior RED, build and failed environment/fixture receipts remain ignored and intact. `00-baseline.json` retains 407 starting tracked
+paths and the authoritative reference snapshots. The full pre-G E–F acceptance history and lower CURRENT_PHASE rulings are preserved.
+Four precise inverse-delta assertions prove the accepted pre-G bytes of the three production files and the one fixture helper, while
+all older hash expectations remain unchanged. Package/lockfile, source fixtures, profiles, pixel/chroma math, models and the 33 schema
+artifacts are exact. No generated media or receipt is staged. Final staged-diff review allows only these ten files:
+
+- `packages/edit-render/owner-media.ts`
+- `scripts/media-ingest-local.ts`
+- `scripts/edit-render-owner-media-authority-local.ts`
+- `tests/owner-media-lossless-media.integration.ts`
+- `tests/support/canonical-lossless-g-preservation.ts`
+- `tests/media-ingest-lossless-audit.test.ts`
+- `tests/support/canonical-lossless-ef-preservation.ts`
+- `tests/support/owner-media-canonical.ts`
+- `docs/CURRENT_PHASE.md`
+- this authoritative B2-B2 record.
+
+The G implementation commit and independently queried local/tracking/live phase equality are recorded in the final owner report
+and ignored publication receipt `63-publication-receipt.json`. Main stays `4f85b559c7eff2c24e221011f3ee1dd1466a111d`; final tracked
+index/worktree must be clean with precisely the 18 preserved historical untracked artifacts. Only the existing phase branch is pushed.
+
+### Limits and next boundary
+
+G registers actual 0.4 derivatives only through registration 0.3; mixed legacy derivatives within that new variant are not added.
+Older 0.1/0.2 registration paths remain supported unchanged. Existing software toolchain, explicit-center chroma eligibility, closed
+compiler admission, byte/resource bounds and default registration output budget remain; no new PCM RETIME is admitted. The scope is
+small bounded generated fixtures. No real-footage generalization, visual edit quality, long-video production capacity, hardware/browser
+playback, cross-machine byte determinism, aggregate parent/native peak RSS or power-loss durability/atomic store transaction is claimed.
+Native file-symlink creation is unavailable on this account; controlled branch coverage is identified above. The authority remains
+local/in-memory and proves current registered lifecycle/bytes, not durable multi-run state or ongoing filesystem immutability.
+
+G produces registration/lifecycle eligibility only. It does not manufacture owner consent, authorize publication automatically, mint
+a render permit, broaden execution policy or integrate 0.4 renderer/QC consumption. Existing independent execution gates still apply.
+**G is ready for independent owner acceptance. Checkpoint H's subsequent generated registered-source renderer/QC integration requires
+separate authorization and is not implemented or proven. H–I, owner footage, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED.**
+No main merge or deployment. **STOP after Checkpoint G publication and owner-review report.**

@@ -748,9 +748,11 @@ function verifyEquivalent(source: Measured, output: Measured, code: CanonicalIng
 
 // ---------------------------------------------------------------- the private canonical store
 interface Store { objects: string; computations: string; pending: string }
-async function ownedDirectory(parent: string, name: string): Promise<string> {
+async function ownedDirectory(parent: string, name: string, existingOnly = false): Promise<string> {
   const path = join(parent, name);
-  try { await mkdir(path); } catch (error) { if ((error as { code?: string }).code !== "EEXIST") fail("store_unavailable", "A store directory could not be created."); }
+  if (!existingOnly) {
+    try { await mkdir(path); } catch (error) { if ((error as { code?: string }).code !== "EEXIST") fail("store_unavailable", "A store directory could not be created."); }
+  }
   let info;
   try { info = await lstat(path); } catch { fail("store_unavailable", "A store directory could not be inspected."); }
   if (info.isSymbolicLink() || !info.isDirectory()) fail("store_location_invalid", "A store directory is not a real directory.");
@@ -760,7 +762,7 @@ async function ownedDirectory(parent: string, name: string): Promise<string> {
   return path;
 }
 /** The fixed store layout under one explicit local workspace, never in the directory that holds the source, never holding the source. */
-async function openStore(workspaceRoot: unknown, sourcePath: string): Promise<Store> {
+async function openStore(workspaceRoot: unknown, sourcePath: string, existingOnly = false): Promise<Store> {
   const workspace = await exactLocation(workspaceRoot, "store_location_invalid");
   let info;
   try { info = await lstat(workspace); } catch { fail("store_location_invalid", "The workspace does not exist."); }
@@ -771,9 +773,9 @@ async function openStore(workspaceRoot: unknown, sourcePath: string): Promise<St
     fail("store_location_invalid", "The canonical store never lives in the directory that holds a source, and never holds a source.");
   }
   let current = workspace;
-  for (const name of CANONICAL_STORE.directory) current = await ownedDirectory(current, name);
-  return { objects: await ownedDirectory(current, CANONICAL_STORE.objects), computations: await ownedDirectory(current, CANONICAL_STORE.computations),
-    pending: await ownedDirectory(current, CANONICAL_STORE.pending) };
+  for (const name of CANONICAL_STORE.directory) current = await ownedDirectory(current, name, existingOnly);
+  return { objects: await ownedDirectory(current, CANONICAL_STORE.objects, existingOnly), computations: await ownedDirectory(current, CANONICAL_STORE.computations, existingOnly),
+    pending: await ownedDirectory(current, CANONICAL_STORE.pending, existingOnly) };
 }
 interface StoredRecord { bytes: string; outputHash: string; outputSize: number; physical?: { dev: bigint; ino: bigint } }
 /** The computation's record exactly as published, or undefined when absent; anything else is a corrupt cache. */
@@ -2048,9 +2050,10 @@ async function routeChromaSafeLossless(ctx: Context, request: Read, source: Anch
   await reconfirm(source, "source_changed");
   return executeLosslessStore({ ctx: routed, request, source, measured, plan: chromaPlanning.plan }, planning, chromaPlanning);
 }
-async function executeLosslessStore(state: LosslessSourceContext, planning: CanonicalPlanningResult, chromaPlanning: ChromaPlanningResult): Promise<CanonicalLosslessPublishedResult> {
+async function executeLosslessStore(state: LosslessSourceContext, planning: CanonicalPlanningResult, chromaPlanning: ChromaPlanningResult,
+  registration?: { derivation: ChromaSafeDerivation; use: (identity: CanonicalStoredFileIdentity) => Promise<void> }): Promise<CanonicalLosslessPublishedResult> {
   const { source, ctx, request, plan } = state, computationId = chromaSafeComputationIdOf({ plan });
-  const store = await openStore(request.workspaceRoot, source.path); await holdLosslessStore(store);
+  const store = await openStore(request.workspaceRoot, source.path, registration !== undefined); await holdLosslessStore(store);
   const record = await readRecord(store, computationId, plan);
   const verify = async (output: Anchor, code: "cache_corrupt" | "publication_conflict") => {
     try {
@@ -2077,6 +2080,16 @@ async function executeLosslessStore(state: LosslessSourceContext, planning: Cano
     losslessRemainingTime(ctx, request.canonicalizationTimeout);
     if (output.sizeBytes > (request.maxOutputBytes ?? CANONICAL_LOSSLESS_RUNTIME_BOUNDS.defaultOutputBytes))
       fail("output_invalid", "The verified lossless output exceeds this request's exact byte budget.");
+    if (registration) {
+      if (!sameObserved(registration.derivation, verified.derivation)) fail("cache_corrupt", "The declared full derivation differs from fresh complete scoped media verification.");
+      await registration.use({ path: output.path, dev: output.dev, ino: output.ino, contentHash: output.contentHash, sizeBytes: output.sizeBytes });
+      await reconfirmLosslessStore(store);
+      const current = await readRecord(store, computationId, plan);
+      if (current?.bytes !== stored.bytes || current.physical?.dev !== stored.physical?.dev || current.physical?.ino !== stored.physical?.ino)
+        fail("cache_corrupt", "The stored record changed during scoped registration.");
+      await reconfirm(source, "source_changed"); await reconfirm(output, "cache_corrupt");
+      losslessRemainingTime(ctx, request.canonicalizationTimeout);
+    }
     return { outcome: "PUBLISHED_VERIFIED_NOT_AUTHORIZED", renderAuthority: "not_registered", source: anchorIdentity(source), output: anchorIdentity(output),
       planning, chromaPlanning, computationId, derivation: verified.derivation, record: verified.projected.record, resources: verified.resources, publication, cache };
   };
@@ -2089,6 +2102,7 @@ async function executeLosslessStore(state: LosslessSourceContext, planning: Cano
       return await finish(output, verified, record, "hit", "existing_object_reverified");
     } finally { await output.handle.close(); }
   }
+  if (registration) fail("cache_corrupt", "Registration requires an existing verified computation record; it never encodes or publishes.");
   return withTrustedLosslessTemporary(state, async temporary => {
     const witness = await verifyCanonicalLosslessTemporary(temporary), held = losslessTemporaryState(temporary);
     let live = LOSSLESS_PREPUBLICATIONS.get(witness);
@@ -2118,4 +2132,39 @@ async function executeLosslessStore(state: LosslessSourceContext, planning: Cano
       return await finish(output, verified, stored, "miss", publication);
     } finally { await output.handle.close(); }
   }, true);
+}
+
+// ---------------------------------------------------------------- B2-B2 G: scoped read-only bridge into the SAME E–F verifier/store.
+import { ChromaSafeDerivationSchema } from "../packages/media-ingest/chroma.js";
+import { EditRenderError } from "../packages/edit-render/common.js";
+export interface CanonicalStoredFileIdentity { path: string; dev: bigint; ino: bigint; contentHash: string; sizeBytes: number }
+/**
+ * The authority calls this itself with its registered root and explicit declaration. No caller proof or output location is accepted.
+ * The callback runs while the content-addressed object/source are held, after complete fresh verification and exact compact-record
+ * equality. Existing store/record/byte reconfirmation and the repaired output budget then run before success. A miss never encodes.
+ * Callback identity is execution-local data, never a detached capability or permission. This creates no authorization or permit.
+ */
+export async function withVerifiedCanonicalLosslessStoredLocalMedia(input: CanonicalIngestRequest, expected: unknown,
+  use: (identity: CanonicalStoredFileIdentity) => Promise<void>): Promise<void> {
+  let declared: ChromaSafeDerivation;
+  try { declared = ChromaSafeDerivationSchema.parse(expected); } catch { fail("request_invalid", "A complete valid 0.4 declaration is required."); }
+  if (typeof use !== "function") fail("request_invalid", "A scoped trusted registration consumer is required.");
+  const request = readRequest(input), root = FootageAuthorizationRootSchema.safeParse(request.authorization);
+  if (!root.success) fail("canonicalization_consent_required", "Stored lossless verification requires the consenting original root.");
+  if (!sameObserved(declared.sampleDerivation.source.rootAuthorization, root.data)) fail("authorization_invalid", "The declared root must equal this operation's authorization.");
+  const ctx: Context = { toolRoot: await approvedRoot(request.toolRoot), hooks: request.hooks };
+  LOSSLESS_DEADLINES.set(ctx, performance.now() + request.canonicalizationTimeout);
+  const source = await openAnchor(await exactLocation(request.sourcePath, "source_location_invalid"), "source_location_invalid", MAX_STAGED_SOURCE_BYTES);
+  try {
+    if (source.contentHash !== root.data.contentHash || source.sizeBytes !== root.data.sizeBytes) fail("source_mismatch", "The source is not the registered authorized bytes.");
+    const measured = await factsOf(ctx, source, "source_changed", false); losslessMeasuredBounds(measured);
+    const chroma = await losslessChromaOf(ctx, source, measured, false);
+    const planning = planCanonicalizationV1(measured.facts), chromaPlanning = planChromaSafeReencode({ source: anchorIdentity(source), sourceFacts: measured.facts, sourceChroma: chroma });
+    if (planning.outcome !== "DEFER" || chromaPlanning.outcome !== "PLAN" || !chromaPlanning.plan || !sameObserved(declared.plan, chromaPlanning.plan))
+      fail("verification_failed", "The actual source must freshly admit exactly the declared Plan 1.1.0.");
+    losslessAudioFilters(measured, chromaPlanning.plan.samplePlan); // Reuse the frozen compiler eligibility, including the unproved PCM RETIME refusal.
+    await executeLosslessStore({ ctx, request, source, measured, plan: chromaPlanning.plan }, planning, chromaPlanning, { derivation: declared, use });
+    await reconfirm(source, "source_changed");
+  } catch (e) { if (e instanceof CanonicalIngestError || e instanceof EditRenderError) throw e; fail("unexpected_failure", "Stored lossless registration verification stopped."); }
+  finally { await source.handle.close(); }
 }

@@ -1,6 +1,8 @@
 // Precisely undo only the owner-authorized E–F seams when testing the accepted pre-C–D prefix.
 // Each literal delta must occur exactly once. The original hash remains the expected value.
+import { acceptedGSourceText } from "./canonical-lossless-g-preservation.js";
 export function acceptedIngestPrefixText(text: string): string {
+  text = acceptedGSourceText("scripts/media-ingest-local.ts", text);
   const swaps: [string, string][] = [
     ['    const boundedTimeout = losslessRemainingTime(ctx, timeoutMilliseconds);\n', ''],
     ['const run = await supervise(child, boundedTimeout, stdoutLimit);', 'const run = await supervise(child, timeoutMilliseconds, stdoutLimit);'],

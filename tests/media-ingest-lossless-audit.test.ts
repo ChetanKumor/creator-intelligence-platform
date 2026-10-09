@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { acceptedIngestPrefixText } from "./support/canonical-lossless-ef-preservation.js";
+import { acceptedGSourceText, G_ACCEPTED_PINS } from "./support/canonical-lossless-g-preservation.js";
 const pins = [
   {
     "path": "package-lock.json",
@@ -67,6 +68,7 @@ const pins = [
   }
 ];
 for (const p of pins) test("CD-AUDIT-frozen " + p.path, () => { let b=readFileSync(p.path);
+  if (p.path === "packages/edit-render/owner-media.ts" || p.path === "scripts/edit-render-owner-media-authority-local.ts") b=Buffer.from(acceptedGSourceText(p.path,b.toString("utf8")));
   if(p.path==="scripts/audit-workspace.mjs") b=Buffer.from(b.toString("utf8").replace('"tests/media-ingest-plan-trust-media.integration.ts", "tests/media-ingest-lossless-cache-media.integration.ts",','"tests/media-ingest-plan-trust-media.integration.ts",'));
   assert.equal(b.length,p.bytes); assert.equal(createHash("sha256").update(b).digest("hex"),p.sha256); });
 const additions = [
@@ -89,3 +91,8 @@ const additions = [
 for (const p of additions) test("CD-AUDIT-exact-accepted-prefix " + p.path, () => { let b=readFileSync(p.path);
   if(p.path==="scripts/media-ingest-local.ts") b=Buffer.from(acceptedIngestPrefixText(b.toString("utf8")));
   assert.ok(b.length>p.bytes); assert.equal(createHash("sha256").update(b.subarray(0,p.bytes)).digest("hex"),p.sha256); });
+
+for (const [path, pin] of Object.entries(G_ACCEPTED_PINS)) test("G-AUDIT-exact accepted bytes outside literal authorized delta " + path, () => {
+  const b = Buffer.from(acceptedGSourceText(path, readFileSync(path, "utf8")));
+  assert.equal(b.length, pin.bytes); assert.equal(createHash("sha256").update(b).digest("hex"), pin.sha256);
+});
