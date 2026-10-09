@@ -977,3 +977,21 @@ The authorized repair publication is `fix(gate7): enforce lossless cache-hit out
 SHA and independently checked local/tracking/live equality after push. No main merge, new dependency, derived authorization, permit
 or lifecycle integration. Preserved E–F/C–D operational limitations still apply. **STOP after repair publication/report; G–I remain
 NOT STARTED, NOT AUTHORIZED, and E–F/B2-B2/Gate 7 are not owner-accepted by this repair.**
+
+## Checkpoints E–F owner acceptance (2026-10-09)
+
+**E–F OWNER-ACCEPTED** at `da3a01be7198c18879a256836d51f24575c30230`, including the accepted output-budget repair.
+The owner accepts the existing canonical publication/cache implementation, fresh lossless verification and corrected output-byte
+budget enforcement within their recorded generated-media scope and limitations. This documentation-only decision records the
+owner's ruling; it adds no media evidence, reruns no completed repair and preserves every earlier failure, receipt and limitation.
+
+Fresh baseline: local/tracking/live phase HEAD equal the accepted SHA; local/tracking/live main remain
+`4f85b559c7eff2c24e221011f3ee1dd1466a111d`; tracked worktree and index clean. The 18 historical untracked artifacts, all 42 original
+E–F evidence files and 16 repair evidence files are snapshotted in the ignored
+`.local-runs/phase5-gate7/batch3e-b2b2-g-20261009/00-baseline.json`. Both pinned executable hashes match.
+
+Only **Checkpoint G** is now authorized, **NOT STARTED** at this decision: the smallest safe explicit 0.4 derived declaration,
+trusted existing-store verification and owner-media registration/lifecycle bridge. Publication of this acceptance must succeed
+separately before G begins. `PUBLISHED_VERIFIED_NOT_AUTHORIZED` remains non-authorizing; no encode, cache or record supplies consent.
+**H–I, renderer/QC integration, owner footage, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED.** B2-B2 and Gate 7 remain
+incomplete and are not owner-accepted as a whole. No main merge, deployment or dependency change is authorized.

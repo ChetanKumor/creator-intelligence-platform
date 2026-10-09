@@ -1,8 +1,19 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (C–D OWNER-ACCEPTED; E–F OWNER-REVIEW BUDGET REPAIR IMPLEMENTED; Gate 7 incomplete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (E–F OWNER-ACCEPTED; G AUTHORIZED, NOT STARTED; Gate 7 incomplete)
 
-Last updated: 2026-10-08
+Last updated: 2026-10-09
 
 ## Current ruling
+
+- **E–F OWNER-ACCEPTED** (2026-10-09) at `da3a01be7198c18879a256836d51f24575c30230`, including the output-byte budget repair.
+  - The owner accepts the existing canonical publication/cache implementation, fresh lossless verification and corrected output-byte
+    budget enforcement within their documented generated-media scope. Earlier failures, evidence and operational limitations remain.
+    This separate documentation-only decision adds no verification claim and does not accept B2-B2 or Gate 7.
+  - **Checkpoint G only is AUTHORIZED, NOT STARTED**: explicit version-aware 0.4 derived registration and inherited owner-media
+    lifecycle through existing infrastructure. H–I, renderer/QC integration, owner footage, 3E-C and Phase 6 remain NOT AUTHORIZED.
+    Publication is limited to the existing phase branch; main remains unchanged.
+  - Details: [E–F owner acceptance](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#checkpoints-ef-owner-acceptance-2026-10-09).
+
+## Preserved owner-review budget repair final ruling
 
 - Phase 5 Gate 7 Batch **3E-B2-B2 E–F owner-review budget repair** (2026-10-08): **REPAIR IMPLEMENTED; ALL AFFECTED GATES PASS; OWNER ACCEPTANCE PENDING**.
   - Base `2fec4adc658005237eb4cb34fc01376b0c3d53ee` incorrectly returns valid cached outputs above explicit and omitted/default
