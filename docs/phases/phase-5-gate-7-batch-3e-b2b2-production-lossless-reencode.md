@@ -1454,3 +1454,58 @@ Concise closure manifest: `.local-runs/phase5-gate7/batch3e-b2b2-i-20261009/23-c
 No claim of real-owner-footage generalization, fresh pretrained editorial quality, professional creative decisions, linked-audio 0.4 rendering, long-video performance, cross-platform hardware playback, distributed lifecycle durability, complete native-child RSS bounds, real-world editing quality or production SaaS readiness.
 
 Before the separate 3E-C milestone: owner review/closure of B2-B2, then explicit bounded authorization for owner-footage canonicalization/analysis, real derived-source editing/rendering, multi-revision freshness and distinct physical multi-source evidence. **Owner footage, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED.** No new model, deployment or main merge.
+
+
+## Checkpoint I and Batch 3E-B2-B2 owner acceptance (2026-10-09)
+
+**CHECKPOINT I OWNER-ACCEPTED** at `4c186bbd298dc00308fde84bd7479ba058c6ad0c`.
+**BATCH 3E-B2-B2 OWNER-ACCEPTED WITHIN ITS DOCUMENTED GENERATED-MEDIA SCOPE.**
+The owner explicitly accepts the final I report and the bounded B2-B2 closure, conditional on consistency of actual repository state
+and preserved evidence. Fresh acceptance auditing found no material contradiction. Gate 7 remains **INCOMPLETE**.
+
+Starting local/tracking/live phase HEAD equals the accepted I SHA on `phase/5-gate7-3e-production-hardening`.
+Tracked worktree/index are clean; precisely 18 historical untracked artifacts retain their exact hashes and sizes.
+Local/tracking/live main remains `4f85b559c7eff2c24e221011f3ee1dd1466a111d`. The full earlier phase record remains
+the exact byte prefix; the full earlier CURRENT_PHASE remains the exact byte suffix. Acceptance changes only these two documents.
+
+Ignored acceptance audit: `.local-runs/phase5-gate7/batch3e-b2b2-i-acceptance-20261009/`.
+`00-baseline.json` snapshots all 412 tracked paths and the authoritative reference inventory. Fresh hash checks substantiate
+410 protected tracked files, 18 historical artifacts, 222 prior evidence files, 126 additional early evidence files, both executable
+pins, the I closure manifest commitments, all seven final regression logs, four static-check logs, H native-history records and
+the actual I original/second-source/derivative/staged/output bytes. No historical receipt is rewritten.
+
+`01-historical-test-reconciliation.json` independently re-parses the preserved TAP logs and compares exact accepted name multiplicities:
+H 95; affected pure 845; G 54; E-F 97; complete C-D/legacy native 304; shared-consumer pure 103; shared-consumer native 19.
+**1,517 historical executed instances / 1,514 distinct tests**, all PASS, no failures/cancellations/skips/TODOs. Exactly three
+segmented freshness tests overlap the complete legacy and shared-consumer native groups and count once in the distinct total:
+
+- 3E-F2: true revision 1 -> 2 publishes with fresh evidence under the accepted 60-second ceiling, on the real clock.
+- 3E-F3/F6: evidence really aged beyond 60 seconds refuses at the permit; no render starts and the head stays.
+- 3E-F4/F5/F6: foreign evidence, a moved head and a CAS loser refuse before a valid permit.
+
+`02-historical-native-revalidation.json` records a fresh **read-only validation of historical evidence**, using existing validators,
+DAG replay, compiler and full-hash routines under the no-network guard. It adds no fresh native render, QC execution or model inference.
+It confirms verified CanonicalMediaDerivation 0.4.0, strict compact computation bytes, explicit Registration 0.3.0, historical cache
+miss/fully reverified hit, owned staging, genuine lifecycle/permit observations and exact execution/DAG/program/scope/output/QC joins.
+The live permit is non-serializable; detached JSON is never promoted to executable authority.
+
+Accepted output: **90 x 160; 2 seconds; 60 frames; 30 fps; H.264; yuv420p; MP4; no audio; 224,588 bytes**.
+SHA-256: `490af62fcc543b835e0ffed3c2d06665ef3a1ec21de0ad6b94d54da05859e0d5`.
+Execution: `render_execution_receipt_v0_17f6b53e5b857fbc05f5b8353c7c9012ab64650631190cd9e31dbba4bcb57806`.
+QC: `technical_media_qc_receipt_v0_e09747c53e5d20909ae33830a84cc2a4df3dd1bdfe2a624dff944b7b1fa04217`;
+**PASS**, 12 passing checks, two audio checks not applicable, historical independent full decode exits 0.
+
+Acceptance is limited to generated media and structural/stub editorial inputs. It does not prove real-owner-footage generalization,
+professional creative quality, linked-audio 0.4 rendering, long-video production capacity, cross-instance durable lifecycle, complete
+native-child RSS, SaaS readiness or cancellation of a running process. Accepted same-user Windows replacement and already-started
+execution limitations remain binding. All prior RED/failure evidence and operational limits are preserved verbatim.
+
+**Rule #1 from this owner directive: RESEARCH GITHUB -> INSPECT ACTUAL SOURCE -> COMPARE -> REUSE -> BUILD WHEN JUSTIFIED -> VERIFY.**
+This extends the existing reuse rule without replacing accepted infrastructure. External source is research evidence, not an approved
+dependency; licensing, security, determinism and frozen contracts remain mandatory.
+
+After this separate docs-only acceptance commit is pushed and local/tracking/live equality is verified, **Stage B GitHub-first source
+research and 3E-C readiness/acceptance design alone are AUTHORIZED**. No 3E-C production implementation is authorized by this ruling.
+Owner footage access/processing, new model inference, dependency installation, frontend changes, deployment, billing, main merge and
+Phase 6 remain **NOT STARTED, NOT AUTHORIZED**. A separate owner decision is required before any 3E-C implementation or media operation.
+The acceptance commit identity and final equality/preservation checks are recorded in `04-publication-receipt.json` and the final report.

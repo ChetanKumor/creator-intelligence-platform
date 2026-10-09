@@ -1,3 +1,24 @@
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (I AND B2-B2 OWNER-ACCEPTED within generated-media scope; Gate 7 incomplete)
+
+Last updated: 2026-10-09
+
+## Current ruling
+
+- **CHECKPOINT I OWNER-ACCEPTED** at `4c186bbd298dc00308fde84bd7479ba058c6ad0c`.
+- **BATCH 3E-B2-B2 OWNER-ACCEPTED WITHIN ITS DOCUMENTED GENERATED-MEDIA SCOPE. Gate 7 remains INCOMPLETE.**
+  - Fresh acceptance audit substantiates historical 1,517 executed instances / 1,514 distinct tests, exactly three overlaps, native hashes/receipts and exact DAG/program/scope/output/QC joins. Historical tests/native execution are not relabelled as new runs.
+  - Actual output remains 90 x 160, 60 frames, 30 fps, 2 seconds, H.264/yuv420p MP4, no audio, 224,588 bytes; SHA-256 `490af62fcc543b835e0ffed3c2d06665ef3a1ec21de0ad6b94d54da05859e0d5`. Independent historical technical QC: PASS.
+  - Generated media and structural/stub editorial inputs only. All real-footage, creative-quality, linked-audio 0.4, resource, long-video, Windows, in-memory lifecycle and running-process cancellation limitations remain. Prior history is preserved verbatim.
+  - Separate acceptance publication changes only CURRENT_PHASE and the appended B2-B2 phase ruling; all production/test/dependency/schema/tool bytes and main remain unchanged.
+  - **Rule #1: research GitHub, inspect actual source/licensing, compare with accepted code, reuse the best compatible component, build only when justified, then verify.** Preserve proven infrastructure and frozen contracts.
+  - **Stage B research and 3E-C readiness design only are AUTHORIZED**, beginning only after successful acceptance publication and local/tracking/live equality. External source is not an approved dependency.
+  - **Owner footage access/processing, 3E-C implementation, new model inference and Phase 6 remain NOT STARTED, NOT AUTHORIZED.** No frontend/dependency/deployment/billing/main merge. STOP after research/readiness reporting; a separate owner decision must authorize implementation.
+  - Details: [I/B2-B2 owner acceptance](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#checkpoint-i-and-batch-3e-b2-b2-owner-acceptance-2026-10-09).
+
+## Preserved full current-phase history from the I verification publication
+
+The complete earlier file follows verbatim. Its historical status/authorization statements are superseded only by the ruling above.
+
 # Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (I IMPLEMENTED/VERIFIED FOR OWNER REVIEW; Gate 7 incomplete)
 
 Last updated: 2026-10-09
