@@ -1164,3 +1164,26 @@ a render permit, broaden execution policy or integrate 0.4 renderer/QC consumpti
 **G is ready for independent owner acceptance. Checkpoint H's subsequent generated registered-source renderer/QC integration requires
 separate authorization and is not implemented or proven. H–I, owner footage, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED.**
 No main merge or deployment. **STOP after Checkpoint G publication and owner-review report.**
+
+## Checkpoint G owner acceptance (2026-10-09)
+
+**G OWNER-ACCEPTED** at `63f9bad4a83726b1631eaceb4b8b399fee6f0322`. The owner has reviewed and accepts Checkpoint G
+within its documented **generated-media, verified 0.4 derivative-registration and local-lifecycle scope only**. All stated evidence
+limitations remain. The complete implementation report, earlier findings, RED source/evidence, failed and passing test receipts,
+historical rulings and operational limits above are preserved unchanged. This separate documentation-only decision adds no new
+media proof, reruns no completed implementation gate and grants no new render permit or automatic media authorization.
+
+Fresh acceptance baseline: local/tracking/live phase HEAD equal the accepted G SHA on `phase/5-gate7-3e-production-hardening`;
+tracked worktree and index are clean. Local/tracking/live main remain `4f85b559c7eff2c24e221011f3ee1dd1466a111d`.
+The ignored `.local-runs/phase5-gate7/batch3e-b2b2-g-acceptance-20261009/00-baseline.json` snapshots all 409 tracked paths,
+18 historical artifacts, 40 authoritative references and 140 existing E–F/repair/G evidence files. Acceptance publication is
+docs-only: CURRENT_PHASE and this appended phase decision. All production/test files and previous phase-history bytes remain exact.
+
+**Rule #1 remains controlling: reuse and preserve accepted infrastructure. Checkpoint H only is AUTHORIZED as the next separately
+gated task, NOT STARTED**: subsequent generated registered-source renderer/QC integration through accepted infrastructure, with its
+own implementation, adversarial verification and owner-review gates. This acceptance session does not implement H or supply that
+render/QC proof. **Checkpoint I is NOT STARTED, NOT AUTHORIZED.** B2-B2 and Gate 7 remain incomplete and are not accepted as a whole.
+**Owner footage, Batch 3E-C and Phase 6 remain NOT AUTHORIZED.** No main merge, deployment, dependency or runtime change.
+
+The separate acceptance SHA and local/tracking/live equality after push are recorded in the final report and ignored
+`02-publication-receipt.json`. **STOP after G acceptance publication and report; H and I remain NOT STARTED.**

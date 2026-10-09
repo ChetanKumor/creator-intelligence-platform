@@ -1,8 +1,21 @@
-# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (CHECKPOINT G IMPLEMENTED FOR OWNER REVIEW; Gate 7 incomplete)
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (G OWNER-ACCEPTED; H AUTHORIZED, NOT STARTED; Gate 7 incomplete)
 
 Last updated: 2026-10-09
 
 ## Current ruling
+
+- **G OWNER-ACCEPTED** (2026-10-09) at `63f9bad4a83726b1631eaceb4b8b399fee6f0322`.
+  - The owner accepts the documented generated-media, verified 0.4 derivative-registration and local-lifecycle scope only.
+    All implementation findings, RED evidence, test receipts and stated limitations remain preserved. This separate docs-only
+    acceptance adds no verification claim, broadens no media or permit authority, and does not close B2-B2 or Gate 7.
+  - Follow **Rule #1: reuse and preserve accepted infrastructure**. **Checkpoint H only is AUTHORIZED as the next separately
+    gated task; NOT STARTED**: generated registered-source renderer/QC integration under its own implementation and verification
+    gates. This acceptance session does not implement H. **Checkpoint I is NOT STARTED, NOT AUTHORIZED.**
+  - Owner footage, Batch 3E-C and Phase 6 remain **NOT AUTHORIZED**. Main and every production/test file remain unchanged.
+    Publication is limited to the existing phase branch. STOP after this acceptance publication and report.
+  - Details: [G owner acceptance](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#checkpoint-g-owner-acceptance-2026-10-09).
+
+## Preserved G implementation-for-review ruling
 
 - **CHECKPOINT G IMPLEMENTED FOR OWNER REVIEW** (2026-10-09). G is not owner-accepted; B2-B2 and Gate 7 remain incomplete.
   - Starting implementation `da3a01be7198c18879a256836d51f24575c30230`; E–F owner acceptance was separately committed and
