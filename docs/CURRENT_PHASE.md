@@ -1,3 +1,22 @@
+# Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (I IMPLEMENTED/VERIFIED FOR OWNER REVIEW; Gate 7 incomplete)
+
+Last updated: 2026-10-09
+
+## Current ruling
+
+- **I IMPLEMENTED/VERIFIED FOR OWNER REVIEW. I and B2-B2 are not owner-accepted; Gate 7 remains incomplete.**
+  - Required starting H SHA `55ccdd2c6e06ba7787c424ca9bd1053213c26de6`; H owner acceptance separately published and verified at `ae07004c66041a4e7579c9449bbd559b2ba9026c` before I began. Main remains `4f85b559c7eff2c24e221011f3ee1dd1466a111d`.
+  - **Rule #1:** reuse only; zero production/test changes or new infrastructure. Complete final post-H regression: **1,514 distinct cases / 1,517 executed instances PASS**, with exact accepted name multiplicities and only the documented three-case overlap. The entire 304-case legacy native gate ran after all H repair lines. No failures, cancellations, skips or missing cases.
+  - Fresh independent generated HEVC -> verified 0.4 canonicalization -> fully reverified cache -> explicit G registration -> owned staging/lifecycle/conformance -> genuine permit -> pinned FFmpeg -> independent QC PASS. Output: 90 x 160, 60 frames, 30 fps, 2 s, H.264/yuv420p MP4, no audio; exact new receipt/program/DAG/scope/output joins.
+  - Cross-boundary audit finds no new genuine counterexample within the frozen local trust model. Full historical evidence, 18 untracked artifacts, source bytes/tool pins, package/lockfile, goldens and all 33 schemas remain exact. Typecheck, clean build, workspace and final process audits PASS.
+  - Evidence remains generated/structural-stub; technical QC is not editorial-quality or authenticated detached-JSON execution proof. All recorded audio/model/resource/Windows/in-memory lifecycle limitations remain binding.
+  - **STOP after I.** Independent owner review and a separate B2-B2 closure ruling are required. Owner footage, 3E-C and Phase 6 remain **NOT STARTED, NOT AUTHORIZED**; no deployment/main merge/new model.
+  - Details: [Checkpoint I final verification](phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md#checkpoint-i-final-verification-2026-10-09).
+
+## Preserved full current-phase history from the H acceptance publication
+
+The complete earlier file follows verbatim. Its historical status/authorization statements are superseded only by the ruling above.
+
 # Current Phase - Phase 5 Gate 7 Batch 3E-B2-B2 (H OWNER-ACCEPTED; I AUTHORIZED, NOT STARTED; Gate 7 incomplete)
 
 Last updated: 2026-10-09

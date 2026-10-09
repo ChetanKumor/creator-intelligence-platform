@@ -1361,3 +1361,96 @@ production scope. **I and B2-B2 are not owner-accepted; Gate 7 remains incomplet
 NOT STARTED, NOT AUTHORIZED.** No main merge or deployment. Publication is limited to the existing phase branch.
 
 The separate acceptance SHA and verified publication equality are recorded in `08-publication-receipt.json` and the final report.
+
+
+## Checkpoint I final verification (2026-10-09)
+
+**I IMPLEMENTED/VERIFIED FOR OWNER REVIEW. I and B2-B2 are not owner-accepted. Gate 7 remains incomplete.**
+
+### Sequential authorization and reuse
+
+Started at the required H implementation `55ccdd2c6e06ba7787c424ca9bd1053213c26de6`. Stage A independently substantiated H and published its separate docs-only owner-acceptance ruling at `ae07004c66041a4e7579c9449bbd559b2ba9026c`, with local/tracking/live equality and unchanged main. I began only after that publication passed. Main remains `4f85b559c7eff2c24e221011f3ee1dd1466a111d`.
+
+**Rule #1: zero production changes, zero tracked test changes, zero new infrastructure.** The accepted chroma eligibility, deterministic compiler, complete streaming verifier, ingest router, identity/budget checks, canonical publication/cache, explicit G registration/lineage/lifecycle, runtime staging, claim/grant/permit, pinned renderer and independent technical-QC path are reused. No speculative cleanup, new model or contract change.
+
+| Accepted checkpoint | Implementation | Owner-acceptance publication |
+|---|---|---|
+| A / B2-B1 | `059754f47fb83ac1936824c4d9cfa7b725ea232b` | `61b4bb1b8f9ea3efb57524fe76e107018fb2a468` |
+| B | `d2ca72ffa38a38ed0b8a6597573e72ee049d2bb7` | `0fb3ca893d34949a03320de7053cfc461a5a0ea1` |
+| C-D | `96871381464eb6bc5064153faa724bf7a898f245` | `ad5d8fe688c46ad2376789626bfd939a1415f075` |
+| E-F initial implementation | `2fec4adc658005237eb4cb34fc01376b0c3d53ee` | `358866208a606feb0cf5a9c340dbcb0205aa6df1` |
+| E-F accepted budget repair | `da3a01be7198c18879a256836d51f24575c30230` | `358866208a606feb0cf5a9c340dbcb0205aa6df1` |
+| G | `63f9bad4a83726b1631eaceb4b8b399fee6f0322` | `dea036d6a0f2ca589c9a51b76e22bc1cc59676f2` |
+| H | `55ccdd2c6e06ba7787c424ca9bd1053213c26de6` | `ae07004c66041a4e7579c9449bbd559b2ba9026c` |
+
+### Complete final post-H regression
+
+Repository suite discovery and authoritative phase references independently regenerated the affected inventory before comparison with accepted manifests. All seven complete gates ran freshly after a clean build of the final accepted H source, including **all 304 C-D/legacy native cases after all 15 H lifecycle repair lines**. No earlier run substitutes for any I gate.
+
+| Fresh I gate | PASS | Receipt in the I evidence directory |
+|---|---:|---|
+| H | 95/95 | `03-h.log` |
+| pure | 845/845 | `04-pure.log` |
+| G | 54/54 | `05-g.log` |
+| E-F | 97/97 | `06-ef.log` |
+| C-D and legacy | 304/304 | `07-legacy.log` |
+| shared render consumers (pure) | 103/103 | `08-consumer-pure.log` |
+| shared render consumers (native) | 19/19 | `09-consumer-native.log` |
+
+**1,517 executed instances; 1,514 distinct cases.** The three overlapping segmented freshness cases execute in both the complete legacy and shared-consumer native gates and count once in the distinct total. Exact test-name multiplicities equal each accepted historical inventory. Zero unexpected failures, cancellations, skips, TODOs or missing cases. Full commands/timings and multiplicity reconciliation: `10-command-outcomes.json`, `15-final-test-inventory.json`.
+
+### Fresh independent generated-media proof
+
+New attempt in `.local-runs/phase5-gate7/batch3e-b2b2-i-20261009`, using the accepted generated HEVC fixture and pinned toolchain through unchanged APIs. It independently executes actual source verification, consenting/scoped chroma admission, verified 0.4 lossless derivation, strict compact computation record, canonical miss/publication and fully reverified cache hit (22 native verification processes, zero encodes), explicit G registration, root/derived lifecycle, owned staging of exact admitted bytes, trusted conformance, non-serializable permit, native rendering and full independent QC. No H success receipt substitutes for this proof.
+
+| Bytes | SHA-256 | Size |
+|---|---|---:|
+| Generated HEVC root | `77f4b161c530e58cc51285c863881ca2752071a8c87796db4fdc7bce59997586` | 136190 |
+| Generated second source | `f702213c97461869f4b2cb09415537d684ff3594118fd67b3eabb17719daddbc` | 138771 |
+| Verified 0.4 derivative | `377ebb5adb7f8131e31b4673719a9a4e7a43ed04841b9601a4b1003655f772dd` | 336472 |
+| Rendered MP4 | `490af62fcc543b835e0ffed3c2d06665ef3a1ec21de0ad6b94d54da05859e0d5` | 224588 |
+
+- Execution: `render_execution_receipt_v0_17f6b53e5b857fbc05f5b8353c7c9012ab64650631190cd9e31dbba4bcb57806`.
+- Independent QC: `technical_media_qc_receipt_v0_e09747c53e5d20909ae33830a84cc2a4df3dd1bdfe2a624dff944b7b1fa04217`; **PASS**, 12 checks pass, 2 audio checks not applicable; full decode exits 0 with no error lines.
+- Actual output: **90 x 160, 60 frames, 30/1 fps, 2.000000 s, H.264/yuv420p MP4, no audio**. Native renderer exits 0, no signal, no timeout; content-addressed publication verified by full SHA/size.
+- Exact scope: `project_footage_test` / `creator_footage_test` / `local_evaluation`; registration digest `ef5cbd47aba03af217a3fb0dd26259681bad2ada8f6e9431ae2aee64018d39d2`. Two staged sources and two genuine lifecycle observations; derivative joins its consenting root, plan and derivation.
+- Fresh proof independently reopens/replays the DAG, recompiles the same program and joins receipt/DAG/program/scope/output/QC exactly. Permit and claim reuse refuse; detached publication cannot execute.
+- The observed output hash equals H's hash. This observation adds no cross-run determinism requirement.
+
+Full native artifacts, exact lineage/claims, permit binding and issuance/use observations, process arguments and receipts: `11-independent-e2e.json`; separate replay/full-hash confirmation: `19-e2e-final-audit.json`. The live permit itself is non-serializable. Fresh H integration native records are archived independently as `17-fresh-h-native-receipts.json` with their original/copy hashes.
+
+### Cross-boundary hostile audit
+
+Fresh existing adversarial gates plus accepted-source inspection find no new genuine counterexample within the frozen trust model:
+
+- Cache/object/hash or coherent counterfeit derivation supplies no permission; explicit scoped registration and fresh complete proof are required. Cross-owner computation sharing does not share authorization.
+- Root/derivative deletion and expiry refuse registration, observation, issuance and applicable pre-start boundaries, including H's awaited-boundary repair. Already-started logical execution semantics remain unchanged.
+- Detached JSON/prototype handles, expired permits, foreign or reused claims cannot start a new FFmpeg execution. Single-use permit and durable exclusive start remain authoritative.
+- Link/parent-junction/replacement/hash/location attacks refuse; owned staging and held renderer descriptors bind admitted bytes, with post-exit rehashing under the accepted same-user local model. File-symlink branch evidence remains controlled, because this account lacks native file-symlink privilege.
+- Frozen Batch-2B section 11 Windows residuals remain binding: no deny-write sharing, no detection of a same-user binary swap between digest verification and path spawn, and pending-name races detected after linking. In-place writes are detected by rehash when retained, not prevented; no hostile same-user protection beyond the accepted detections is claimed.
+- Actual wrong/corrupt/nonconforming output cannot pass against the exact accepted receipt identity and DAG's technical expectations. The fresh proof recompiles the program; the review consumer separately rejects `program_mismatch` and detached QC. QC data copies the receipt program identifier and does not authenticate detached JSON execution provenance or semantic editing quality.
+- Real failed FFmpeg and interrupted pre-spawn execution produce truthful refusal/failure with no certified success. Unconfirmed-child supervision remains explicitly controlled process-event evidence.
+
+Exact cases and 17 accepted-source hashes: `18-cross-boundary-audit.json`. No production repair or scope expansion was required.
+
+### Preservation, resources and audits
+
+All 18 historical untracked artifacts, 222 prior evidence files, 126 additional early B/C-D/segmented evidence files, old native receipts and actual accepted media bytes remain exact. All 412 tracked files match before these two documentation additions; all other 410 remain byte-exact afterward. Package/lockfile, test goldens, old computation/plan/derivation/execution identities and 33 schema artifacts remain frozen. Previous phase history is preserved verbatim as CURRENT_PHASE's full suffix and this record's full prefix.
+
+Existing native harnesses refresh their designated mutable test-artifact scratch outputs. The two fresh I freshness proofs are separately archived as `25-legacy-freshness-proof.json` and `26-consumer-freshness-proof.json`; these refreshes do not rewrite the frozen archived records or goldens.
+
+Both pinned tools remain exact: FFmpeg SHA `72a489eccd008c2ec2c0a5856c5c75bc3d8bbfa90166c4566865c246445e6aa3` (102856192 bytes); ffprobe SHA `19202b23c0043f15ad1b7bce2344f406fd52bd6efd8f995ce02e7392a1cec52f` (102652416 bytes). Typecheck, clean build, schema check, workspace audit and final process cleanup audit PASS. No task-owned native/test process remains; no unrelated process was terminated.
+
+Measured fresh attempt elapsed: 24974 ms under concurrent regression load. Renderer monotonic spawn-to-exit: 158 ms; actual output 224588 bytes. FFmpeg reports 125 ms CPU and 30,617,600 bytes Windows peak private commit under the existing local-executor owner ruling; neither is independent RSS nor a whole-process-tree memory bound. Local compute cost remains not applicable with no invented numeric value. Streaming instrumentation reports 3 full-frame buffers / 64,800 frame-buffer bytes, 2,880 digest-buffer bytes, 131,072 queued-byte ceiling per decoder, source peak 91,552 and output peak 92,288 bytes. These are observed bounded fixture values, not long-video/native-child memory guarantees.
+
+One local replay-reader RED is preserved with its exact script/log: JSON had serialized Uint8Array to numeric-keyed objects, which the accepted validator correctly refused. Restoring those unchanged bytes to Uint8Array passed every original replay/compiler/hash assertion. This correction is solely in ignored I audit code; no production/test assertion, expected value or accepted evidence changed.
+
+Concise closure manifest: `.local-runs/phase5-gate7/batch3e-b2b2-i-20261009/23-closure-evidence-manifest.json`. Pre/post publication preservation and equality receipts accompany it. The only tracked I changes are **`docs/CURRENT_PHASE.md` and `docs/phases/phase-5-gate-7-batch-3e-b2b2-production-lossless-reencode.md`**, documentation only; publication is limited to the existing phase branch.
+
+### Owner decision and remaining scope
+
+**I VERIFIED FOR OWNER REVIEW; no automatic I or B2-B2 owner acceptance. STOP after I.** The owner must independently review this bounded generated-media evidence and give a separate B2-B2 closure ruling. Gate 7 remains incomplete.
+
+No claim of real-owner-footage generalization, fresh pretrained editorial quality, professional creative decisions, linked-audio 0.4 rendering, long-video performance, cross-platform hardware playback, distributed lifecycle durability, complete native-child RSS bounds, real-world editing quality or production SaaS readiness.
+
+Before the separate 3E-C milestone: owner review/closure of B2-B2, then explicit bounded authorization for owner-footage canonicalization/analysis, real derived-source editing/rendering, multi-revision freshness and distinct physical multi-source evidence. **Owner footage, 3E-C and Phase 6 remain NOT STARTED, NOT AUTHORIZED.** No new model, deployment or main merge.
