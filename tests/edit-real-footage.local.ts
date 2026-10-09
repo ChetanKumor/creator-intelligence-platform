@@ -21,7 +21,8 @@ import { performance } from "node:perf_hooks";
 import { canonicalSerialize } from "../packages/domain/serialization.js";
 import { equal, type SuppliedArtifact } from "../packages/editorial/common.js";
 import * as E from "../packages/edit-editorial/index.js";
-import { compileRenderProgram, ownerMediaDeclarations, type SegmentedRenderExecutionReceipt, type TechnicalMediaQcReceipt } from "../packages/edit-render/index.js";
+import { compileRenderProgram, type SegmentedRenderExecutionReceipt, type TechnicalMediaQcReceipt } from "../packages/edit-render/index.js";
+import { CANONICAL_STORE } from "../packages/edit-render/owner-media.js";
 import { acquireExecutionClaim, openValidatedDag, registerDagAttempt, stageClaimedSource, type RuntimeCall, type StagedSourceReceipt,
   type ValidatedExecutionDag } from "../packages/edit-runtime/index.js";
 import { planReview, runCriticReview, type CriticReport } from "../packages/edit-review/index.js";
@@ -142,6 +143,7 @@ async function main(): Promise<number> {
   try {
     // ================================================================ 1. manifest, owner registration, exact byte verification
     let manifest: R.RealFootageRunManifest, authority: OwnerMediaLifecycleAuthority, footagePath: string;
+    let registeredMedia: R.RegisteredMediaInput | undefined, allowedSourceRoots: string[];
     let sources: { entryId: string; assetId: string; analysis: R.FootageAnalysis; analysisSha256: string; candidateId: string | null }[];
     let run: { jobId: string; record: unknown };
     try {
@@ -152,10 +154,20 @@ async function main(): Promise<number> {
       assertPrivateLocation(footagePath, "The footage manifest");
       const footageRead = await readExactJson(footagePath, MAX_MANIFEST_BYTES, "The footage manifest");
       receipt.manifest.footageManifestSha256 = footageRead.sha256; const footage = FootageManifestSchema.parse(footageRead.value);
-      const registration = { artifactType: "OwnerMediaRegistration", artifactVersion: "0.1.0", stability: "internal_pre_stable", footage,
-        renderAuthorization: manifest.renderAuthorization };
-      const declared = ownerMediaDeclarations(registration);
-      authority = await timed("source_verification", () => createOwnerMediaLifecycleAuthority({ registration, baseDirectory: dirname(footagePath), clock: systemRuntimeClock }));
+      let supplied: unknown, canonicalWorkspace: string | undefined;
+      if (manifest.schemaVersion === "0.2.0") {
+        const path = R.absoluteLocalPath(manifest.ownerMediaRegistration, "The owner media registration");
+        assertPrivateLocation(path, "The owner media registration");
+        const registrationRead = await readExactJson(path, MAX_ANALYSIS_BYTES, "The owner media registration");
+        supplied = registrationRead.value; evidence.ownerMediaRegistrationSha256 = registrationRead.sha256;
+        canonicalWorkspace = R.absoluteLocalPath(manifest.canonicalWorkspace, "The canonical workspace");
+        assertPrivateLocation(join(canonicalWorkspace, ...CANONICAL_STORE.directory), "The canonical store");
+      }
+      const declared = R.registrationForRun(manifest, footage, supplied), registration = declared.registration;
+      authority = await timed("source_verification", () => createOwnerMediaLifecycleAuthority({ registration, baseDirectory: dirname(footagePath), clock: systemRuntimeClock,
+        ...(canonicalWorkspace === undefined ? {} : { canonicalWorkspace, canonicalToolRoot: PINNED_TOOL_ROOT }) }));
+      allowedSourceRoots = [dirname(footagePath), ...new Set(authority.sourceLocations.filter(s => declared.derivatives.some(d => d.assetId === s.assetId)).map(s => dirname(s.path)))];
+      if (manifest.schemaVersion === "0.2.0") registeredMedia = { registration, authority, asOf: now() };
       receipt.manifest.registrationDigest = authority.registrationDigest;
       // The accepted analyzer's outputs for exactly this footage manifest.
       const runDirectoryOf = join(PROJECT_ROOT, ".local-runs", manifest.analysisJobId);
@@ -195,7 +207,8 @@ async function main(): Promise<number> {
     let plan: R.OutputPlan, chosen: [R.CandidateFacts, R.CandidateFacts];
     try {
       const timeline = [sources[0]!, sources[1]!] as const;
-      plan = R.planOutput(timeline, { sourceAudio: manifest.sourceAudio, outputResolution: manifest.outputResolution, realMedia: true });
+      plan = R.planOutput(timeline, { sourceAudio: manifest.sourceAudio, outputResolution: manifest.outputResolution, realMedia: true,
+        ...(registeredMedia === undefined ? {} : { registeredMedia: { ...registeredMedia, asOf: now() } }) });
       ({ chosen } = R.selectTimeline(timeline, [timeline[0].candidateId, timeline[1].candidateId], plan));
       chosen.forEach((c, i) => { receipt.sources[i]!.candidateId = c.candidateId; });
       evidence.outputPlan = plan; evidence.chosen = chosen;
@@ -217,7 +230,7 @@ async function main(): Promise<number> {
     try {
       if (runtimeRoot.length > MAX_RUNTIME_ROOT_LENGTH) throw new R.HarnessRefusal("runtime_root_path_too_long", [`The runtime root is ${runtimeRoot.length} characters; `
         + `the accepted runtime allows ${MAX_RUNTIME_ROOT_LENGTH}. Move the repository to a shorter path.`]);
-      runtime = await createLocalEditRuntime({ runtimeRoot, allowedSourceRoots: [dirname(footagePath)], clock: systemRuntimeClock, sources: authority.sourceLocations });
+      runtime = await createLocalEditRuntime({ runtimeRoot, allowedSourceRoots, clock: systemRuntimeClock, sources: authority.sourceLocations });
     } catch (error) {
       set("baseline_render", "FAIL", `runtime: ${describe(error)}`); console.error(error); blockAfter("baseline_render", R.SCENARIOS); return finish();
     }

@@ -34,8 +34,8 @@ export interface RegisteredFixture {
 export const makeAuthority = (f: Pick<RegisteredFixture, "registration" | "sources" | "workspace">, clock: RuntimeClock = systemRuntimeClock, registration = f.registration, workspace = f.workspace) =>
   createOwnerMediaLifecycleAuthority({ registration, baseDirectory: f.sources, canonicalWorkspace: workspace, canonicalToolRoot: PINNED_TOOL_ROOT, clock });
 
-export async function registeredFixture(): Promise<RegisteredFixture> {
-  const base = await cdBase("h-generated-"), sources = join(base, "sources"), workspace = join(base, "canonical");
+export async function registeredFixture(prefix = "h-generated-"): Promise<RegisteredFixture> {
+  const base = await cdBase(prefix), sources = join(base, "sources"), workspace = join(base, "canonical");
   await mkdir(sources); await mkdir(workspace);
   const rootPath = await cdSeed(sources, "hevc", 90, 160, 30), betaPath = await cdSeed(sources, "h264", 90, 160, 30);
   const root = rootOf(await readFile(rootPath)), beta = rootOf(await readFile(betaPath));
@@ -90,11 +90,11 @@ export interface ClaimedRegistered {
   fixture: RegisteredFixture; authority: OwnerMediaLifecycleAuthority; runtime: LocalEditRuntime; call: RuntimeCall; staged: StagedSourceReceipt[];
 }
 export async function claimRegistered(fixture: RegisteredFixture, options: { clock?: RuntimeClock; authority?: OwnerMediaLifecycleAuthority;
-  mappings?: { assetId: string; path: string }[]; execution?: R.RealExecution } = {}): Promise<ClaimedRegistered> {
+  mappings?: { assetId: string; path: string }[]; execution?: R.RealExecution; runtimePrefix?: string } = {}): Promise<ClaimedRegistered> {
   const clock = options.clock ?? systemRuntimeClock, authority = options.authority ?? await makeAuthority(fixture, clock);
   const execution = options.execution ?? fixture.execution, dag = openValidatedDag({ dag: execution.dagArtifact.ref }, execution.artifacts);
   const allowed = new Set(dag.admission.sources.map(s => s.assetId)), locations = authority.sourceLocations.filter(s => allowed.has(s.assetId));
-  const runtimeRoot = await cdBase("h-runtime-");
+  const runtimeRoot = await cdBase(options.runtimePrefix ?? "h-runtime-");
   const runtime = await createLocalEditRuntime({ runtimeRoot, allowedSourceRoots: [fixture.sources, dirname(locations.find(s => s.assetId === fixture.publication.output.assetId)!.path)],
     sources: options.mappings ?? locations, clock });
   await registerDagAttempt(dag, execution.artifacts, runtime);

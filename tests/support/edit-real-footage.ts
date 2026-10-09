@@ -3,8 +3,9 @@
 // read and every byte verification the owner-local authority performed. Everything is built only from accepted Gate 1-7 APIs.
 //
 // - Provenance is derived, never asserted: each record's media and computation labels come from the supplied analysis. A synthetic
-//   analysis yields synthetic labels (the cloud tests use one); only an owner_supplied analysis of the frozen real model yields
-//   real-media labels, and the runner refuses anything else before any media work.
+//   analysis yields synthetic labels (the cloud tests use one). Real eligibility requires owner provenance and the frozen model
+//   configuration; a canonical derivative additionally requires the existing live 0.3 authority and exact 0.4 lineage. This check
+//   is neither proof of inference nor a fresh byte observation or an executable permit.
 // - Direction, planning and the edit requests are DETERMINISTIC VERIFICATION INPUT, not creative direction: no Director model runs,
 //   and nothing here measures creative or editing quality.
 // - Admissibility is checked, never repaired: variable-rate, off-grid, rotated, non-H.264, non-square-pixel or mismatched sources,
@@ -33,6 +34,8 @@ import { FOOTAGE_VERSION, FootageAnalysisSchema } from "../../packages/footage-a
 import { SIGLIP_MODELS, siglipConfiguration } from "../../packages/reference-analyzer/models.js";
 import { embeddingSpaceId } from "../../packages/reference-analyzer/embeddings.js";
 import { artifact } from "./planning.js";
+import { AnyOwnerRenderAuthorizationSchema, OwnerMediaLosslessRegistrationSchema, ownerMediaDeclarations, ownerMediaLosslessDeclarations } from "../../packages/edit-render/owner-media.js";
+import { OwnerMediaLifecycleAuthority } from "../../scripts/edit-render-owner-media-authority-local.js";
 
 export const HARNESS = { harnessId: "batch3d_real_footage_harness", version: "0.1.0" } as const;
 /** The label every direction, plan and request of this harness carries: it is verification input, never creative direction. */
@@ -72,21 +75,41 @@ const Dimension = z.number().int().min(2).max(RENDER_SEMANTICS.bounds.maxWidth).
  * AuthorizedFootageSet (exact relative paths, SHA-256, sizes, labels and owner provenance) that the accepted analyzer consumed, and
  * the timeline names that set's own entry labels. The render authorization is the owner's explicit marker.
  */
-export const RealFootageRunManifestSchema = z.strictObject({
-  manifestType: z.literal("Batch3DRealFootageRun"), schemaVersion: z.literal("0.1.0"),
+const RunFields = {
+  manifestType: z.literal("Batch3DRealFootageRun"),
   /** Absolute local path of the accepted Phase-2 AuthorizedFootageSet JSON. Its directory is the only place sources are read from. */
   footageManifest: z.string().min(1).max(1024),
   /** The accepted analyzer's run over exactly that footage manifest: .local-runs/<analysisJobId>/. */
   analysisJobId: z.string().regex(/^footage_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/),
-  renderAuthorization: OwnerRenderAuthorizationSchema,
   /** Two clips in output order: the first is locked (state only), the second is trimmed. A null candidate lets the harness choose deterministically. */
   timeline: z.tuple([z.strictObject({ entryId: IdSchema, candidateId: IdSchema.nullable() }), z.strictObject({ entryId: IdSchema, candidateId: IdSchema.nullable() })]),
   /** Explicit: linked source audio, or audio excluded by the owner's graph policy. Never inferred, never silently removed. */
   sourceAudio: z.enum(["linked_identity", "excluded"]),
   /** Optional output size with the sources' exact display aspect; default the first timeline source's own size. */
   outputResolution: z.strictObject({ width: Dimension, height: Dimension }).nullable(),
-}).refine(v => v.renderAuthorization.renderIntents.includes("final"), "The owner's render authorization must cover the final render intent.");
+};
+/** 0.1 keeps the original contract; 0.2 names an explicit accepted 0.3 registration and its private canonical store. */
+export const RealFootageRunManifestSchema = z.union([
+  z.strictObject({ ...RunFields, schemaVersion: z.literal("0.1.0"), renderAuthorization: OwnerRenderAuthorizationSchema }),
+  z.strictObject({ ...RunFields, schemaVersion: z.literal("0.2.0"), renderAuthorization: AnyOwnerRenderAuthorizationSchema,
+    ownerMediaRegistration: z.string().min(1).max(1024), canonicalWorkspace: z.string().min(1).max(1024) }),
+]).refine(v => v.renderAuthorization.renderIntents.includes("final"), "The owner's render authorization must cover the final render intent.");
 export type RealFootageRunManifest = z.infer<typeof RealFootageRunManifestSchema>;
+
+/** Version dispatch only: accepted parsers own all registration/authorization/derivation rules. No registration is invented for a derivative. */
+export function registrationForRun(manifest: RealFootageRunManifest, footage: unknown, supplied?: unknown) {
+  if (manifest.schemaVersion === "0.1.0") {
+    const d = ownerMediaDeclarations({ artifactType: "OwnerMediaRegistration", artifactVersion: "0.1.0", stability: "internal_pre_stable",
+      footage, renderAuthorization: manifest.renderAuthorization });
+    return { ...d, derivatives: [] };
+  }
+  const registration = OwnerMediaLosslessRegistrationSchema.parse(supplied), d = ownerMediaLosslessDeclarations(registration);
+  if (!equal(registration.footage, footage) || !equal(registration.renderAuthorization, manifest.renderAuthorization))
+    refuse("registration_run_mismatch", ["The explicit registration must bind exactly the named root manifest and render authorization."]);
+  if (!manifest.timeline.some(t => d.derivatives.some(a => a.entryId === t.entryId)))
+    refuse("canonical_timeline_missing", ["The canonical run must select a declared 0.4 derivative."]);
+  return { registration, registrationDigest: d.registrationDigest, declarations: [...d.declarations, ...d.derivatives], derivatives: d.derivatives };
+}
 
 /** An absolute local path, never a URL, share, device path, traversal or NUL. */
 export function absoluteLocalPath(path: string, label: string): string {
@@ -135,17 +158,62 @@ export function isFrozenRealModel(analysis: FootageAnalysis): boolean {
   return e.mode === "siglip" && e.model === FROZEN_SEMANTIC_MODEL.model && e.revision === FROZEN_SEMANTIC_MODEL.revision && equal(e, siglipConfiguration("so400m"))
     && embeddingSpaceId(e) === FROZEN_SEMANTIC_MODEL.spaceId;
 }
+export interface RegisteredMediaInput { registration: unknown; authority: unknown; asOf: string }
+/** Pure eligibility inspection of an already-created authority. The runner still re-verifies bytes and obtains fresh execution observations. */
+function registeredAnalysisReasons(sources: readonly TimelineSource[], input: RegisteredMediaInput): string[] {
+  const parsed = OwnerMediaLosslessRegistrationSchema.safeParse(input.registration);
+  if (!parsed.success) return ["canonical_registration_invalid"];
+  const declared = ownerMediaLosslessDeclarations(parsed.data), all = [...declared.declarations, ...declared.derivatives];
+  const authority = input.authority;
+  if (!OwnerMediaLifecycleAuthority.is(authority)) return ["canonical_live_authority_required"];
+  const identities = all.map(({ entryId, assetId, contentHash, sizeBytes }) => ({ entryId, assetId, contentHash, sizeBytes })).sort(byText(d => d.assetId));
+  if (authority.registrationDigest !== declared.registrationDigest || !equal(authority.scope, { projectId: parsed.data.footage.projectId, creatorId: parsed.data.footage.creatorId })
+    || !equal(authority.renderAuthorization, parsed.data.renderAuthorization) || !equal([...authority.declared].sort(byText(d => d.assetId)), identities))
+    return ["canonical_authority_registration_mismatch"];
+  const reasons: string[] = [];
+  if (parsed.data.renderAuthorization.authorizedAt > input.asOf) reasons.push("render_authorization_not_in_effect");
+  for (const s of sources) {
+    const d = all.find(d => d.entryId === s.entryId), a = s.analysis;
+    if (d === undefined) { reasons.push(`canonical_analysis_missing_or_invalid:${s.entryId}`); continue; }
+    if (a.assetId !== d.assetId || a.contentHash !== d.contentHash || a.authorization.sizeBytes !== d.sizeBytes || !equal(a.authorization, d.authorization))
+      reasons.push(`canonical_analysis_binding_mismatch:${s.entryId}`);
+    if (!isFrozenRealModel(a) || a.inventory.embeddingSpace.spaceId !== FROZEN_SEMANTIC_MODEL.spaceId || a.inventory.embeddingSpace.dimensions !== 1152)
+      reasons.push(`analysis_not_frozen_semantic_model:${s.entryId}`);
+    try { authority.assertCurrent(d.assetId, input.asOf); } catch (error) {
+      const code = error !== null && typeof error === "object" && "code" in error ? String(error.code) : "invalid";
+      reasons.push(`canonical_lifecycle_refused:${s.entryId}:${code}`);
+    }
+    const derivative = declared.derivatives.find(v => v.assetId === d.assetId);
+    if (derivative === undefined) continue;
+    const facts = derivative.derivation.sampleDerivation.output.facts, video = facts.streams.find(s => s.kind === "video"), m = a.metadata;
+    if (video === undefined || m.codec !== video.codec || m.width !== video.geometry.declared.width || m.height !== video.geometry.declared.height
+      || m.codedWidth !== video.geometry.declared.width || m.codedHeight !== video.geometry.declared.height || m.rotation !== 0 || m.variableFrameRate
+      || !equal(m.fps, video.declaredFrameRate) || m.frameCount !== video.presentationTimestamps.length
+      || !equal(m.frameTimes, video.presentationTimestamps.map(value => secondsOf({ value, rate: rateOf(video.timeBase.denominator) })))
+      || m.hasAudio !== facts.streams.some(s => s.kind === "audio")) reasons.push(`canonical_analysis_media_mismatch:${s.entryId}`);
+  }
+  return reasons;
+}
 /**
  * Inspects the timeline sources against the accepted V0 render and conformance rules. `realMedia` requires owner-supplied real media
  * analysed by the frozen real model. Every violation is reported with its exact reason; nothing is normalized.
  */
 export function planOutput(sources: readonly TimelineSource[], o: { sourceAudio: "linked_identity" | "excluded"; outputResolution: { width: number; height: number } | null;
-  realMedia: boolean }): OutputPlan {
-  const reasons: string[] = [];
+  realMedia: boolean; registeredMedia?: RegisteredMediaInput }): OutputPlan {
+  const { realMedia, registeredMedia, sourceAudio, outputResolution } = o;
+  if (realMedia && registeredMedia) sources = sources.map(s => {
+    const entryId = s.entryId, parsed = FootageAnalysisSchema.safeParse(s.analysis);
+    if (!parsed.success) refuse("source_not_admissible", [`canonical_analysis_missing_or_invalid:${entryId}`]);
+    return { entryId, analysis: parsed.data };
+  });
+  const reasons: string[] = realMedia && registeredMedia ? registeredAnalysisReasons(sources, registeredMedia) : [];
+  // Invalid or missing registered analysis must refuse before legacy metadata access; never repair it or borrow a root's analysis.
+  if (reasons.length > 0) refuse("source_not_admissible", reasons);
   for (const { entryId, analysis } of sources) {
     const a = analysis.authorization, m = analysis.metadata;
-    if (o.realMedia && (a.sourceType !== "owner_supplied" || !OWNER_BASES.includes(a.authorizationBasis))) reasons.push(`analysis_not_owner_real_media:${entryId}`);
-    if (o.realMedia && !isFrozenRealModel(analysis)) reasons.push(`analysis_not_frozen_semantic_model:${entryId}`);
+    if (realMedia && ((a.sourceType !== "owner_supplied" && !(registeredMedia && a.sourceType === "system_canonicalized"))
+      || !OWNER_BASES.includes(a.authorizationBasis))) reasons.push(`analysis_not_owner_real_media:${entryId}`);
+    if (realMedia && !isFrozenRealModel(analysis)) reasons.push(`analysis_not_frozen_semantic_model:${entryId}`);
     if (!a.allowedPurposes.includes(PURPOSE)) reasons.push(`authorization_lacks_local_evaluation:${entryId}`);
     if (m.variableFrameRate) reasons.push(`variable_frame_rate:${entryId} (V0 renders only constant-rate sources; nothing is converted)`);
     if (m.codec !== "h264") reasons.push(`codec_unsupported:${entryId}:${m.codec}`);
@@ -156,7 +224,7 @@ export function planOutput(sources: readonly TimelineSource[], o: { sourceAudio:
     const off = m.frameTimes.findIndex((t, i) => t !== secondsOf({ ...grid, value: i }));
     if (off >= 0) reasons.push(`frame_table_off_grid:${entryId}:frame ${off} at ${m.frameTimes[off]} s is not exactly ${off} x ${m.fps.denominator}/${m.fps.numerator} s`);
     if (m.fps.numerator < m.fps.denominator || m.fps.numerator > 240 * m.fps.denominator) reasons.push(`frame_rate_out_of_bounds:${entryId}`);
-    if (o.sourceAudio === "linked_identity" && !m.hasAudio) reasons.push(`source_audio_absent:${entryId} (V0 never synthesizes silence; declare sourceAudio "excluded" explicitly)`);
+    if (sourceAudio === "linked_identity" && !m.hasAudio) reasons.push(`source_audio_absent:${entryId} (V0 never synthesizes silence; declare sourceAudio "excluded" explicitly)`);
   }
   const retained = [...new Map(sources.map(s => [s.analysis.assetId, s.analysis.keptCandidateIds.length])).values()].reduce((n, k) => n + k, 0);
   if (retained > MAX_RETAINED_CANDIDATES) reasons.push(`candidate_universe_exceeds_harness_bound:${retained} retained candidates (at most ${MAX_RETAINED_CANDIDATES}; authorize and analyze shorter clips)`);
@@ -165,7 +233,7 @@ export function planOutput(sources: readonly TimelineSource[], o: { sourceAudio:
     if (m.fps.numerator !== first.fps.numerator || m.fps.denominator !== first.fps.denominator) reasons.push(`frame_rate_mismatch:${entryId}`);
     if (m.aspectRatio.width !== first.aspectRatio.width || m.aspectRatio.height !== first.aspectRatio.height) reasons.push(`display_aspect_mismatch:${entryId}`);
   }
-  const resolution = o.outputResolution ?? { width: first.width, height: first.height };
+  const resolution = outputResolution ?? { width: first.width, height: first.height };
   if (resolution.width % 2 !== 0 || resolution.height % 2 !== 0 || resolution.width > RENDER_SEMANTICS.bounds.maxWidth || resolution.height > RENDER_SEMANTICS.bounds.maxHeight) {
     reasons.push(`output_resolution_unsupported:${resolution.width}x${resolution.height} (even, at most ${RENDER_SEMANTICS.bounds.maxWidth}; set outputResolution explicitly)`);
   }
@@ -174,7 +242,7 @@ export function planOutput(sources: readonly TimelineSource[], o: { sourceAudio:
   try { ticksPerSecond = outputClockFor(first.fps); } catch (error) { if (error instanceof HarnessRefusal) reasons.push(...error.reasons); else throw error; }
   if (reasons.length > 0) refuse("source_not_admissible", reasons);
   return { frameRate: { numerator: first.fps.numerator, denominator: first.fps.denominator }, ticksPerSecond, aspect: { ...first.aspectRatio }, resolution,
-    linkedAudio: o.sourceAudio === "linked_identity" };
+    linkedAudio: sourceAudio === "linked_identity" };
 }
 
 // ================================================================ candidate admissibility and exact frame selection
