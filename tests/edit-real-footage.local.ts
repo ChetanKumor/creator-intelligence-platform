@@ -6,7 +6,9 @@
 //
 // It reads exactly: the run manifest; the accepted Phase-2 AuthorizedFootageSet it names; the files that set declares, only through the
 // owner-local lifecycle authority (exact relative path, SHA-256 and size; nothing is discovered, listed or downloaded); and the accepted
-// analyzer's outputs under .local-runs/<analysisJobId>/. Source bytes are only ever read. It writes only under the git-ignored
+// analyzer's outputs under .local-runs/<analysisJobId>/. For 0.2 that job may analyze a separate explicitly authorized set containing
+// the selected derivative and original; each result must bind the exact registered identity/authorization. No jobs are merged.
+// Source bytes are only ever read. It writes only under the git-ignored
 // .local-runs/phase5-gate7/b3d-<instant>-<nonce>/: receipt.json (the one bounded receipt), evidence.json,
 // timings.json and runtime/ (staged copies of the declared sources, render outputs and segment artifacts, kept for owner review).
 //
@@ -169,7 +171,8 @@ async function main(): Promise<number> {
       allowedSourceRoots = [dirname(footagePath), ...new Set(authority.sourceLocations.filter(s => declared.derivatives.some(d => d.assetId === s.assetId)).map(s => dirname(s.path)))];
       if (manifest.schemaVersion === "0.2.0") registeredMedia = { registration, authority, asOf: now() };
       receipt.manifest.registrationDigest = authority.registrationDigest;
-      // The accepted analyzer's outputs for exactly this footage manifest.
+      // One accepted analysis job containing the selected registered bytes. In 0.2 its authorized analysis set may differ from the
+      // registration's root set: e.g. derivative + beta. An original-only job cannot supply or borrow the derivative's analysis.
       const runDirectoryOf = join(PROJECT_ROOT, ".local-runs", manifest.analysisJobId);
       const runRead = await readExactJson(join(runDirectoryOf, "run.json"), MAX_ANALYSIS_BYTES, "The analysis run record");
       const record = runRead.value as { jobId?: unknown; status?: unknown };

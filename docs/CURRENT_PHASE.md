@@ -1,3 +1,24 @@
+# Current Phase - Phase 5 Gate 7 Batch 3E-C R01 (HARNESS FOR OWNER REVIEW; REAL MEDIA PENDING; Gate 7 incomplete)
+
+Last updated: 2026-10-10
+
+## Current ruling
+
+- **3E-C HARNESS IMPLEMENTED FOR OWNER REVIEW — REAL MEDIA PENDING.** R01 is verified for owner review; no self-acceptance or Gate 7 closure.
+- **R01's absolute analyzer-to-runner reachability finding is falsified.** One explicit joint authorized analysis set for the registered derivative and second original reaches the existing unchanged 0.2 runner. Original-only analysis cannot borrow or merge an independent derivative job. No new functional bridge is justified.
+- Reused accepted analyzer/path resolver/result persistence, registration/native verification/lifecycle, grants/staging/permit, renderer/QC and editorial head/CAS/reuse. Four source files change: four actual-CLI regressions and bounded test helpers, an existing structural-backend export, and comment clarification. No production contract, analyzer/model pipeline, dependency, renderer, schema, security allowlist or tool-pin change.
+- Actual generated-byte analysis with structural perception → exact registration/lookup/admissibility → pinned FFmpeg/native output/independent QC → R0 → R1 passes all 16 runner scenarios. Altered permissions and foreign scope refuse before render. No owner-media, fresh-model or real R2 claim.
+- Complete current verification: **2,153 distinct JS cases / 2,156 required passing coverage instances**; historical seven-gate inventory exactly reconciled. The four R01 cases are included. Final typecheck, clean build, workspace, 33 schema/fixture identities, synthetic demo and **23 Python analyzer tests PASS**. Literal `npm run verify` NOT RUN; every unchanged constituent ran with accepted bounded concurrency.
+- An earlier full native attempt is preserved as **38 PASS / one FAIL** with no final positive CLI receipt. The same assertions pass after only pre-analysis generated-fixture proposal bounds are narrowed; no timeout/freshness/authorization relaxation. All 291 unaffected compiled modules are byte-exact, preserving the truthful chronology of reused unaffected test results.
+- All 18 historical untracked artifacts, three owner research drafts, audited generated source/evidence archives, public schemas/dependencies/lockfile/pins and full prior phase history remain exact. Only the six authorized code/report/current-phase files are eligible for publication. Main remains `4f85b559c7eff2c24e221011f3ee1dd1466a111d`.
+- Real physically distinct owner sources, eligible real canonical derivative, fresh frozen inference and real R0 → R1 → R2 remain **NOT AUTHORIZED / NOT RUN**. Generated technical QC does not establish professional editing quality or autonomous Director behavior.
+- **STOP after the bounded R01 owner-review checkpoint. Gate 7 remains INCOMPLETE; Phase 6 is NOT STARTED and NOT AUTHORIZED.** No private-media access, pretrained inference, main merge or deployment.
+- Details: [R01 reachability proof and bounded verification](phases/phase-5-gate-7-batch-3e-c-r01-owner-review.md).
+
+## Preserved full current-phase history
+
+The complete prior file follows verbatim. Historical rulings are superseded only within the bounded R01 ruling above.
+
 # Current Phase - Phase 5 Gate 7 Batch 3E-C (HARNESS FOR OWNER REVIEW; REAL MEDIA PENDING; Gate 7 incomplete)
 
 Last updated: 2026-10-09

@@ -72,14 +72,15 @@ function refuse(code: string, reasons: readonly string[]): never { throw new Har
 const Dimension = z.number().int().min(2).max(RENDER_SEMANTICS.bounds.maxWidth).refine(v => v % 2 === 0, "Output dimensions are even.");
 /**
  * The strict run manifest. It carries no media and no identity of its own: the footage manifest it names is the accepted Phase-2
- * AuthorizedFootageSet (exact relative paths, SHA-256, sizes, labels and owner provenance) that the accepted analyzer consumed, and
- * the timeline names that set's own entry labels. The render authorization is the owner's explicit marker.
+ * AuthorizedFootageSet (exact relative paths, SHA-256, sizes, labels and owner provenance). In 0.2 it is the registration's ROOT set;
+ * the analyzer may consume a separate authorized derivative/original set. The timeline names registered entry labels, and each
+ * selected result must bind the exact registered identity/authorization. The render authorization is the owner's explicit marker.
  */
 const RunFields = {
   manifestType: z.literal("Batch3DRealFootageRun"),
-  /** Absolute local path of the accepted Phase-2 AuthorizedFootageSet JSON. Its directory is the only place sources are read from. */
+  /** Absolute root AuthorizedFootageSet JSON. Root files are relative to it; 0.2 also reads explicitly declared canonical objects. */
   footageManifest: z.string().min(1).max(1024),
-  /** The accepted analyzer's run over exactly that footage manifest: .local-runs/<analysisJobId>/. */
+  /** One accepted analyzer job containing all selected exact assets: .local-runs/<analysisJobId>/. No unrelated jobs are merged. */
   analysisJobId: z.string().regex(/^footage_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/),
   /** Two clips in output order: the first is locked (state only), the second is trimmed. A null candidate lets the harness choose deterministically. */
   timeline: z.tuple([z.strictObject({ entryId: IdSchema, candidateId: IdSchema.nullable() }), z.strictObject({ entryId: IdSchema, candidateId: IdSchema.nullable() })]),

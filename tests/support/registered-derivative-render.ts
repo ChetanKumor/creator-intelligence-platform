@@ -21,7 +21,7 @@ import { footageEnvironment } from "./footage.js";
 import { OWNER, OWNER_SCOPE, rootOf, registration02, type Json } from "./owner-media-canonical.js";
 import * as R from "./edit-real-footage.js";
 
-class StructuralBackend implements EmbeddingBackend {
+export class StructuralBackend implements EmbeddingBackend {
   async embed(ids: readonly string[]) {
     return { vectors: ids.map((sampleId, i) => ({ sampleId, vector: Array.from({ length: 1152 }, (_, k) => ((k * 7 + i * 13) % 17) / 17 + 0.01) })),
       version: "test-backend-not-a-model", device: "cpu" as const, fallback: false };
