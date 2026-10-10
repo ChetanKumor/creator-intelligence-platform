@@ -1,3 +1,21 @@
+# Current Phase - Phase 5 Gate 7 Batch 3E-C (R01 AND HARNESS OWNER-ACCEPTED within generated-media/structural scope; REAL MEDIA PENDING; Gate 7 incomplete)
+
+Last updated: 2026-10-10
+
+## Current ruling
+
+- **3E-C R01 AND BOUNDED HARNESS OWNER-ACCEPTED WITHIN GENERATED-MEDIA/STRUCTURAL SCOPE.** R01 at `ece60ae72a9b316055699bd4459a928c730dd64a`; harness at `8601ed433ba57c181644c443f124689f87d719ff`.
+- **FULL REAL-MEDIA 3E-C REMAINS PENDING.** Real originals, an eligible real 0.4 derivative, fresh frozen inference and real R0 → R1 → R2 are not established by this acceptance.
+  - A fresh read-only acceptance audit re-parses every R01 TAP log: 2,153 distinct JS cases / 2,156 coverage instances PASS. The preserved 38 PASS / one FAIL attempt stays recorded and uncounted; 23 Python tests OK. The six committed files, receipts, 21 owner files and the CURRENT_PHASE suffix are exact. No material contradiction. No test, render or model was rerun.
+  - Main remains `4f85b559c7eff2c24e221011f3ee1dd1466a111d`. This docs-only publication changes only CURRENT_PHASE and the appended ruling in the R01 record.
+  - **Rule #1: reuse before building.** Real-media 3E-C execution is AUTHORIZED by the 2026-10-10 owner directive only after this publication's local/tracking/live equality. It proceeds only through bounded metadata-only candidate discovery plus one explicit owner confirmation of two exact source files and the processing scope. No source bytes are opened before that confirmation.
+  - Gate 7 remains INCOMPLETE. No self-acceptance; Phase 6 NOT STARTED, NOT AUTHORIZED; no main merge or deployment.
+  - Details: [R01/harness owner acceptance](phases/phase-5-gate-7-batch-3e-c-r01-owner-review.md#r01-and-bounded-3e-c-harness-owner-acceptance-2026-10-10).
+
+## Preserved full current-phase history
+
+The complete prior file follows verbatim. Historical status/authorization statements are superseded only within the ruling above.
+
 # Current Phase - Phase 5 Gate 7 Batch 3E-C R01 (HARNESS FOR OWNER REVIEW; REAL MEDIA PENDING; Gate 7 incomplete)
 
 Last updated: 2026-10-10
