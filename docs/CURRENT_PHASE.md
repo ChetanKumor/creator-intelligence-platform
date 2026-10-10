@@ -1,3 +1,21 @@
+# Current Phase - Phase 5 Gate 7 Batch 3E-C (PREPARED-SOURCE ATTEMPT BLOCKED AT THE CHROMA GATE; OWNER WILL SUPPLY CAMERA-ORIGINAL HEVC; Gate 7 incomplete)
+
+Last updated: 2026-10-10
+
+## Current ruling
+
+- **3E-C BLOCKED — EXACT REMAINING OWNER DECISION**, since resolved by the owner: route 1, an owner-supplied untouched camera-original HEVC clip whose every SPS explicitly signals center siting. 3E-C waits for that clip.
+  - The owner explicitly authorized a bounded prepared-source route from asset_01 and asset_03 (rights confirmed; prepared roots admissible; exact scope, storage and compute approved at 2026-10-10T06:18:51.998Z). It stopped at the pre-registered chroma gate, before any media was prepared.
+  - R1: both originals declare left siting by omission (normative H.264 type 0); ffprobe reports left on every frame. R2: the pixel estimator recovers known siting on generated scenes (18/18, maximum error 0.037 luma px), but real-content shift controls fail (2/12). R3: asset_01 φh median −0.805 luma px and φv 0.777, neither left nor center, varying ≈0.7 px across the frame; asset_03's correlation curves are nearly flat. The actual siting cannot be established: **STOP**.
+  - Nothing was encoded, canonicalized, registered, model-analysed or rendered. The approved records and render authorization (expiring 2026-10-17T06:18:51.998Z) were not written and will not be used. Originals re-hash unchanged; no code, schema, dependency or pin change; no regression required.
+  - Next run needs the owner's clip plus a renderer-conforming second source at its frame rate and display aspect (the approved asset_03 recipe assumed 960×544 and 30:17 and needs re-confirmation). A real R2 still needs one added runner scenario (RED first).
+- **Gate 7 INCOMPLETE. Phase 6 NOT STARTED, NOT AUTHORIZED.** Docs-only publication on the phase branch; no main merge or deployment.
+- Details: [prepared-source attempt](phases/phase-5-gate-7-batch-3e-c-prepared-source-attempt.md).
+
+## Preserved full current-phase history
+
+The complete prior file follows verbatim. Historical status/authorization statements are superseded only within the ruling above.
+
 # Current Phase - Phase 5 Gate 7 Batch 3E-C (REAL-MEDIA PROBE PARTIAL / BLOCKED - OWNER ACTION REQUIRED; Gate 7 incomplete)
 
 Last updated: 2026-10-10
