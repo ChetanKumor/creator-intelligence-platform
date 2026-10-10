@@ -1,3 +1,23 @@
+# Current Phase - Phase 5 Gate 7 Batch 3E-C (REAL-MEDIA PROBE PARTIAL / BLOCKED - OWNER ACTION REQUIRED; Gate 7 incomplete)
+
+Last updated: 2026-10-10
+
+## Current ruling
+
+- **3E-C PARTIAL / BLOCKED — OWNER ACTION REQUIRED.** R01 and the bounded harness remain owner-accepted within generated/structural scope (`2a6eb427a4c94c6eec8c37fefbad173c7290995a`). Full real-media 3E-C remains pending.
+- Owner-authorized probe of Phase-2 asset_01 and asset_03 only. It used the existing 1.0.0 records (analysis/evaluation purposes); no canonicalization consent or render authorization was granted or written.
+  - Fresh read-only inspection: SHA-256 and size exact; H.264 1920×1088 yuv420p, 30/1 CFR, explicit BT.709 limited range, SAR unspecified, no display matrix. The accepted 0.4 route is **`EXISTING_PATH` — no genuine 0.4 derivative is possible**. Chroma admission refuses with `canonicalization_consent_required` before any process. No canonicalization, registration, render or QC ran.
+  - **Genuine frozen SigLIP2 CPU inference, FRESH:** `google/siglip2-so400m-patch16-naflex` @ `cc24074f717b612951c2dead130904ab9b65a81e`, CPU. It produced 14 new 1152-dimensional vectors in `space_58bd790c6dc94ee22f001fadec49ff85cb3178eef47a856ca421948b3d06f687`, using isolated caches; the global caches are untouched. The repeat run had 14/14 cache hits, 0 embeddings and identical analysis IDs.
+  - Resources: worker peak commit 10,686,369,792 B (self-reported) and peak working set 2,202,304,512 B (OS counter); fresh run 115.4 s, on battery power.
+  - There are 204 retained candidates, above the harness bound of 32. These analyses are of originals, not execution derivatives.
+- Smallest route to one eligible real HEVC source: either an owner-recorded HEVC clip that explicitly signals center chroma siting, or an owner-approved, truthfully labelled clip prepared from asset_01 (chroma resampled to center, libx265, center declared). Either must pass the unchanged accepted admission. A matching renderer-conforming second source is also required.
+- Docs-only publication; no production, test, schema, dependency or pin change. **Gate 7 INCOMPLETE. Phase 6 NOT STARTED, NOT AUTHORIZED.** No main merge or deployment.
+- Details: [real-media probe](phases/phase-5-gate-7-batch-3e-c-real-media-probe.md).
+
+## Preserved full current-phase history
+
+The complete prior file follows verbatim. Historical status/authorization statements are superseded only within the ruling above.
+
 # Current Phase - Phase 5 Gate 7 Batch 3E-C (R01 AND HARNESS OWNER-ACCEPTED within generated-media/structural scope; REAL MEDIA PENDING; Gate 7 incomplete)
 
 Last updated: 2026-10-10
